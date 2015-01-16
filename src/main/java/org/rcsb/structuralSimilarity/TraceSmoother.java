@@ -201,7 +201,7 @@ public class TraceSmoother {
 		params.setAlignSeqRes(true);
 		params.setParseCAOnly(true);
 		params.setLoadChemCompInfo(true);
-	//	ChemCompGroupFactory.setChemCompProvider(new AllChemCompProvider());
+		cache.setFileParsingParams(params);
 		ChemCompGroupFactory.setChemCompProvider(new DownloadChemCompProvider());
 		return cache;
 	}
