@@ -22,7 +22,7 @@ import org.rcsb.fingerprints.DCT1DFingerprint;
 import scala.Tuple2;
 
 /**
- * 
+ * This class is under development. It current does not work!
  * @author  Peter Rose
  */
 public class FingerprintClusterer 
@@ -97,7 +97,7 @@ public class FingerprintClusterer
 		System.out.println("number of pairs: " + numPairs);
 		
 		List<Tuple2<String, Float>> bestScores = sc.parallelizePairs(pairList, NUM_THREADS*NUM_TASKS_PER_THREAD)
-				.mapToPair(new PairSimilarityCalculator(vec))
+				.mapToPair(new FeatureVectorToJaccardMapper(vec))
 			    .filter(s -> s._2 > 0.9f)
 			    .collect();
 		

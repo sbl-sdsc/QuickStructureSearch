@@ -27,17 +27,18 @@ import org.biojava.bio.structure.io.mmcif.AllChemCompProvider;
 import org.biojava.bio.structure.io.mmcif.ChemCompGroupFactory;
 import org.biojava3.structure.StructureIO;
 import org.rcsb.utils.BlastClustReader;
-
+/**
+ * This class creates a Hadoop sequence file for protein chains. By default, it uses the first
+ * representative chains from each 40% sequence identity cluster. The Hadoop sequence file
+ * uses a delta encoding of the PDB coordinates as well as BZIP2 block level compression.
+ * 
+ * @author  Peter Rose
+ */
 public class ChainsToSequenceFile {
 	private static AtomCache cache = initializeCache();
-	private static final int SCALE = 1000;
-	private static final int PERCENT_SEQUENCE_IDENTITY = 40;
-	
-//	Total structures: 27116
-//	Success: 27108
-//	Chains: 26170
-//	Failure: 8
-//	Time: 8141.109319477 sec.
+	private static final int SCALE = 1000; // Factor to convert PDB coordinates to integer values. Do not change this value!
+
+	private static final int PERCENT_SEQUENCE_IDENTITY = 40; // use 40% sequence identity clusters
 
 	public static void main(String[] args) throws IOException {
 		String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
@@ -76,11 +77,10 @@ public class ChainsToSequenceFile {
 				System.out.println(cluster.get(0));
 				Structure s = null;
 				try {
-	//				s = StructureIO.getStructure("4D6T.F");
 					s = StructureIO.getStructure(cluster.get(0));
 					success++;
 				} catch (Exception e) {
-					// TODO Auto-generated catch block
+					// some files can't be read. Let's just skip those!
 					e.printStackTrace();
 					failure++;
 					continue;
@@ -144,10 +144,12 @@ public class ChainsToSequenceFile {
 		int y = 0;
 		int z = 0;
 
-		// delta code coordinate values
+		// delta encode coordinate values. Gaps in the protein chains
+		// are encoded as the maximum integer values.
 		for (int i = 0, dx = 0, dy = 0, dz = 0; i < ca.length; i++) {
 			Atom a = ca[i];
 			if (a != null) {
+				// delta encode coordinate values as integers
 				x = (int)Math.round(a.getX()*SCALE);
 				y = (int)Math.round(a.getY()*SCALE);
 				z = (int)Math.round(a.getZ()*SCALE);
@@ -158,6 +160,7 @@ public class ChainsToSequenceFile {
 				dy = y;
 				dz = z;
 			} else {
+				// encode a gap in the protein chain
 				writable[n++] = new IntWritable(Integer.MAX_VALUE);
 			}
 		}

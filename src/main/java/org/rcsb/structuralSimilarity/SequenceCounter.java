@@ -15,7 +15,8 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 
 /**
- * 
+ * Demo Map-Reduce program that shows how to read a Hadoop Sequence file and
+ * calculate some simple chain statistics
  * @author  Peter Rose
  */
 public class SequenceCounter 

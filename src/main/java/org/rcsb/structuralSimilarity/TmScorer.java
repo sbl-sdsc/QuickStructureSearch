@@ -16,7 +16,7 @@ import org.biojava.bio.structure.align.fatcat.calc.FatCatParameters;
 import org.biojava.bio.structure.align.model.AFPChain;
 import org.biojava.bio.structure.align.util.AFPChainScorer;
 
-public class ChainSimilarity {
+public class TmScorer {
 	private static final String CA_NAME = "CA";
 	private static final String GROUP_NAME = "GLU";
 

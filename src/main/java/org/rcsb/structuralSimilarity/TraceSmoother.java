@@ -48,6 +48,7 @@ public class TraceSmoother {
 		
 		fileName += pdbId;
 		
+		// save original coordinates
 		PrintWriter writer = new PrintWriter(fileName + "0.pdb");
 		Point3d[] points = new Point3d[ca.length];
 		for (int i = 0; i < points.length; i++) {
@@ -56,37 +57,20 @@ public class TraceSmoother {
 		}
 		writer.close();
 		
+		// save savitzky golay smoothed coordinates (cubic 7 point, 2 iterations)
 		writer = new PrintWriter(fileName + "sg5.pdb");
-		Point3d[] sPoints = smoothSavitzkyGolayCubic5Point(points, 2);
+		Point3d[] sPoints = smoothSavitzkyGolayCubic7Point(points, 2);
 		int offset = (points.length - sPoints.length)/2;
 
 		for (int i = offset; i < points.length-offset; i++) {
 			sPoints[i-offset].get(ca[i].getCoords());
 			writer.println(ca[i].toPDB());
 		}
-		writer.close();
 		
-		writer = new PrintWriter(fileName + (iterations/2) + ".pdb");
-		Point3d[] iPoints = smoothLinear(points, iterations/2);
-		for (int i = 0; i < iPoints.length; i++) {
-			iPoints[i].get(ca[i].getCoords());
-			writer.println(ca[i].toPDB());
-		}
 		writer.close();
-
-		writer = new PrintWriter(fileName + iterations + ".pdb");
-		iPoints = smoothLinear(points, iterations);
-		for (int i = 0; i < iPoints.length; i++) {
-			iPoints[i].get(ca[i].getCoords());
-			writer.println(ca[i].toPDB());
-		}
-		writer.close();
-
-		
-
 	}
 	
-	public static Point3d[] smoothLinear(Point3d[] points, int iterations) {		
+	public static Point3d[] smoothRogen(Point3d[] points, int iterations) {		
 		double[] x = new double[points.length];
 		double[] y = new double[points.length];
 		double[] z = new double[points.length];
@@ -98,9 +82,6 @@ public class TraceSmoother {
 		}
 		
 		for (int i = 0; i < iterations; i++) {
-//			x = smoothLinear(x);
-//			y = smoothLinear(y);
-//			z = smoothLinear(z);
 			x = smoothRogen(x);
 			y = smoothRogen(y);
 			z = smoothRogen(z);
@@ -114,25 +95,6 @@ public class TraceSmoother {
 		return smoothedPoints;
 	}
 	
-	private static double[] smoothLinear(double[] x) {	    	
-		double[] y = new double[x.length];
-
-//		y[0] = (x[0]+x[1])/2.0;
-		y[0] = x[0];
-//		y[1] = (x[0] + x[1] + x[2])/3.0;
-		y[1] = (x[0] + x[2])/2.0;
-		for (int i = 2; i < x.length-2; i++) {
-//			y[i] = (x[i-2]+ x[i-1] + x[i] + x[i+1] + x[i+2])/5.0;
-			y[i] = (x[i-2]+ x[i-1] + x[i+1] + x[i+2])/4.0;
-		}
-//		y[x.length-2] =  (x[x.length-3] + x[x.length-2] + x[x.length-1])/3.0;
-		y[x.length-2] =  (x[x.length-3] + x[x.length-1])/2.0;
-//		y[x.length-1] =  (x[x.length-2]+x[x.length-1])/2.0;
-		y[x.length-1] = x[x.length-1];
-
-		return y;
-	}
-	
 	/**
 	 * P. Rogen, Evaluating protein structure descriptors and tuning Gauss integral
 	 * based descriptors, J. Phys.: Condens. Matter (2005) 17, S1523-S1538
@@ -141,7 +103,7 @@ public class TraceSmoother {
 	 */
 	private static double[] smoothRogen(double[] x) {	    	
 		double[] y = new double[x.length];
-        double a =2.4;
+        double a = 2.4;
         double b = 2.1;
         
 		y[0] = x[0];
@@ -155,7 +117,14 @@ public class TraceSmoother {
 		return y;
 	}
 	
-	public static Point3d[] smoothSavitzkyGolayLinear3Point(Point3d[] points, int iterations) {	
+	/**
+	 * http://en.wikipedia.org/wiki/Savitzky–Golay_filter
+	 * Note, the smoothed curve will have fewer points in its current implementation
+	 * @param points
+	 * @param iterations
+	 * @return
+	 */
+	public static Point3d[] smoothSavitzkyGolayLinear4Point(Point3d[] points, int iterations) {	
 		int[] coefficients = {1,1,1,1};
 		int norm = 4;
 		return smoothSavitzkyGolay(points, coefficients, norm, iterations);
@@ -163,19 +132,18 @@ public class TraceSmoother {
 	
 	/**
 	 * http://en.wikipedia.org/wiki/Savitzky–Golay_filter
+	 * Note, the smoothed curve will have fewer points in its current implementation
 	 * @param points
 	 * @param iterations
 	 * @return
 	 */
-	public static Point3d[] smoothSavitzkyGolayCubic5Point(Point3d[] points, int iterations) {	
+	public static Point3d[] smoothSavitzkyGolayCubic7Point(Point3d[] points, int iterations) {	
 		int[] coefficients = {-2,3,6,7,6,3,-2};
 		int norm = 21;
 		return smoothSavitzkyGolay(points, coefficients, norm, iterations);
 	}
 	
-	public static Point3d[] smoothSavitzkyGolay(Point3d[] points, int[] coefficients, int norm, int iterations) {
-
-		
+	public static Point3d[] smoothSavitzkyGolay(Point3d[] points, int[] coefficients, int norm, int iterations) {	
 		double[] x = new double[points.length];
 		double[] y = new double[points.length];
 		double[] z = new double[points.length];

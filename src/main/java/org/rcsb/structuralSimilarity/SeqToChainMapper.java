@@ -17,6 +17,10 @@ public class SeqToChainMapper implements PairFunction<Tuple2<Text,ArrayWritable>
 	public SeqToChainMapper() {
 	}
 
+	/**
+	 * Maps a <Text, ArrayWritable> pair read from a Hadoop sequence file to <String, Point3d[]> pair by
+	 * applying inverse delta coding. Note, the Point3d[] contains null entries at gaps in the protein chain.
+	 */
 	@Override
 	public Tuple2<String, Point3d[]> call(Tuple2<Text, ArrayWritable> tuple) throws Exception {
 		Writable[] w = tuple._2.get();

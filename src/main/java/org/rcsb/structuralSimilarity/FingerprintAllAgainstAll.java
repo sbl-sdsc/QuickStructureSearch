@@ -22,12 +22,12 @@ import scala.Tuple2;
  * 
  * @author  Peter Rose
  */
-public class FingerprintAllAgainstAll {  
+public class FingerprintAllAgainstAll { 
 	private static int NUM_THREADS = 8;
-	private static int NUM_TASKS_PER_THREAD = 4;
-	private static int BATCH_SIZE = 5000000;
+	private static int NUM_TASKS_PER_THREAD = 3; // Spark recommends 2-3 tasks per thread
+	private static int BATCH_SIZE = 5000000; // number of pairs to be processed per batch
 
-	private int pairsProcessed = 0;
+	private int pairsProcessed;
 
 	public static void main(String[] args ) throws FileNotFoundException
 	{
@@ -43,31 +43,31 @@ public class FingerprintAllAgainstAll {
 		SparkConf conf = new SparkConf()
 				.setMaster("local[" + NUM_THREADS + "]")
 				.setAppName("1" + this.getClass().getSimpleName())
-				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer").setSparkHome("/tmp/");
+				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
 
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		
 		long t1 = System.nanoTime();
 
-		// read file with protein chains and calculate fingerprint vectors
-		List<Tuple2<String,Vector>> bc  = sc.
-				sequenceFile(path, Text.class, ArrayWritable.class, NUM_THREADS)  // read protein chains
-//				.sample(false, 0.4, 123456)
+		// Step 1. calculate <pdbId.chainId, feature vector> pairs
+		List<Tuple2<String,Vector>> bc  = sc
+				.sequenceFile(path, Text.class, ArrayWritable.class, NUM_THREADS)  // read protein chains
+//				.sample(false, 0.4, 123456) // use only a random fraction, i.e., 40%
 				.mapToPair(new SeqToChainMapper()) // convert input to <pdbId.chainId, CA coordinate> pairs
-				.filter(new GapFilter(3, 5))
-				.filter(new LengthFilter(75,1000))
-				.mapToPair(new ChainToFeatureVectorMapper(new EndToEndDistanceFingerprint())) // calculate fingerprints
-	//			.mapToPair(new ChainToFeatureVectorMapper(new DCT1DFingerprint())) // calculate fingerprints
-				.collect();
+				.filter(new GapFilter(3, 5)) // keep protein chains with gap size <= 3 and <= 5 gaps
+				.filter(new LengthFilter(75,1000)) // keep protein chains with at least 75 residues
+				.mapToPair(new ChainToFeatureVectorMapper(new EndToEndDistanceFingerprint())) // calculate features
+	//			.mapToPair(new ChainToFeatureVectorMapper(new DCT1DFingerprint())) // calculate features
+				.collect(); // return results to master node
 
-		// broadcast feature vectors to all nodes
-		final Broadcast<List<Tuple2<String,Vector>>> vec = sc.broadcast(bc);
+		// Step 2.  broadcast feature vectors to all nodes
+		final Broadcast<List<Tuple2<String,Vector>>> featureVectors = sc.broadcast(bc);
 		int numVectors = bc.size();
 		System.out.println("Vectors: " + numVectors);
 
 		long t2 = System.nanoTime();
 
-		// process pairwise comparisons in batches
+		// Step 3: process pairwise comparisons in batches
 		System.out.println("Total pairs: " + (numVectors*(numVectors-1)/2));
 		
 		PrintWriter writer = new PrintWriter(results);	
@@ -83,15 +83,17 @@ public class FingerprintAllAgainstAll {
 			List<Tuple2<Integer, Integer>> pairList = nextBatch(numVectors);
 
 			// calculate pairwise scores and filter with score > 0.9
-			List<Tuple2<String, Float>> list = sc.parallelizePairs(pairList, NUM_THREADS*NUM_TASKS_PER_THREAD)
-					.mapToPair(new PairSimilarityCalculator(vec))
-					.filter(s -> s._2 > 0.9f)
-					.collect();	
+			List<Tuple2<String, Float>> list = sc
+					.parallelizePairs(pairList, NUM_THREADS*NUM_TASKS_PER_THREAD) // distribute data
+					.mapToPair(new FeatureVectorToJaccardMapper(featureVectors)) // maps pairs of feature vectors to Jaccard index
+					.filter(s -> s._2 > 0.9f) // keep only a pair with a Jaccard index > 0.9
+					.collect();	// copy result to master node
 
-			numPairs += pairList.size();
-			numBestScores += list.size();
 			// write results to .csv file
 			writeToCsv(writer, list);
+			
+			numPairs += pairList.size();
+			numBestScores += list.size();
 		}
 		long t3 = System.nanoTime();
 
@@ -99,16 +101,21 @@ public class FingerprintAllAgainstAll {
 		sc.stop();
 		sc.close();
 
-		System.out.println("protein chains: " + numVectors);
-		System.out.println("pairs         : " + numPairs);
-		System.out.println("filtered pairs: " + numBestScores);
+		System.out.println("protein chains    : " + numVectors);
+		System.out.println("total pairs       : " + numPairs);
+		System.out.println("filtered pairs    : " + numBestScores);
 		System.out.println();
-		System.out.println("calculate fingerprints : " + (t2-t1)/1E9 + " s");
-		System.out.println("calculate pairs        : " + (t3-t2)/1E9 + " s");
-		System.out.println("total time             : " + (t3 - t1)/1E9 + " s");
-		System.out.println("time per pair          : " + ((t3 - t1)/numPairs)  + " ns");
+		System.out.println("calculate feature : " + (t2-t1)/1E9 + " s");
+		System.out.println("compare pairs     : " + (t3-t2)/1E9 + " s");
+		System.out.println("total time        : " + (t3-t1)/1E9 + " s");
+		System.out.println("time per pair     : " + ((t3-t1)/numPairs)  + " ns");
 	}
 
+	/**
+	 * Writes pairs of chain ids and calculated similarity score to a csv file
+	 * @param writer
+	 * @param list
+	 */
 	private static void writeToCsv(PrintWriter writer, List<Tuple2<String, Float>> list) {
 		for (Tuple2<String, Float> t : list) {
 			writer.print(t._1);
@@ -119,6 +126,12 @@ public class FingerprintAllAgainstAll {
 		writer.flush();
 	}
 
+	/**
+	 * Returns pairs of indices for the pairwise comparison. This is done 
+	 * in batches to reduce the memory footprint.
+	 * @param n
+	 * @return
+	 */
 	private List<Tuple2<Integer, Integer>> nextBatch(int n) {
 		List<Tuple2<Integer,Integer>> list = new ArrayList<>(BATCH_SIZE);
 

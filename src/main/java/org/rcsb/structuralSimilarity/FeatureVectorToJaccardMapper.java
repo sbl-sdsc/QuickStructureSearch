@@ -8,15 +8,26 @@ import org.apache.spark.mllib.linalg.Vector;
 
 import scala.Tuple2;
 
-public class PairSimilarityCalculator implements PairFunction<Tuple2<Integer,Integer>,String,Float> {
+/**
+ * This class maps a pair of chains, specified by two indices into the broadcasted data list, to
+ * a Jaccard Index. It calculates the Jaccard index for multi-sets.
+ * 
+ * @author  Peter Rose
+ */
+public class FeatureVectorToJaccardMapper implements PairFunction<Tuple2<Integer,Integer>,String,Float> {
 	private static final long serialVersionUID = 1L;
 	private Broadcast<List<Tuple2<String,Vector>>> data = null;
 
 
-	public PairSimilarityCalculator(Broadcast<List<Tuple2<String,Vector>>> data) {
+	public FeatureVectorToJaccardMapper(Broadcast<List<Tuple2<String,Vector>>> data) {
 		this.data = data;
 	}
 
+	/**
+	 * Returns <PdbId.Chain, Jaccard Index> pairs. This is an extension of the 
+	 * Jaccard Index to multi-sets. The multi-sets are represented as vectors,
+	 * where each vector element is a feature count.
+	 */
 	public Tuple2<String, Float> call(Tuple2<Integer, Integer> tuple) throws Exception {
 		Tuple2<String,Vector> t1 = this.data.getValue().get(tuple._1);
 		Tuple2<String,Vector> t2 = this.data.getValue().get(tuple._2);
