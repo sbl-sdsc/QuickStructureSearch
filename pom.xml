@@ -10,9 +10,14 @@
 
 	 <repositories>        
             <repository>
+                <id>oss-sonatype</id>
+                <name>OSS sonatype repository</name>
+                <url>https://oss.sonatype.org/content/repositories/snapshots/</url>           
+            </repository>
+            <repository>
                 <id>biojava-maven-repo</id>
                 <name>BioJava repository</name>
-                <url>https://oss.sonatype.org/content/repositories/snapshots/</url>           
+                <url>http://www.biojava.org/download/maven/</url>           
             </repository>
         </repositories>
 
