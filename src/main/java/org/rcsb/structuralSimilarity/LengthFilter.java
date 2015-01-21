@@ -6,11 +6,22 @@ import org.apache.spark.api.java.function.Function;
 
 import scala.Tuple2;
 
+/**
+ * This class implements a filter in Spark workflow to filter out protein chains
+ * that are either short than the specified minimum length or longer than the
+ * specified maximum length. It ignores N-terminal and C-terminal gaps.
+ * 
+ * @author Peter Rose
+ */
 public class LengthFilter implements Function<Tuple2<String,Point3d[]>, Boolean> {
 	private static final long serialVersionUID = 1L;
 	int minLength;
 	int maxLength;
 
+	/**
+	 * @param minLength minimum chain length
+	 * @param maxLength maximum chain length
+	 */
 	public LengthFilter(int minLength, int maxLength) {
 		this.minLength = minLength;
 		this.maxLength = maxLength;
@@ -22,21 +33,19 @@ public class LengthFilter implements Function<Tuple2<String,Point3d[]>, Boolean>
 		
 		int start = 0;
 		
-		// skip N-terminal gap
+		// skip N-terminal gap (start of chain)
 		for (int i = 0; i < points.length; i++) {
-			if (points[i] == null) {
+			if (points[i] != null) {
 				start = i;
-			} else {
 				break;
-			}
+			} 
 		}
 		
 		// skip C-terminal gap
 		int end = points.length-1;
 		for (int i = points.length-1; i > start; i--) {
-			if (points[i] == null) {
+			if (points[i] != null) {
 				end = i;
-			} else {
 				break;
 			}
 		}

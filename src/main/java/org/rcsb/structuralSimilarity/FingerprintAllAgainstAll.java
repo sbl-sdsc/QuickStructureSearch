@@ -3,7 +3,6 @@ package org.rcsb.structuralSimilarity;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import org.apache.hadoop.io.ArrayWritable;
@@ -12,8 +11,6 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.mllib.linalg.Vector;
-import org.apache.spark.rdd.HadoopRDD;
-import org.rcsb.fingerprints.DCT1DFingerprint;
 import org.rcsb.fingerprints.EndToEndDistanceFingerprint;
 
 import scala.Tuple2;
@@ -52,12 +49,13 @@ public class FingerprintAllAgainstAll {
 		// Step 1. calculate <pdbId.chainId, feature vector> pairs
 		List<Tuple2<String,Vector>> bc  = sc
 				.sequenceFile(path, Text.class, ArrayWritable.class, NUM_THREADS)  // read protein chains
-//				.sample(false, 0.4, 123456) // use only a random fraction, i.e., 40%
+			//	.sample(false, 0.4, 123456) // use only a random fraction, i.e., 40%
 				.mapToPair(new SeqToChainMapper()) // convert input to <pdbId.chainId, CA coordinate> pairs
 				.filter(new GapFilter(3, 5)) // keep protein chains with gap size <= 3 and <= 5 gaps
-				.filter(new LengthFilter(75,1000)) // keep protein chains with at least 75 residues
+				.filter(new LengthFilter(50,1000)) // keep protein chains with at least 50 residues
+		   //	.mapToPair(new ChainSmootherMapper(new RogenChainSmoother(2))); // add new chain smoother here ...
 				.mapToPair(new ChainToFeatureVectorMapper(new EndToEndDistanceFingerprint())) // calculate features
-	//			.mapToPair(new ChainToFeatureVectorMapper(new DCT1DFingerprint())) // calculate features
+	       //	.mapToPair(new ChainToFeatureVectorMapper(new DCT1DFingerprint())) // calculate features
 				.collect(); // return results to master node
 
 		// Step 2.  broadcast feature vectors to all nodes
@@ -129,7 +127,7 @@ public class FingerprintAllAgainstAll {
 	/**
 	 * Returns pairs of indices for the pairwise comparison. This is done 
 	 * in batches to reduce the memory footprint.
-	 * @param n
+	 * @param n number of feature vectors
 	 * @return
 	 */
 	private List<Tuple2<Integer, Integer>> nextBatch(int n) {
