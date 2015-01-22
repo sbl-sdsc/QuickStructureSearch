@@ -32,8 +32,8 @@ public class SmoothTest {
 
 	public static void main(String[] args ) throws FileNotFoundException
 	{
-		String sequenceFileName = "/Users/peter/Data/PDB_CHAINS/protein_chains_40_20150114_141156.seq";
-		String pdbFileDirectory = "/Users/peter/Data/ProteinSimilarity/";
+		String sequenceFileName = "/Users/xueyangli/Desktop/RCSB/data/protein_chains_40_20150114_141156.seq";
+		String pdbFileDirectory = "/Users/xueyangli/Desktop/RCSB/result/";
 
 		SmoothTest aaa = new SmoothTest();
 		aaa.run(sequenceFileName, pdbFileDirectory);
