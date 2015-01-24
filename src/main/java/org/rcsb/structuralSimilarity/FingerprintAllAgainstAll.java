@@ -28,11 +28,10 @@ public class FingerprintAllAgainstAll {
 
 	public static void main(String[] args ) throws FileNotFoundException
 	{
-		String path = "/Users/xueyangli/Desktop/RCSB/protein_chains_40_20150114_141156.seq";
-		String results = "/Users/xueyangli/Desktop/RCSB/FingerPrintAllAgainstAll20150111.csv";
+		String sequenceFileName = "src/test/resources/protein_chains_40_20150114_141156.seq";
 
 		FingerprintAllAgainstAll aaa = new FingerprintAllAgainstAll();
-		aaa.run(path, results);
+		aaa.run(sequenceFileName, args[0]);
 	}
 
 	private void run(String path, String results) throws FileNotFoundException {
@@ -49,7 +48,7 @@ public class FingerprintAllAgainstAll {
 		// Step 1. calculate <pdbId.chainId, feature vector> pairs
 		List<Tuple2<String,Vector>> bc  = sc
 				.sequenceFile(path, Text.class, ArrayWritable.class, NUM_THREADS)  // read protein chains
-			//	.sample(false, 0.4, 123456) // use only a random fraction, i.e., 40%
+				.sample(false, 0.4, 123456) // use only a random fraction, i.e., 40%
 				.mapToPair(new SeqToChainMapper()) // convert input to <pdbId.chainId, CA coordinate> pairs
 				.filter(new GapFilter(3, 5)) // keep protein chains with gap size <= 3 and <= 5 gaps
 				.filter(new LengthFilter(50,1000)) // keep protein chains with at least 50 residues
@@ -99,14 +98,14 @@ public class FingerprintAllAgainstAll {
 		sc.stop();
 		sc.close();
 
-		System.out.println("protein chains    : " + numVectors);
-		System.out.println("total pairs       : " + numPairs);
-		System.out.println("filtered pairs    : " + numBestScores);
+		System.out.println("protein chains     : " + numVectors);
+		System.out.println("total pairs        : " + numPairs);
+		System.out.println("filtered pairs     : " + numBestScores);
 		System.out.println();
-		System.out.println("calculate feature : " + (t2-t1)/1E9 + " s");
-		System.out.println("compare pairs     : " + (t3-t2)/1E9 + " s");
-		System.out.println("total time        : " + (t3-t1)/1E9 + " s");
-		System.out.println("time per pair     : " + ((t3-t1)/numPairs)  + " ns");
+		System.out.println("calculate features : " + (t2-t1)/1E9 + " s");
+		System.out.println("compare pairs      : " + (t3-t2)/1E9 + " s");
+		System.out.println("total time         : " + (t3-t1)/1E9 + " s");
+		System.out.println("time per pair      : " + ((t3-t1)/numPairs)  + " ns");
 	}
 
 	/**

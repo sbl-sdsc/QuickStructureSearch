@@ -32,11 +32,10 @@ public class SmoothTest {
 
 	public static void main(String[] args ) throws FileNotFoundException
 	{
-		String sequenceFileName = "/Users/xueyangli/Desktop/RCSB/data/protein_chains_40_20150114_141156.seq";
-		String pdbFileDirectory = "/Users/xueyangli/Desktop/RCSB/result/";
+		String sequenceFileName = "src/test/resources/protein_chains_40_20150114_141156.seq";
 
 		SmoothTest aaa = new SmoothTest();
-		aaa.run(sequenceFileName, pdbFileDirectory);
+		aaa.run(sequenceFileName, args[0]);
 	}
 
 	private void run(String path, String filename) throws FileNotFoundException {
@@ -55,7 +54,7 @@ public class SmoothTest {
 				.mapToPair(new SeqToChainMapper()) // convert input to <pdbId.chainId, CA coordinate> pairs
 				.filter(new GapFilter(0, 5)) // keep protein chains with gap size <= 3 and <= 5 gaps
 				.filter(new LengthFilter(50,1000)) // keep protein chains with at least 75 residues
-				//		.mapToPair(new ChainSmootherMapper(new RogenSmoother(2))); // apply smoothing here ..
+		//		.mapToPair(new ChainSmootherMapper(new RogenSmoother(2))); // apply smoothing here ..
 				//		.mapToPair(new ChainSmootherMapper(new SavitzkyGolay7PointSmoother(2))); // apply smoothing here ..
 				.collect(); // return results to master node
 
@@ -94,7 +93,7 @@ public class SmoothTest {
 					// create an amino acid group (residue) and add it to the chain
 					Group g = new AminoAcidImpl();
 					g.setPDBName("GLY"); // for now, all amino acids set to Glycine
-					g.setResidueNumber("A",  i, ' ');
+					g.setResidueNumber(tuple._1.substring(5,6),  i, ' ');
 					g.addAtom(atom);
 					
 					// add group to chain
