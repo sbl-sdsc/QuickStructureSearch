@@ -32,18 +32,25 @@ public class FingerprintClusterer
 	
 	public static void main(String[] args ) throws FileNotFoundException
 	{
-		String path = "/Users/peter/Data/PDB_CHAINS/protein_chains_40_20150111_232623.seq";
-		String results = "/Users/peter/Data/ProteinSimilarity/FingerPrintClusterer20150104.csv";
+		String sequenceFileName = "src/test/resources/protein_chains_40_20150114_141156.seq";
+		String outputFileName = args[0];
+
+		if (args.length == 2) {
+			sequenceFileName = args[0]; 
+			outputFileName = args[1];
+		}
 
 		long t1 = System.nanoTime();
 
-		SparkConf conf = new SparkConf().setMaster("local[*]").setAppName("FingerprintClusterer");
-		conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
+		SparkConf conf = new SparkConf().setMaster("local[" + NUM_THREADS + "]")
+				.setAppName("FingerprintClusterer")
+				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
+		
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		
 		// calculate fingerprint vectors
-		JavaPairRDD<String, Vector> chains = sc.sequenceFile(path, Text.class, ArrayWritable.class, NUM_THREADS)  
-//				.sample(false, 0.1, 123456)
+		JavaPairRDD<String, Vector> chains = sc.sequenceFile(sequenceFileName, Text.class, ArrayWritable.class, NUM_THREADS*NUM_TASKS_PER_THREAD)  
+//				.sample(false, 0.4, 123456)
 		        .mapToPair(new SeqToChainMapper()) // convert input chain id, CA coordinate pairs
 		        .mapToPair(new ChainToFeatureVectorMapper(new DCT1DFingerprint()))  // calculate fingerprints
 		        .cache();
@@ -52,21 +59,22 @@ public class FingerprintClusterer
 		final Broadcast<List<Tuple2<String,Vector>>> vec = sc.broadcast(bc);
 		
 		JavaRDD<Vector> vectors = chains.values().cache();
-		JavaRDD<Vector> vsqrt = vectors.map(new Function<Vector, Vector>() {
-			private static final long serialVersionUID = 1L;
-
-			@Override
-			public Vector call(Vector v) throws Exception {
-				double[] array = v.toArray();
-				for (int i = 0; i < array.length; i++) {
-					array[i] = Math.sqrt(array[i]);
-				}
-				// TODO Auto-generated method stub
-				return Vectors.dense(array);
-			}
-		});
 		chains.unpersist();
-		
+//		JavaRDD<Vector> vsqrt = vectors.map(new Function<Vector, Vector>() {
+//			private static final long serialVersionUID = 1L;
+//
+//			@Override
+//			public Vector call(Vector v) throws Exception {
+//				double[] array = v.toArray();
+//				for (int i = 0; i < array.length; i++) {
+//					array[i] = Math.sqrt(array[i]);
+//				}
+//				// TODO Auto-generated method stub
+//				return Vectors.dense(array);
+//			}
+//		});
+//		vsqrt.cache();
+//		
 		int numVectors = bc.size();
 		System.out.println("Vectors: " + numVectors);
 		
@@ -80,14 +88,15 @@ public class FingerprintClusterer
 
 		KMeans km = new KMeans();
 		km.setInitializationMode(KMeans.K_MEANS_PARALLEL());
-//		KMeansModel clusters = KMeans.train(vectors.rdd(), numClusters, numIterations);
-//		double wssse = clusters.computeCost(vectors.rdd());
-		KMeansModel clusters = KMeans.train(vsqrt.rdd(), numClusters, numIterations);
-		double wssse = clusters.computeCost(vsqrt.rdd());
+		km.setK(numClusters);
+		KMeansModel clusters = KMeans.train(vectors.rdd(), numClusters, numIterations);
+		double wssse = clusters.computeCost(vectors.rdd());
+//		KMeansModel clusters = KMeans.train(vsqrt.rdd(), numClusters, numIterations);
+//		double wssse = clusters.computeCost(vsqrt.rdd());
 		System.out.println("clusters: " + numClusters + " error: " + wssse);
 
-//		JavaRDD<Integer> membership = clusters.predict(vectors);
-		JavaRDD<Integer> membership = clusters.predict(vsqrt);
+		JavaRDD<Integer> membership = clusters.predict(vectors);
+//		JavaRDD<Integer> membership = clusters.predict(vsqrt);
 		
 		long t3 = System.nanoTime();
 		
@@ -104,7 +113,7 @@ public class FingerprintClusterer
 		long t4 = System.nanoTime();  
 		
 		// save results
-		writeToCsv(results, bestScores);
+		writeToCsv(outputFileName, bestScores);
 		sc.stop();
 		sc.close();
 
@@ -113,8 +122,8 @@ public class FingerprintClusterer
 		System.out.println("pairs: " + numPairs);
 		System.out.println("filtered pairs: " + bestScores.size());
 		System.out.println("calculate fingerprints : " + (t2 - t1)/1E9 + " s");
-		System.out.println("KMeans clustering      : " + (t3-t2)/1E6 + " s");
-		System.out.println("calculate pairs        : " + (t4-t3)/1E6 + " s");
+		System.out.println("KMeans clustering      : " + (t3-t2)/1E9 + " s");
+		System.out.println("calculate pairs        : " + (t4-t3)/1E9 + " s");
 		System.out.println("Time: " + (t4 - t1)/1E9 + " sec.");
 	}
 

@@ -52,7 +52,7 @@ public class SmoothTest {
 				.sequenceFile(path, Text.class, ArrayWritable.class, NUM_THREADS)  // read protein chains
 				.sample(false, 0.001, 123456) // use only a random fraction, i.e., 40%
 				.mapToPair(new SeqToChainMapper()) // convert input to <pdbId.chainId, CA coordinate> pairs
-				.filter(new GapFilter(0, 5)) // keep protein chains with gap size <= 3 and <= 5 gaps
+				.filter(new GapFilter(3, 5)) // keep protein chains with gap size <= 3 and <= 5 gaps
 				.filter(new LengthFilter(50,1000)) // keep protein chains with at least 75 residues
 		//		.mapToPair(new ChainSmootherMapper(new RogenSmoother(2))); // apply smoothing here ..
 				//		.mapToPair(new ChainSmootherMapper(new SavitzkyGolay7PointSmoother(2))); // apply smoothing here ..

@@ -1,6 +1,7 @@
 package org.rcsb.fingerprints;
 
 import java.io.Serializable;
+import java.util.Arrays;
 
 import javax.vecmath.Point3d;
 
@@ -65,7 +66,7 @@ public class EndToEndDistanceFingerprint implements GenericFingerprint, Serializ
     		}
     		features[bin]++;
     	}
-    	
+//    	System.out.println(Arrays.toString(features));
 		return features;
     }
 }
