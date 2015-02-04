@@ -8,7 +8,7 @@ import org.apache.spark.broadcast.Broadcast;
 import scala.Tuple2;
 
 /**
-* This class map a tuple of chainIds <String, String> to a tuple of chain indices <Integer, Integer>
+* This class maps a tuple of chainIds <String, String> to a tuple of chain indices <Integer, Integer>
 * based on the passed in chainId list.
 * 
 * @author Peter Rose
@@ -28,9 +28,6 @@ public class ChainIdToIndexMapper implements PairFunction<Tuple2<String, String>
 	public Tuple2<Integer, Integer> call(Tuple2<String, String> tuple) throws Exception {	
 		long index1 = chainIds.getValue().indexOf(tuple._1);
 		long index2 = chainIds.getValue().indexOf(tuple._2);
-		if (index2 == -1) {
-			System.out.println("-1: " + tuple._2);
-		}
 		return new Tuple2<Integer,Integer>((int)index1, (int)index2);
 	}
 }

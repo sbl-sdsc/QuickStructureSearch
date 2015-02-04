@@ -15,22 +15,30 @@ import java.util.Map;
 
 
 public class BlastClustReader {
-	private int sequenceIdentity = 0;
 	private List<List<String>> clusters = new ArrayList<List<String>>();
 	private static final String coreUrl = "ftp://resources.rcsb.org/sequence/clusters/";
 	private static List<Integer> seqIdentities = Arrays.asList(30, 40, 50, 70, 90, 95, 100);
 
 	public BlastClustReader(int sequenceIdentity) {
-		this.sequenceIdentity = sequenceIdentity;
+		loadClusters(sequenceIdentity);
 	}
 	
 	public List<List<String>> getPdbChainIdClusters() {
-		loadClusters(sequenceIdentity);
 		return clusters;
 	}
 	
+	public Map<String,Integer> getPdbChainIdClusterMap() {	
+		Map<String,Integer> map = new LinkedHashMap<String,Integer>();
+		for (int i = 0; i < clusters.size(); i++) {
+			List<String> cluster = clusters.get(i);
+			for (String pdbChainId: cluster) {
+				map.put(pdbChainId, i);  
+			}
+		}
+		return map;
+	}
+	
 	public Map<String,String> getRepresentatives(String pdbId) {
-		loadClusters(sequenceIdentity);
 		String pdbIdUc = pdbId.toUpperCase();
 		
 		Map<String,String> representatives = new LinkedHashMap<String,String>();
@@ -47,8 +55,6 @@ public class BlastClustReader {
 	}
 	
 	public String getRepresentativeChain(String pdbId, String chainId) {
-		loadClusters(sequenceIdentity);
-
 		String pdbChainId = pdbId.toUpperCase() + "." + chainId;   
 		
 		for (List<String> cluster: clusters) {
@@ -60,10 +66,11 @@ public class BlastClustReader {
 	}
 	
 	public int indexOf(String pdbId, String chainId) {
-		loadClusters(sequenceIdentity);
-
 		String pdbChainId = pdbId.toUpperCase() + "." + chainId;   
-		
+		return indexOf(pdbChainId);
+	}
+	
+	public int indexOf(String pdbChainId) {
 		for (int i = 0; i < clusters.size(); i++) {
 			List<String> cluster = clusters.get(i);
 			if (cluster.contains(pdbChainId)) {
@@ -74,7 +81,6 @@ public class BlastClustReader {
 	}
 	
 	public List<List<String>> getPdbChainIdClusters(String pdbId) {
-		loadClusters(sequenceIdentity);
 		String pdbIdUpper = pdbId.toUpperCase();
 
 		List<List<String>> matches = new ArrayList<List<String>>();
@@ -90,8 +96,6 @@ public class BlastClustReader {
 	}
 	
 	public List<List<String>> getChainIdsInEntry(String pdbId) {
-		loadClusters(sequenceIdentity);
-		
 		List<List<String>> matches = new ArrayList<List<String>>();
 		List<String> match = null;
 		

@@ -2,13 +2,8 @@ package org.rcsb.structuralSimilarity;
 
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
-import java.util.ArrayList;
-import java.util.Collection;
-import java.util.HashSet;
+import java.util.Arrays;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.Set;
 
 import javax.vecmath.Point3d;
 
@@ -16,7 +11,6 @@ import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
-import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.mllib.linalg.Vector;
@@ -39,7 +33,7 @@ public class FingerPrintTester {
 	public static void main(String[] args ) throws FileNotFoundException
 	{
 		if (args.length < 2) {
-			System.out.println("Usage: CompareWithTm.jar inputDirectory [sequenceFile] outputFile");
+			System.out.println("Usage: FingerPrintTester.jar inputDirectory [sequenceFile] outputFile");
 			System.out.println("  inputDirectory: directory with .csv files that contain TM scores");
 			System.out.println("  sequenceFile: Hadoop sequence file with protein chain information");
 			System.out.println("  outputFile: results from calculation in .csv format. This file should have a .csv extension");
@@ -59,7 +53,7 @@ public class FingerPrintTester {
 		// setup spark
 		SparkConf conf = new SparkConf()
 				.setMaster("local[" + NUM_THREADS + "]")
-				.setAppName("1" + this.getClass().getSimpleName())
+				.setAppName(this.getClass().getSimpleName())
 				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
 
 		JavaSparkContext sc = new JavaSparkContext(conf);
@@ -93,10 +87,12 @@ public class FingerPrintTester {
 				.filter(new ChainIdFilter<Point3d[]>(chainIdsBc)) // calculate feature vectors for chains in the training set only
 				.filter(new GapFilter(0, 0)) // keep protein chains with gap size <= 3 and <= 5 gaps
 				.filter(new LengthFilter(50,1000)) // keep protein chains with at least 50 residues
-//		     	.mapToPair(new ChainSmootherMapper(new RogenChainSmoother(2))); // add new chain smoother here ...
+		     	.mapToPair(new ChainSmootherMapper(new RogenChainSmoother(2))) // add new chain smoother here ...
+//		        .mapToPair(new ChainSmootherMapper(new SavitzkyGolay7PointSmoother(2))) // add new chain smoother here ...
 //				.mapToPair(new ChainToFeatureVectorMapper(new TetrahedronFingerprint())) // calculate features
-//				.mapToPair(new ChainToFeatureVectorMapper(new EndToEndDistanceFingerprint())) // calculate features
-	       	    .mapToPair(new ChainToFeatureVectorMapper(new DCT1DFingerprint())) // calculate features
+				.mapToPair(new ChainToFeatureVectorMapper(new EndToEndDistanceFingerprint(9,2))) // calculate features
+//	       	    .mapToPair(new ChainToFeatureVectorMapper(new DCT1DFingerprint())) // calculate features
+//	       	    .mapToPair(new ChainToFeatureVectorMapper(new PointToPointDistanceFingerprint(200, 50, 10))) // calculate features
 				.cache();
       
         // broadcast feature vectors
@@ -121,7 +117,10 @@ public class FingerPrintTester {
 				.join(trainingData) // join with TM metrics from the input file
 				.sortByKey()
 				.collect();
-		
+	    
+		sc.stop();
+		sc.close();
+
 		
 		int numPairs = results.size();
 		
@@ -129,11 +128,12 @@ public class FingerPrintTester {
 		PrintWriter writer = new PrintWriter(outputFileName);
 		writeToCsv2(writer, results);
 		writer.close();
+		
+		printStatistics(results);
 
 		long t3 = System.nanoTime();
 
-		sc.stop();
-		sc.close();
+
      	System.out.println("protein chains     : " + numVectors);
 		System.out.println("total pairs        : " + numPairs);
 		System.out.println();
@@ -158,6 +158,55 @@ public class FingerPrintTester {
 			writer.println();
 		}
 		writer.flush();
+	}
+	
+	/**
+	 * 
+	 * @param writer
+	 * @param list
+	 */
+	private static void printStatistics(List<Tuple2<String, Tuple2<Float, String>>> joinedResults) {	
+		System.out.println("TP     FN     TN     FP   SENS   SPEC   F1");
+		for (float f = 0.3f; f < 0.7f; f+= 0.05f) {
+			float[] scores = getStatistics(joinedResults, f);
+			System.out.println(f + ": " + Arrays.toString(scores));
+		}
+	}
+	
+	private static float[] getStatistics(List<Tuple2<String, Tuple2<Float, String>>> joinedResults, float threshold) {
+		float[] scores = new float[7];
+		
+		int tp = 0;
+		int tn = 0;
+		int fp = 0;
+		int fn = 0;
+		
+		for (Tuple2<String, Tuple2<Float, String>> t: joinedResults) {
+			float tmScore = Float.parseFloat(t._2._2.split(",")[0]);
+			float fingerPrintScore = t._2._1;
+			if (tmScore >= 0.5) {
+				if (fingerPrintScore >= threshold) {
+					tp++;
+				} else {
+					fn++;
+				}
+			} else {
+				if (fingerPrintScore >= threshold)	 {
+					fp++;
+				} else {
+					tn++;
+				}
+			}
+		}
+		scores[0] = tp;
+		scores[1] = fn;
+		scores[2] = tn;
+		scores[3] = fp;
+		scores[4] = tp/(float)(tp+fn);
+		scores[5] = tn/(float)(fp+tn);
+		scores[6] = 2*tp/(float)(2*tp+fp+fn);
+		
+		return scores;
 	}
 }
 

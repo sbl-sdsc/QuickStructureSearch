@@ -4,6 +4,7 @@ import java.io.Serializable;
 import java.util.Arrays;
 
 import javax.vecmath.Point3d;
+import javax.vecmath.Vector3d;
 
 /**
  * This class generates a fingerprint (signature) for protein chains based upon

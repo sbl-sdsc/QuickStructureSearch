@@ -56,6 +56,9 @@ public class DCT1DFingerprint implements GenericFingerprint, Serializable {
     		
     		// calculate unique hash code for fragment
     		int hashCode = Arrays.hashCode(values);
+    		if (hashCode < 0) {
+    			continue;
+    		}
     		
     		// map hashCode into feature vector of fixed size by hashing.
     		// This is called the "hashing trick". See http://en.wikipedia.org/wiki/Feature_hashing

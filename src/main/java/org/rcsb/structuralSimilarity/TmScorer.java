@@ -20,7 +20,9 @@ public class TmScorer {
 	private static final String CA_NAME = "CA";
 	private static final String GROUP_NAME = "GLU";
 
-	public static double getFatCatTmScore(Point3d[] points1, Point3d[] points2) {
+	public static Float[] getFatCatTmScore(Point3d[] points1, Point3d[] points2) {
+		Float[] scores = new Float[6];
+		
 		Atom[] ca1 = getCAAtoms(points1);
 		Atom[] ca2 = getCAAtoms(points2);
 		
@@ -33,28 +35,44 @@ public class TmScorer {
 			afp.setTMScore(tmScore);
 		} catch (StructureException e) {
 			e.printStackTrace();
-			return 0.0;
-		}            
-		return afp.getTMScore();
+			return scores;
+		}        
+
+		scores[0] = (float) afp.getTMScore();
+		scores[1] = (float) afp.getTotalRmsdOpt();
+		scores[2] = (float) afp.getProbability();
+		scores[3] = (float) afp.getOptLength();
+		scores[4] = (float) afp.getCoverage1();
+		scores[5] = (float) afp.getCoverage2();
+		return scores;
 	}
 
 	private static Atom[] getCAAtoms(Point3d[] points) {
+		int gaps = 0;
+		for (Point3d p: points) {
+			if (p == null) {
+				gaps++;
+			}
+		}
 		Chain c = new ChainImpl();
 		c.setChainID("A");		
 
-		Atom[] atoms = new Atom[points.length];
+		Atom[] atoms = new Atom[points.length-gaps];
 
-		for (int i = 0; i < points.length; i++) {
-			atoms[i] = new AtomImpl();
-			atoms[i].setName(CA_NAME);
-			Group g = new AminoAcidImpl();
-			g.setPDBName(GROUP_NAME);
-			g.addAtom(atoms[i]);
-			c.addGroup(g);
+		for (int i = 0, j = 0; i < points.length; i++) {
+			if (points[i] != null) {
+				atoms[j] = new AtomImpl();
+				atoms[j].setName(CA_NAME);
+				Group g = new AminoAcidImpl();
+				g.setPDBName(GROUP_NAME);
+				g.addAtom(atoms[j]);
+				c.addGroup(g);
 
-			atoms[i].setX(points[i].x);
-			atoms[i].setY(points[i].y);
-			atoms[i].setZ(points[i].z);
+				atoms[j].setX(points[i].x);
+				atoms[j].setY(points[i].y);
+				atoms[j].setZ(points[i].z);
+				j++;
+			}
 		}
 
 		return atoms;

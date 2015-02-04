@@ -51,7 +51,7 @@ public class ChainsToSequenceFile {
 
 		BlastClustReader reader = new BlastClustReader(PERCENT_SEQUENCE_IDENTITY);
 		List<List<String>> clusters = reader.getPdbChainIdClusters();
-//		clusters = clusters.subList(0, 250);
+		clusters = clusters.subList(0, 250);
 	
 		StructureIO.setAtomCache(cache);
 		cache.setPath("/Users/peter/Data/PDB/");

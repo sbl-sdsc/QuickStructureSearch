@@ -14,8 +14,8 @@ import javax.vecmath.Point3d;
 import scala.Tuple2;
 
 /**
- * This class generates a fingerprint (signature) for protein chains based upon
- * the end-to-end distance of fragments
+ * This class generates a fingerprint (signature) for protein chains based quartets
+ * of points that span a tetrahedron in a protein chains
  *
  * @author Peter Rose
  */
@@ -25,7 +25,8 @@ public class TetrahedronFingerprint implements GenericFingerprint, Serializable 
 	private double binSize = 2.0;
 	private int dimensions = 80; // 40: 821056, 60: 469370, 80: 420455
 	private int increment = 1;
-	private List<Integer> list = Arrays.asList(4,8,16,32,64);
+//	private List<Integer> list = Arrays.asList(4,8,16,32,64);
+	private List<Integer> list = Arrays.asList(8,16,32,64);
 
 	/**
 	 * Default constructor uses default parameters
