@@ -166,10 +166,20 @@ public class FingerPrintTester {
 	 * @param list
 	 */
 	private static void printStatistics(List<Tuple2<String, Tuple2<Float, String>>> joinedResults) {	
-		System.out.println("TP     FN     TN     FP   SENS   SPEC   F1");
+		System.out.printf("%7s %7s %7s %7s %7s %7s %7s %7s", "F", "TP", "FN", "TN", "FP", "SENS", "SPEC", "F1");
+		System.out.println();
 		for (float f = 0.3f; f < 0.7f; f+= 0.05f) {
 			float[] scores = getStatistics(joinedResults, f);
-			System.out.println(f + ": " + Arrays.toString(scores));
+            System.out.printf("%8.2f", f);
+            System.out.printf("%8d", (int)scores[0]);
+            System.out.printf("%8d", (int)scores[1]);
+            System.out.printf("%8d", (int)scores[2]);
+            System.out.printf("%8d", (int)scores[3]);
+            System.out.printf("%8.2f", scores[4]);
+            System.out.printf("%8.2f", scores[5]);
+            System.out.printf("%8.2f", scores[6]);
+            System.out.println();
+//			System.out.println(f + ": " + Arrays.toString(scores));
 		}
 	}
 	

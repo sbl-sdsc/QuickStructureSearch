@@ -4,7 +4,6 @@ import java.io.FileNotFoundException;
 import java.util.Comparator;
 
 import org.apache.hadoop.io.ArrayWritable;
-import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
@@ -20,8 +19,8 @@ import org.apache.spark.api.java.JavaSparkContext;
  * @author  Peter Rose
  */
 public class SequenceCounter {    
-	private static int NUM_THREADS = 8;
-	private static int NUM_TASKS_PER_THREAD = 2; // Spark recommends 2-3 tasks per thread
+	private static int NUM_THREADS = 4;
+	private static int NUM_TASKS_PER_THREAD = 1; // Spark recommends 2-3 tasks per thread
 	
 	public static void main(String[] args ) throws FileNotFoundException
 	{
@@ -32,16 +31,14 @@ public class SequenceCounter {
 		SparkConf conf = new SparkConf().setMaster("local[" + NUM_THREADS + "]").setAppName(SequenceCounter.class.getSimpleName());
 		JavaSparkContext sc = new JavaSparkContext(conf);
 
-//		JavaPairRDD<Text, ArrayWritable> seq = sc.sequenceFile(path, Text.class, ArrayWritable.class,NUM_THREADS*NUM_TASKS_PER_THREAD);      
-//		JavaRDD<Long> len = seq.map(s -> new Long(((IntWritable)s._2.get()[0]).get()));
-//		len.cache();
-
 		long start = System.nanoTime();
 		
-		// compact version
-		JavaRDD<Long> len = sc
+		// read sequence file and map sequence length to an RDD
+		JavaRDD<Integer> len = sc
 				.sequenceFile(path, Text.class, ArrayWritable.class,NUM_THREADS*NUM_TASKS_PER_THREAD)
-				.map(s -> new Long(((IntWritable)s._2.get()[0]).get()))
+				.mapToPair(new SeqToChainMapper()) // convert input to <pdbId.chainId, CA coordinate array> pairs
+				.filter(new GapFilter(3, 1)) // filter chains with zero gap length and zero gaps
+				.map(s -> s._2.length)
 				.cache(); // cache since we are using the JavaRDD multiple times below
 		
 		long chainCount = len.count();
