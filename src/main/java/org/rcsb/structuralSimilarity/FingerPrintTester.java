@@ -16,6 +16,7 @@ import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.mllib.linalg.Vector;
 import org.rcsb.fingerprints.DCT1DFingerprint;
 import org.rcsb.fingerprints.EndToEndDistanceFingerprint;
+import org.rcsb.fingerprints.PointToPointDistanceFingerprint;
 import org.rcsb.fingerprints.TetrahedronFingerprint;
 
 import scala.Tuple2;
@@ -89,8 +90,8 @@ public class FingerPrintTester {
 				.filter(new LengthFilter(50,1000)) // keep protein chains with at least 50 residues
 		     	.mapToPair(new ChainSmootherMapper(new RogenChainSmoother(2))) // add new chain smoother here ...
 //		        .mapToPair(new ChainSmootherMapper(new SavitzkyGolay7PointSmoother(2))) // add new chain smoother here ...
-//				.mapToPair(new ChainToFeatureVectorMapper(new TetrahedronFingerprint())) // calculate features
-				.mapToPair(new ChainToFeatureVectorMapper(new EndToEndDistanceFingerprint(9,2))) // calculate features
+				.mapToPair(new ChainToFeatureVectorMapper(new TetrahedronFingerprint())) // calculate features
+//				.mapToPair(new ChainToFeatureVectorMapper(new EndToEndDistanceFingerprint(9,2))) // calculate features
 //	       	    .mapToPair(new ChainToFeatureVectorMapper(new DCT1DFingerprint())) // calculate features
 //	       	    .mapToPair(new ChainToFeatureVectorMapper(new PointToPointDistanceFingerprint(200, 50, 10))) // calculate features
 				.cache();

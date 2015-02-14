@@ -1,5 +1,7 @@
 package org.rcsb.structuralSimilarity;
 
+import java.io.Serializable;
+
 import javax.vecmath.Point3d;
 
 import org.biojava.bio.structure.AminoAcidImpl;
@@ -16,7 +18,8 @@ import org.biojava.bio.structure.align.fatcat.calc.FatCatParameters;
 import org.biojava.bio.structure.align.model.AFPChain;
 import org.biojava.bio.structure.align.util.AFPChainScorer;
 
-public class TmScorer {
+public class TmScorer implements Serializable {
+	private static final long serialVersionUID = 1L;
 	private static final String CA_NAME = "CA";
 	private static final String GROUP_NAME = "GLU";
 

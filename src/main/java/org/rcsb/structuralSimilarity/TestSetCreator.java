@@ -17,6 +17,8 @@ import org.apache.spark.broadcast.Broadcast;
 import scala.Tuple2;
 
 /**
+ * This class creates structural alignments between random protein chain pairs 
+ * using jFatCAT and scores the alignments with the TM score
  * 
  * @author  Peter Rose
  */
@@ -53,7 +55,7 @@ public class TestSetCreator {
 			//	.sample(false, 0.1, 123456) // use only a random fraction, i.e., 40%
 				.mapToPair(new SeqToChainMapper()) // convert input to <pdbId.chainId, CA coordinate> pairs
 				.filter(new GapFilter(0, 5)) // keep protein chains with gap size <= 3 and <= 5 gaps
-				.filter(new LengthFilter(200,220)) // keep protein chains with at least 50 residues
+				.filter(new LengthFilter(50,500)) // keep protein chains with at least 50 residues
 				.collect(); // return results to master node
 
 		// Step 2.  broadcast feature vectors to all nodes
@@ -69,6 +71,7 @@ public class TestSetCreator {
 
 			List<Tuple2<String, Float[]>> list = sc
 					.parallelizePairs(pairs, NUM_THREADS*NUM_TASKS_PER_THREAD) // distribute data
+					.filter(new ChainPairLengthFilter(chainsBc, 0.9)) // length of shorter chain should be at least 90% on the length of the longer chain
 					.mapToPair(new ChainPairToTmMapper(chainsBc)) // maps pairs of chain id indices to chain id, TM score pairs
 					//				.filter(s -> s._2 > 0.9f) //
 					.collect();	// copy result to master node
@@ -114,12 +117,14 @@ public class TestSetCreator {
 		for (int i = 0; i < nPairs; i++) {
 			int j = r.nextInt(n);
 			int k = r.nextInt(n);
-			System.out.println("pair: " + j + "," + k);
 			if (j == k) {
 				continue;
 			}
 
-			list.add(new Tuple2<Integer,Integer>(j,k));
+			Tuple2<Integer,Integer> tuple = new Tuple2<>(j,k);
+			if (! list.contains(tuple)) {
+			    list.add(tuple);
+			}
 		}
 		return list;
 	}
