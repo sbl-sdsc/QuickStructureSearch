@@ -5,9 +5,7 @@ import java.util.List;
 import javax.vecmath.Point3d;
 
 import org.apache.spark.api.java.function.Function;
-import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
-import org.apache.spark.mllib.linalg.Vector;
 
 import scala.Tuple2;
 
@@ -19,15 +17,18 @@ import scala.Tuple2;
 public class ChainPairLengthFilter implements Function<Tuple2<Integer,Integer>, Boolean> {
 	private static final long serialVersionUID = 1L;
 	private Broadcast<List<Tuple2<String, Point3d[]>>> data = null;
-	private double coverage;
+	private double minCoverage;
+	private double maxCoverage;
 
 /**
  * @param data Broadcast list of <ChainId, Calpha coordinate array> pairs
- * @param coverage fraction of the short chain that covers the long chain
+ * @param minimum coverage fraction of the short chain that covers the long chain
+ * @param maximum coverage fraction of the short chain that covers the long chain
  */
-	public ChainPairLengthFilter(Broadcast<List<Tuple2<String,Point3d[]>>> data, double coverage) {
+	public ChainPairLengthFilter(Broadcast<List<Tuple2<String,Point3d[]>>> data, double mincCoverage, double maxCoverage) {
 		this.data = data;
-		this.coverage = coverage;
+		this.minCoverage = minCoverage;
+		this.maxCoverage = maxCoverage;
 	}
 
 	/**
@@ -40,6 +41,8 @@ public class ChainPairLengthFilter implements Function<Tuple2<Integer,Integer>, 
 		int minLen = Math.min(t1._2.length, t2._2.length);
 		int maxLen = Math.max(t1._2.length, t2._2.length);
 		
-		return (minLen/(double)maxLen >= coverage);
+		double coverage = minLen/(double)maxLen;
+		
+		return (coverage >= minCoverage && coverage <= maxCoverage);
     }
 }
