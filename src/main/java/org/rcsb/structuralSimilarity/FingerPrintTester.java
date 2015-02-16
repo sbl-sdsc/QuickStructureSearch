@@ -3,7 +3,9 @@ package org.rcsb.structuralSimilarity;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.util.Arrays;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Set;
 
 import javax.vecmath.Point3d;
 
@@ -14,8 +16,11 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.mllib.linalg.Vector;
+import org.rcsb.fingerprints.CombinationFingerprint;
 import org.rcsb.fingerprints.DCT1DFingerprint;
 import org.rcsb.fingerprints.EndToEndDistanceFingerprint;
+import org.rcsb.fingerprints.GenericFingerprint;
+import org.rcsb.fingerprints.NullHypothesisFingerprint;
 import org.rcsb.fingerprints.PointToPointDistanceFingerprint;
 import org.rcsb.fingerprints.TetrahedronFingerprint;
 
@@ -78,22 +83,34 @@ public class FingerPrintTester {
         		.union(pairs.values().distinct()) // union with all distinct values (chainId2)
         		.distinct() // finally make sure all chain ids are distinct
         		.collect();
-        final Broadcast<List<String>> chainIdsBc = sc.broadcast(chainIds);
+        final Broadcast<Set<String>> chainIdsBc = sc.broadcast(new HashSet<String>(chainIds));
+        
+        GenericFingerprint combined = new CombinationFingerprint(
+        		new DCT1DFingerprint(), 
+ //       		new TetrahedronFingerprint(),
+ //       		new EndToEndDistanceFingerprint(),
+ //       		new PointToPointDistanceFingerprint(200, 20, 5),
+        		new PointToPointDistanceFingerprint(200, 30, 5),
+        		0.25,
+        		0.75);
         
 		// calculate <chainId, feature vector> pairs
         JavaPairRDD<String, Vector> features = sc
 				.sequenceFile(path, Text.class, ArrayWritable.class, NUM_THREADS*NUM_TASKS_PER_THREAD)  // read protein chains
 			//	.sample(false, 0.1, 123456) // use only a random fraction, i.e., 40%
-				.mapToPair(new SeqToChainMapper()) // convert input to <pdbId.chainId, CA coordinate[]> pairs
-				.filter(new ChainIdFilter<Point3d[]>(chainIdsBc)) // calculate feature vectors for chains in the training set only
+				.mapToPair(new SeqToChainMapper()) // convert input to <pdbId.chainId, CA coordinate[]> pairs				
 				.filter(new GapFilter(0, 0)) // keep protein chains with gap size <= 3 and <= 5 gaps
-				.filter(new LengthFilter(50,1000)) // keep protein chains with at least 50 residues
-		     	.mapToPair(new ChainSmootherMapper(new RogenChainSmoother(2))) // add new chain smoother here ...
-//		        .mapToPair(new ChainSmootherMapper(new SavitzkyGolay7PointSmoother(2))) // add new chain smoother here ...
-				.mapToPair(new ChainToFeatureVectorMapper(new TetrahedronFingerprint())) // calculate features
-//				.mapToPair(new ChainToFeatureVectorMapper(new EndToEndDistanceFingerprint(9,2))) // calculate features
-//	       	    .mapToPair(new ChainToFeatureVectorMapper(new DCT1DFingerprint())) // calculate features
-//	       	    .mapToPair(new ChainToFeatureVectorMapper(new PointToPointDistanceFingerprint(200, 50, 10))) // calculate features
+				.filter(new LengthFilter(50,500)) // keep protein chains with at least 50 residues
+				.filter(new ChainIdFilter<Point3d[]>(chainIdsBc)) // calculate feature vectors for chains in the training set only
+//		     	.mapToPair(new ChainSmootherMapper(new RogenChainSmoother(2))) // add new chain smoother here ...
+		        .mapToPair(new ChainSmootherMapper(new SavitzkyGolay7PointSmoother(1))) // add new chain smoother here ...
+//				.mapToPair(new ChainToFeatureVectorMapper(new TetrahedronFingerprint())) // calculate features
+//				.mapToPair(new ChainToFeatureVectorMapper(new EndToEndDistanceFingerprint())) // calculate features
+//				.mapToPair(new ChainToFeatureVectorMapper(new NullHypothesisFingerprint(9))) // calculate feature
+		        .mapToPair(new ChainToFeatureVectorMapper(combined)) // calculate features
+//	       	    .mapToPair(new ChainToFeatureVectorMapper(new DCT1DFingerprint(8,40))) // calculate features
+//	       	    .mapToPair(new ChainToFeatureVectorMapper(new DCT1DFingerprint(16,40))) // calculate features
+//	       	    .mapToPair(new ChainToFeatureVectorMapper(new PointToPointDistanceFingerprint(200, 20, 5))) // calculate features
 				.cache();
       
         // broadcast feature vectors
@@ -114,7 +131,9 @@ public class FingerPrintTester {
 				.filter(new ChainIdPairFilter(availableChainIdsBc)) // only keep pairs that have feature vectors available
 				.mapToPair(new ChainIdToIndexMapper(availableChainIdsBc)) // map chain ids to indices into feature vector
 				.mapToPair(new FeatureVectorToJaccardMapper(featureVectorsBc)) // maps pairs of feature vectors to Jaccard index
-	//			.filter(s -> s._2 > 0.9f) // keep only a pair with a Jaccard index > 0.9
+	//			.mapToPair(new FeatureVectorToContainmentScoreMapper(featureVectorsBc)) // maps pairs of feature vectors to Jaccard index
+	//			.mapToPair(new FeatureVectorToCosineScoreMapper(featureVectorsBc)) // maps pairs of feature vectors to Jaccard index
+				//			.filter(s -> s._2 > 0.9f) // keep only a pair with a Jaccard index > 0.9
 				.join(trainingData) // join with TM metrics from the input file
 				.sortByKey()
 				.collect();
@@ -169,8 +188,9 @@ public class FingerPrintTester {
 	private static void printStatistics(List<Tuple2<String, Tuple2<Float, String>>> joinedResults) {	
 		System.out.printf("%7s %7s %7s %7s %7s %7s %7s %7s", "F", "TP", "FN", "TN", "FP", "SENS", "SPEC", "F1");
 		System.out.println();
-		for (float f = 0.3f; f < 0.7f; f+= 0.05f) {
-			float[] scores = getStatistics(joinedResults, f);
+		float tmThreshold = 0.8f;
+		for (float f = 0.3f; f < 0.8f; f+= 0.05f) {
+			float[] scores = getStatistics(joinedResults, f, tmThreshold);
             System.out.printf("%8.2f", f);
             System.out.printf("%8d", (int)scores[0]);
             System.out.printf("%8d", (int)scores[1]);
@@ -184,7 +204,7 @@ public class FingerPrintTester {
 		}
 	}
 	
-	private static float[] getStatistics(List<Tuple2<String, Tuple2<Float, String>>> joinedResults, float threshold) {
+	private static float[] getStatistics(List<Tuple2<String, Tuple2<Float, String>>> joinedResults, float threshold, float tmThreshold) {
 		float[] scores = new float[7];
 		
 		int tp = 0;
@@ -195,14 +215,14 @@ public class FingerPrintTester {
 		for (Tuple2<String, Tuple2<Float, String>> t: joinedResults) {
 			float tmScore = Float.parseFloat(t._2._2.split(",")[0]);
 			float fingerPrintScore = t._2._1;
-			if (tmScore >= 0.5) {
+			if (tmScore >= tmThreshold) {
 				if (fingerPrintScore >= threshold) {
 					tp++;
 				} else {
 					fn++;
 				}
 			} else {
-				if (fingerPrintScore >= threshold)	 {
+				if (fingerPrintScore >= tmThreshold)	 {
 					fp++;
 				} else {
 					tn++;

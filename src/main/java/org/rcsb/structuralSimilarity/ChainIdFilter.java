@@ -3,6 +3,7 @@ package org.rcsb.structuralSimilarity;
 import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
+import java.util.Set;
 
 import org.apache.spark.api.java.function.Function;
 import org.apache.spark.broadcast.Broadcast;
@@ -17,13 +18,13 @@ import scala.Tuple2;
  */
 public class ChainIdFilter<E> implements Function<Tuple2<String,E>, Boolean> {
 	private static final long serialVersionUID = 1L;
-	private Broadcast<List<String>> chainIds;
+	private Broadcast<Set<String>> chainIds;
 
 	/**
 	 * @param list of chain ids
 	 */
-	public ChainIdFilter(Broadcast<List<String>> chainIds) {
-		this.chainIds = chainIds;
+	public ChainIdFilter(Broadcast<Set<String>> chainIdsBc){
+		this.chainIds = chainIdsBc;
 	}
 
 	@Override

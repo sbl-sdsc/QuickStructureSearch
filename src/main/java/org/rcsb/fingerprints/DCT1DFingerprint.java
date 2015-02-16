@@ -17,21 +17,26 @@ public class DCT1DFingerprint implements GenericFingerprint, Serializable {
 	private int terms = 6;
 	private int binWidth = 15;
 	private int dimensions = 40;
-//	private static int[][] distancePairs = 
-//	{{0,7},{0,6},{1,7},{0,5},{2,7},{0,4},{1,5},{2,6},{3,7},{0,3},{1,4},{3,6},{4,7},
-//	{0,2},{1,3},{2,4},{3,5},{4,6},{5,7}};
-//  {{0,7},{0,6},{1,7},{0,5},{2,7},{0,4},{1,5},{2,6},{3,7},{0,3},{1,4},{3,6},{4,7}};
-//	{{0,3},{1,4},{0,4},{1,5},{0,5},{0,6},{0,7},{1,7},{2,7},{2,6},{3,7},{3,6},{4,7}};
-//	{{0,7},{0,6},{1,7},{0,5},{1,6},{2,7},{0,4},{1,5},{2,6},{3,7},{0,3},{1,4},{2,5},{3,6},{4,7}};
-	private static final int[][] distancePairs = 
-	{{0,7},{0,6},{1,7},{0,5},{1,6},{2,7},{0,4},{1,5},{2,6},{3,7},{0,3},{1,4},{2,5},{3,6},{4,7},{0,2},{1,3},{2,4},{3,5},{4,6},{5,7}};
 
-	private static final double[][] cosMatrix = initializeCosMatrix(distancePairs.length);
+//	private static final int[][] distancePairs = 
+//	{{0,7},{0,6},{1,7},{0,5},{1,6},{2,7},{0,4},{1,5},{2,6},{3,7},{0,3},{1,4},{2,5},{3,6},{4,7},{0,2},{1,3},{2,4},{3,5},{4,6},{5,7}};
+	private int[][] distancePairs = getDistancePairs();
+	private double[][] cosMatrix = initializeCosMatrix(distancePairs.length);
 	
+	
+	public static void main(String args[]) {
+		DCT1DFingerprint f = new DCT1DFingerprint();
+		f.getDistancePairs();
+	}
 	public DCT1DFingerprint(){
 	}
 	
 	public DCT1DFingerprint(int dimensions){
+		this.dimensions = dimensions;
+	}
+	
+	public DCT1DFingerprint(int length, int dimensions){
+		this.length = length;
 		this.dimensions = dimensions;
 	}
 	
@@ -82,7 +87,7 @@ public class DCT1DFingerprint implements GenericFingerprint, Serializable {
 	 * @param index
 	 * @return
 	 */
-	private static double[] getDistanceMatrix(Point3d[] coords, int index){
+	private double[] getDistanceMatrix(Point3d[] coords, int index){
 		double[] distance = new double[distancePairs.length];
 
 		for (int i = 0; i < distancePairs.length; i++){
@@ -96,7 +101,7 @@ public class DCT1DFingerprint implements GenericFingerprint, Serializable {
     /**
      * Takes in a 2D array and returns the discrete cosine transform of it
      */
-    private static double[] getDCT (double[] distances){
+    private double[] getDCT (double[] distances){
     	double[] dct = new double[distances.length];
     	
     	for (int u = 0; u < distances.length; u++){
@@ -125,7 +130,7 @@ public class DCT1DFingerprint implements GenericFingerprint, Serializable {
 	 * @param v vertical spatial frequency of dct transformed matrix
 	 * @return a double with the value of the summation part of the dct formula
 	 */
-	private static double getSummationValue(double[] distances, int u) {
+	private double getSummationValue(double[] distances, int u) {
 		double sum = 0;
 		
 		for (int x = 0; x < distances.length; x++){
@@ -180,5 +185,23 @@ public class DCT1DFingerprint implements GenericFingerprint, Serializable {
 			}
 		}
 		return false;
+	}
+	
+	private int[][] getDistancePairs() {
+		int n = 0;
+		for (int i = 0; i < this.length-1; i++) {
+			n += i;
+		}
+		int[][] pairs = new int[n][2];
+		
+		int j = 0;
+		for (int d = this.length-1; d > 1; d--) {
+			for (int i = 0; i < this.length-d; i++) {
+				pairs[j][0] = i;
+				pairs[j][1] = i + d;
+				j++;
+			}
+		}
+		return pairs;
 	}
 }

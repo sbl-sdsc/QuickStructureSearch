@@ -22,11 +22,12 @@ import scala.Tuple2;
 public class TetrahedronFingerprint implements GenericFingerprint, Serializable {
 	private static final long serialVersionUID = 1L;
 	private int length = 9;
-	private double binSize = 2.0;
+	private double binSize = 3.0;
 	private int dimensions = 80; // 40: 821056, 60: 469370, 80: 420455
 	private int increment = 1;
 //	private List<Integer> list = Arrays.asList(4,8,16,32,64);
 	private List<Integer> list = Arrays.asList(8,16,32,64);
+//	private List<Integer> list = Arrays.asList(8,16,24,32,40,48,56,64);
 
 	/**
 	 * Default constructor uses default parameters
@@ -82,14 +83,15 @@ public class TetrahedronFingerprint implements GenericFingerprint, Serializable 
 					for (int k = j + length; k < points.length-length-1; k+=increment) {
 						if (dm[i][k] != 0 && dm[j][k] != 0 && dm[i][j] == dm[i][k]) {
 							for (int l = k + length; l < points.length; l+=increment) {
-								if (dm[i][l] != 0 && dm[i][j] == dm[i][l] && dm[j][l] != 0 && dm[k][l] != 0) {
+//								if (dm[i][l] != 0 && dm[i][j] == dm[i][l] && dm[j][l] != 0 && dm[k][l] != 0) {
+									if (dm[i][l] != 0 && dm[j][l] != 0 && dm[k][l] != 0) {
 									distances[0] = dm[i][j];
 									distances[1] = dm[i][k];
 									distances[2] = dm[i][l];
 									distances[3] = dm[j][k];
 									distances[4] = dm[j][l];
 									distances[5] = dm[k][l];
-									Arrays.sort(distances);
+					//				Arrays.sort(distances);
 									// calculate unique hash code for fragment
 									int hashCode = Arrays.hashCode(distances);
 

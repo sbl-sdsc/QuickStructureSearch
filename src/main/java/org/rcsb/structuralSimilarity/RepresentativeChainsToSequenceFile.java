@@ -3,8 +3,10 @@ package org.rcsb.structuralSimilarity;
 import java.io.IOException;
 import java.text.SimpleDateFormat;
 import java.util.Calendar;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
+import java.util.Set;
 
 import javax.vecmath.Point3d;
 
@@ -84,7 +86,7 @@ public class RepresentativeChainsToSequenceFile {
         List<String> chainIds = JavaPairRDD.fromJavaRDD(reps)
         		.keys()
         		.collect();
-        Broadcast<List<String>> repbc = sc.broadcast(chainIds);
+        Broadcast<Set<String>> repbc = sc.broadcast(new HashSet<String>(chainIds));
 
         // get representative chains
         List<Tuple2<String, Point3d[]>> representatives = chains
