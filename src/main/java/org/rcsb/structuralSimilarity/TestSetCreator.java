@@ -45,7 +45,8 @@ public class TestSetCreator {
 		SparkConf conf = new SparkConf()
 				.setMaster("local[" + NUM_THREADS + "]")
 				.setAppName("1" + this.getClass().getSimpleName())
-				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
+				.set("spark.driver.maxResultSize", "2g");
+//				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
 
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		
@@ -71,7 +72,7 @@ public class TestSetCreator {
 
 			List<Tuple2<String, Float[]>> list = sc
 					.parallelizePairs(pairs, NUM_THREADS*NUM_TASKS_PER_THREAD) // distribute data
-					.filter(new ChainPairLengthFilter(chainsBc, 0.9)) // length of shorter chain should be at least 90% on the length of the longer chain
+					.filter(new ChainPairLengthFilter(chainsBc, 0.5, 0.6)) // length of shorter chain should be at least 90% on the length of the longer chain
 					.mapToPair(new ChainPairToTmMapper(chainsBc)) // maps pairs of chain id indices to chain id, TM score pairs
 					//				.filter(s -> s._2 > 0.9f) //
 					.collect();	// copy result to master node
