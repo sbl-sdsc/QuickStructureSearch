@@ -1,3 +1,4 @@
+<?xml version="1.0" encoding="UTF-8"?>
 <project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
 	xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 http://maven.apache.org/xsd/maven-4.0.0.xsd">
 	<modelVersion>4.0.0</modelVersion>
@@ -5,28 +6,28 @@
 	<artifactId>quick-structure-search</artifactId>
 	<version>0.0.2-SNAPSHOT</version>
 	<name>Protein Similarity</name>
-	  <url>http://maven.apache.org</url>
+	<url>http://maven.apache.org</url>
 	<packaging>jar</packaging>
 
-	 <repositories>        
-            <repository>
-                <id>oss-sonatype</id>
-                <name>OSS sonatype repository</name>
-                <url>https://oss.sonatype.org/content/repositories/snapshots/</url>           
-            </repository>
-            <repository>
-                <id>biojava-maven-repo</id>
-                <name>BioJava repository</name>
-                <url>http://www.biojava.org/download/maven/</url>           
-            </repository>
-        </repositories>
+	<repositories>
+		<repository>
+			<id>oss-sonatype</id>
+			<name>OSS sonatype repository</name>
+			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
+		</repository>
+		<repository>
+			<id>biojava-maven-repo</id>
+			<name>BioJava repository</name>
+			<url>http://www.biojava.org/download/maven/</url>
+		</repository>
+	</repositories>
 
 
 	<properties>
 		<project.build.sourceEncoding>UTF-8</project.build.sourceEncoding>
 		<jdk.version>1.8</jdk.version>
 	</properties>
-	
+
 	<build>
 		<plugins>
 			<plugin>
@@ -71,9 +72,20 @@
 		</dependency>
 		<dependency>
 			<groupId>org.biojava</groupId>
-			<artifactId>biojava3-structure</artifactId>
-			<version>4.0.0-SNAPSHOT</version>
+			<artifactId>biojava-core</artifactId>
+			<version>4.0.0</version>
 		</dependency>
+		<dependency>
+			<groupId>org.biojava</groupId>
+			<artifactId>biojava-structure</artifactId>
+			<version>4.0.0</version>
+		</dependency>
+
+		<!-- <dependency> -->
+		<!-- <groupId>org.biojava</groupId> -->
+		<!-- <artifactId>biojava3-structure</artifactId> -->
+		<!-- <version>4.0.0-SNAPSHOT</version> -->
+		<!-- </dependency> -->
 	</dependencies>
 
 </project>

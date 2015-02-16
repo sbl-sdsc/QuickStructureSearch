@@ -9,10 +9,10 @@ import java.util.List;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
-import org.biojava.bio.structure.align.client.JFatCatClient;
-import org.biojava.bio.structure.align.client.StructureName;
-import org.biojava.bio.structure.align.util.HTTPConnectionTools;
-import org.biojava.bio.structure.align.xml.RepresentativeXMLConverter;
+import org.biojava.nbio.structure.align.client.JFatCatClient;
+import org.biojava.nbio.structure.align.client.StructureName;
+import org.biojava.nbio.structure.align.util.HTTPConnectionTools;
+import org.biojava.nbio.structure.align.xml.RepresentativeXMLConverter;
 
 /**
  * TODO Move this to {@link Representatives}.
