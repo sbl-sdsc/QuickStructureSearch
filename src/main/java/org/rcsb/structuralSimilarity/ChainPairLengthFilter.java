@@ -25,7 +25,7 @@ public class ChainPairLengthFilter implements Function<Tuple2<Integer,Integer>, 
  * @param minimum coverage fraction of the short chain that covers the long chain
  * @param maximum coverage fraction of the short chain that covers the long chain
  */
-	public ChainPairLengthFilter(Broadcast<List<Tuple2<String,Point3d[]>>> data, double mincCoverage, double maxCoverage) {
+	public ChainPairLengthFilter(Broadcast<List<Tuple2<String,Point3d[]>>> data, double minCoverage, double maxCoverage) {
 		this.data = data;
 		this.minCoverage = minCoverage;
 		this.maxCoverage = maxCoverage;
