@@ -50,8 +50,13 @@ public class CombinationFingerprint implements GenericFingerprint, Serializable 
        double sum1 = sum(f1);
        double sum2 = sum(f2);
        
-       f1 = scale(f1, weight1*sum2/sum1);
-       f2 = scale(f2, weight2*sum1/sum2);
+       double relWeight = 1;
+       if (sum1 > 0 && sum2 > 0) {
+           relWeight = sum2/sum1;
+       }
+//       System.out.println("sums: " + sum1 + ", " + sum2);
+       f1 = scale(f1, weight1*relWeight);
+       f2 = scale(f2, weight2);
  //      System.out.println("wf1: " + Arrays.toString(f1));
  //      System.out.println("wf2: " + Arrays.toString(f2));
 

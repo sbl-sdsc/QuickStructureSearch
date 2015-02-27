@@ -1,5 +1,7 @@
 package org.rcsb.structuralSimilarity;
 
+import java.util.Arrays;
+
 import javax.vecmath.Point3d;
 
 import org.apache.hadoop.io.ArrayWritable;
@@ -13,6 +15,7 @@ import scala.Tuple2;
 public class SeqToChainMapper implements PairFunction<Tuple2<Text,ArrayWritable>,String, Point3d[]> {
 	private static final long serialVersionUID = 1L;
 	private static final double SCALE = 0.001;
+	private boolean truncateTermini = true;
 
 	public SeqToChainMapper() {
 	}
@@ -55,7 +58,31 @@ public class SeqToChainMapper implements PairFunction<Tuple2<Text,ArrayWritable>
 			throw new Exception("ERROR: Input file is corrupted");
 		}
 		
+		if (truncateTermini) {
+			points = truncateTermini(points);
+		}
 		return new Tuple2<String,Point3d[]>(tuple._1.toString(), points);
 
+	}
+
+	private Point3d[] truncateTermini(Point3d[] points) {
+		int start = 0;
+		// skip N-terminal gap (start of chain)
+		for (int i = 0; i < points.length; i++) {
+			if (points[i] != null) {
+				start = i;
+				break;
+			}
+		}
+
+		// skip C-terminal gap (end of chain)
+		int end = points.length-1;
+		for (int i = points.length-1; i > start; i--) {
+			if (points[i] != null) {
+				end = i;
+				break;
+			}
+		}
+		return Arrays.copyOfRange(points, start, end);
 	}
 }

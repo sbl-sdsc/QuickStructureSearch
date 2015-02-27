@@ -17,7 +17,7 @@ public class EndToEndDistanceFingerprint implements GenericFingerprint, Serializ
 	private double MAX_AVE_CA_CA_DISTANCE = 3.3;
     private int length = 9;
     private double binSize = 2.0;
-    private int featureCount = (int)(this.length * this.MAX_AVE_CA_CA_DISTANCE/this.binSize);
+    private int featureCount = (int)(this.length * this.MAX_AVE_CA_CA_DISTANCE/this.binSize + 1);
  
     /**
      * Default constructor uses default parameters
@@ -47,10 +47,11 @@ public class EndToEndDistanceFingerprint implements GenericFingerprint, Serializ
     	double[] features = new double[this.featureCount];
 
     	double scale = 1/this.binSize;
-    	if (coords.length-this.length-1 <= 0) {
+    	if (coords.length-this.length < 0) {
     		return features;
     	}
-    	for (int i = 0; i < coords.length-this.length-1; i++) {
+
+    	for (int i = 0; i < coords.length-this.length+1; i++) {
     		Point3d first = coords[i];
     		Point3d last = coords[i+this.length-1];
     		

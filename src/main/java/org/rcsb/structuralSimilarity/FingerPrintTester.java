@@ -2,7 +2,6 @@ package org.rcsb.structuralSimilarity;
 
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
@@ -18,11 +17,9 @@ import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.mllib.linalg.Vector;
 import org.rcsb.fingerprints.CombinationFingerprint;
 import org.rcsb.fingerprints.DCT1DFingerprint;
-import org.rcsb.fingerprints.EndToEndDistanceFingerprint;
+import org.rcsb.fingerprints.DCT1DLinearFingerprint;
 import org.rcsb.fingerprints.GenericFingerprint;
-import org.rcsb.fingerprints.NullHypothesisFingerprint;
 import org.rcsb.fingerprints.PointToPointDistanceFingerprint;
-import org.rcsb.fingerprints.TetrahedronFingerprint;
 
 import scala.Tuple2;
 
@@ -91,8 +88,8 @@ public class FingerPrintTester {
  //       		new EndToEndDistanceFingerprint(),
  //       		new PointToPointDistanceFingerprint(200, 20, 5),
         		new PointToPointDistanceFingerprint(200, 30, 5),
-        		0.25,
-        		0.75);
+        		0.9,
+        		0.1);
         
 		// calculate <chainId, feature vector> pairs
         JavaPairRDD<String, Vector> features = sc
@@ -107,8 +104,10 @@ public class FingerPrintTester {
 //				.mapToPair(new ChainToFeatureVectorMapper(new TetrahedronFingerprint())) // calculate features
 //				.mapToPair(new ChainToFeatureVectorMapper(new EndToEndDistanceFingerprint())) // calculate features
 //				.mapToPair(new ChainToFeatureVectorMapper(new NullHypothesisFingerprint(9))) // calculate feature
-		        .mapToPair(new ChainToFeatureVectorMapper(combined)) // calculate features
-//	       	    .mapToPair(new ChainToFeatureVectorMapper(new DCT1DFingerprint(8,40))) // calculate features
+//		        .mapToPair(new ChainToFeatureVectorMapper(combined)) // calculate features
+//	       	    .mapToPair(new ChainToFeatureVectorMapper(new DCT1DFingerprint())) // calculate features
+//	       	    .mapToPair(new ChainToFeatureVectorMapper(new DCT1DOptFingerprint())) // calculate features
+	       	    .mapToPair(new ChainToLinearFeatureMapper(new DCT1DLinearFingerprint()))
 //	       	    .mapToPair(new ChainToFeatureVectorMapper(new DCT1DFingerprint(16,40))) // calculate features
 //	       	    .mapToPair(new ChainToFeatureVectorMapper(new PointToPointDistanceFingerprint(200, 20, 5))) // calculate features
 				.cache();
@@ -130,8 +129,9 @@ public class FingerPrintTester {
 	    List<Tuple2<String, Tuple2<Float, String>>> results = pairs
 				.filter(new ChainIdPairFilter(availableChainIdsBc)) // only keep pairs that have feature vectors available
 				.mapToPair(new ChainIdToIndexMapper(availableChainIdsBc)) // map chain ids to indices into feature vector
-				.mapToPair(new FeatureVectorToJaccardMapper(featureVectorsBc)) // maps pairs of feature vectors to Jaccard index
-	//			.mapToPair(new FeatureVectorToContainmentScoreMapper(featureVectorsBc)) // maps pairs of feature vectors to Jaccard index
+	//			.mapToPair(new FeatureVectorToJaccardMapper(featureVectorsBc)) // maps pairs of feature vectors to Jaccard index
+                .mapToPair(new LinearFeatureVectorToLevenshteinMapper(featureVectorsBc))
+				//			.mapToPair(new FeatureVectorToContainmentScoreMapper(featureVectorsBc)) // maps pairs of feature vectors to Jaccard index
 	//			.mapToPair(new FeatureVectorToCosineScoreMapper(featureVectorsBc)) // maps pairs of feature vectors to Jaccard index
 				//			.filter(s -> s._2 > 0.9f) // keep only a pair with a Jaccard index > 0.9
 				.join(trainingData) // join with TM metrics from the input file
@@ -188,8 +188,8 @@ public class FingerPrintTester {
 	private static void printStatistics(List<Tuple2<String, Tuple2<Float, String>>> joinedResults) {	
 		System.out.printf("%7s %7s %7s %7s %7s %7s %7s %7s", "F", "TP", "FN", "TN", "FP", "SENS", "SPEC", "F1");
 		System.out.println();
-		float tmThreshold = 0.8f;
-		for (float f = 0.3f; f < 0.8f; f+= 0.05f) {
+		float tmThreshold = 0.5f;
+		for (float f = 0.1f; f < 0.8f; f+= 0.05f) {
 			float[] scores = getStatistics(joinedResults, f, tmThreshold);
             System.out.printf("%8.2f", f);
             System.out.printf("%8d", (int)scores[0]);
@@ -222,7 +222,7 @@ public class FingerPrintTester {
 					fn++;
 				}
 			} else {
-				if (fingerPrintScore >= tmThreshold)	 {
+				if (fingerPrintScore >= threshold)	 {
 					fp++;
 				} else {
 					tn++;

@@ -45,7 +45,7 @@ public class FingerprintAllAgainstAll {
 		// setup spark
 		SparkConf conf = new SparkConf()
 				.setMaster("local[" + NUM_THREADS + "]")
-				.setAppName("1" + this.getClass().getSimpleName())
+				.setAppName(this.getClass().getSimpleName())
 				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
 
 		JavaSparkContext sc = new JavaSparkContext(conf);

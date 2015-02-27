@@ -15,7 +15,10 @@ public class DCT1DFingerprint implements GenericFingerprint, Serializable {
 	private static final long serialVersionUID = 1L;
 	private int length = 8;
 	private int terms = 6;
-	private int binWidth = 15;
+	private int binWidth = 15; // default // rmsd <= 3.75
+//	private int binWidth = 10; // rmsd <= 3.55
+//	private int binWidth = 5; // rmsd <= 2.94
+//	private int binWidth = 3; // rmsd <= 3.68?
 	private int dimensions = 40;
 
 //	private static final int[][] distancePairs = 
@@ -43,13 +46,13 @@ public class DCT1DFingerprint implements GenericFingerprint, Serializable {
 	public double[] getFingerprint(Point3d[] coords) {
 		double[] features = new double[this.dimensions];
 		
-		if(coords.length-this.length-1 <= 0){
+		if(coords.length-this.length < 0){
     		return features;
     	}
 
 		double[] distances = new double[distancePairs.length];	
     	
-    	for(int i = 0; i < coords.length-this.length-1; i++){
+    	for(int i = 0; i < coords.length-this.length+1; i++){
     		if (hasGaps(coords, i)){
     			continue; //Skip if gap exists
     		}
