@@ -83,7 +83,7 @@ public final class SuperPositionQCP implements Serializable {
     	org.biojava.nbio.structure.symmetry.geometry.SuperPosition.transform(ms, frag2);
     	System.out.println("SuperPosition ms: ");
     	System.out.println(ms);
-    	rmsd = SuperPosition.calcRmsd(frag1, frag2);
+    	rmsd = SuperPosition.rmsd(frag1, frag2);
     	System.out.println("sps: " + (System.nanoTime() - start));
     	System.out.println("rmsd sps: " + rmsd);
     	
@@ -163,23 +163,24 @@ public final class SuperPositionQCP implements Serializable {
     /* Superposition coords2 onto coords1 -- in other words, coords2 is rotated, coords1 is held fixed */
     private void calcTransformation() {
     	// x and y interchanged??
+    	transformation.setIdentity();
         transformation.set(rotmat);
 
         // combine with x -> origin translation
         Matrix4d trans = new Matrix4d();
         trans.setIdentity();
-        Vector3d xv = new Vector3d(xtrans);
+        Vector3d xv = new Vector3d(ytrans);
         xv.negate();
         trans.setTranslation(xv);
-  //      transformation.mul(transformation, trans);
-        transformation.mul(trans,transformation);
+        transformation.mul(transformation, trans);
+ //       transformation.mul(trans,transformation);
 //        System.out.println("setting xtrans");
 //        System.out.println(transformation);
 //
 //        // combine with origin -> y translation  
         Matrix4d transInverse = new Matrix4d(); 
         transInverse.setIdentity();    
-        Vector3d yv = new Vector3d(ytrans);
+        Vector3d yv = new Vector3d(xtrans);
         transInverse.setTranslation(yv);
         transformation.mul(transInverse, transformation);
     }
