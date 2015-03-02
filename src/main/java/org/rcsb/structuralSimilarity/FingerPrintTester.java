@@ -18,8 +18,10 @@ import org.apache.spark.mllib.linalg.Vector;
 import org.rcsb.fingerprints.CombinationFingerprint;
 import org.rcsb.fingerprints.DCT1DFingerprint;
 import org.rcsb.fingerprints.DCT1DLinearFingerprint;
+import org.rcsb.fingerprints.DCT1DOptFingerprint;
 import org.rcsb.fingerprints.GenericFingerprint;
 import org.rcsb.fingerprints.PointToPointDistanceFingerprint;
+import org.rcsb.fingerprints.WrithingNumberFingerprint;
 
 import scala.Tuple2;
 
@@ -83,18 +85,19 @@ public class FingerPrintTester {
         final Broadcast<Set<String>> chainIdsBc = sc.broadcast(new HashSet<String>(chainIds));
         
         GenericFingerprint combined = new CombinationFingerprint(
-        		new DCT1DFingerprint(), 
+        		new DCT1DOptFingerprint(), 
+        		new WrithingNumberFingerprint(),
  //       		new TetrahedronFingerprint(),
  //       		new EndToEndDistanceFingerprint(),
  //       		new PointToPointDistanceFingerprint(200, 20, 5),
-        		new PointToPointDistanceFingerprint(200, 30, 5),
-        		0.9,
-        		0.1);
+ //       		new PointToPointDistanceFingerprint(200, 30, 5),
+        		0.75,
+        		0.25);
         
 		// calculate <chainId, feature vector> pairs
         JavaPairRDD<String, Vector> features = sc
 				.sequenceFile(path, Text.class, ArrayWritable.class, NUM_THREADS*NUM_TASKS_PER_THREAD)  // read protein chains
-			//	.sample(false, 0.1, 123456) // use only a random fraction, i.e., 40%
+				.sample(false, 0.2, 123456) // use only a random fraction, i.e., 40%
 				.mapToPair(new SeqToChainMapper()) // convert input to <pdbId.chainId, CA coordinate[]> pairs				
 				.filter(new GapFilter(0, 0)) // keep protein chains with gap size <= 3 and <= 5 gaps
 				.filter(new LengthFilter(50,500)) // keep protein chains with at least 50 residues
@@ -108,6 +111,7 @@ public class FingerPrintTester {
 //	       	    .mapToPair(new ChainToFeatureVectorMapper(new DCT1DFingerprint())) // calculate features
 //	       	    .mapToPair(new ChainToFeatureVectorMapper(new DCT1DOptFingerprint())) // calculate features
 	       	    .mapToPair(new ChainToLinearFeatureMapper(new DCT1DLinearFingerprint()))
+//	       	    .mapToPair(new ChainToFeatureVectorMapper(new WrithingNumberFingerprint()))
 //	       	    .mapToPair(new ChainToFeatureVectorMapper(new DCT1DFingerprint(16,40))) // calculate features
 //	       	    .mapToPair(new ChainToFeatureVectorMapper(new PointToPointDistanceFingerprint(200, 20, 5))) // calculate features
 				.cache();
@@ -129,7 +133,7 @@ public class FingerPrintTester {
 	    List<Tuple2<String, Tuple2<Float, String>>> results = pairs
 				.filter(new ChainIdPairFilter(availableChainIdsBc)) // only keep pairs that have feature vectors available
 				.mapToPair(new ChainIdToIndexMapper(availableChainIdsBc)) // map chain ids to indices into feature vector
-	//			.mapToPair(new FeatureVectorToJaccardMapper(featureVectorsBc)) // maps pairs of feature vectors to Jaccard index
+//				.mapToPair(new FeatureVectorToJaccardMapper(featureVectorsBc)) // maps pairs of feature vectors to Jaccard index
                 .mapToPair(new LinearFeatureVectorToLevenshteinMapper(featureVectorsBc))
 				//			.mapToPair(new FeatureVectorToContainmentScoreMapper(featureVectorsBc)) // maps pairs of feature vectors to Jaccard index
 	//			.mapToPair(new FeatureVectorToCosineScoreMapper(featureVectorsBc)) // maps pairs of feature vectors to Jaccard index

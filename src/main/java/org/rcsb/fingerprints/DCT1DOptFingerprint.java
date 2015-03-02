@@ -164,21 +164,18 @@ public class DCT1DOptFingerprint implements GenericFingerprint, LinearFingerprin
     		
     		// calculate unique hash code for fragment
     		int hashCode = Arrays.hashCode(dctCoeff);
- //   		if (hashCode < 0) {
-//    			continue;
- //   		}
     		
     		// map hashCode into feature vector of fixed size by hashing.
     		// This is called the "hashing trick". See http://en.wikipedia.org/wiki/Feature_hashing
     		features[Math.abs(hashCode) % this.dimensions]++;
     	}
 
-    	Set<Integer> set = new HashSet<Integer>();
-    	for (int h: getLinearFingerprint(coords)) {
-    		set.add(h);
-    	}
-    	System.out.println("Set: " + set.size());
-    	System.out.println(Arrays.toString(getLinearFingerprint(coords)));
+//    	Set<Integer> set = new HashSet<Integer>();
+//    	for (int h: getLinearFingerprint(coords)) {
+//    		set.add(h);
+//    	}
+ //   	System.out.println("Set: " + set.size());
+//    	System.out.println(Arrays.toString(getLinearFingerprint(coords)));
     	return features;
 	}
 	

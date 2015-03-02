@@ -53,10 +53,10 @@ public class TestSetCreator {
 		// Step 1. calculate <pdbId.chainId, feature vector> pairs
         List<Tuple2<String, Point3d[]>> chains = sc
 				.sequenceFile(path, Text.class, ArrayWritable.class, NUM_THREADS)  // read protein chains
-			//	.sample(false, 0.1, 123456) // use only a random fraction, i.e., 40%
+			//	.sample(false, 0.1, 123456) // use only a random fraction, i.e., 10%
 				.mapToPair(new SeqToChainMapper()) // convert input to <pdbId.chainId, CA coordinate> pairs
-				.filter(new GapFilter(0, 5)) // keep protein chains with gap size <= 3 and <= 5 gaps
-				.filter(new LengthFilter(50,500)) // keep protein chains with at least 50 residues
+				.filter(new GapFilter(0, 0)) // keep protein chains with gap size <= 0 and 0 gaps
+				.filter(new LengthFilter(50,500)) // keep protein chains with 50 - 500 residues
 				.collect(); // return results to master node
 
 		// Step 2.  broadcast feature vectors to all nodes
@@ -72,7 +72,7 @@ public class TestSetCreator {
 
 			List<Tuple2<String, Float[]>> list = sc
 					.parallelizePairs(pairs, NUM_THREADS*NUM_TASKS_PER_THREAD) // distribute data
-					.filter(new ChainPairLengthFilter(chainsBc, 0.5, 1.0)) // length of shorter chain should be at least 90% on the length of the longer chain
+					.filter(new ChainPairLengthFilter(chainsBc, 0.5, 1.0)) // restrict the difference in chain length
 					.mapToPair(new ChainPairToTmMapper(chainsBc)) // maps pairs of chain id indices to chain id, TM score pairs
 					//				.filter(s -> s._2 > 0.9f) //
 					.collect();	// copy result to master node

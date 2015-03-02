@@ -31,8 +31,10 @@ import org.rcsb.fingerprints.DCT1DFingerprint;
 import org.rcsb.fingerprints.DCT1DOptFingerprint;
 import org.rcsb.fingerprints.EndToEndDistanceFingerprint;
 import org.rcsb.fingerprints.GenericFingerprint;
+import org.rcsb.structuralSimilarity.ChainSmootherMapper;
 import org.rcsb.structuralSimilarity.GapFilter;
 import org.rcsb.structuralSimilarity.LengthFilter;
+import org.rcsb.structuralSimilarity.SavitzkyGolay7PointSmoother;
 import org.rcsb.structuralSimilarity.SeqToChainMapper;
 
 import scala.Tuple2;
@@ -79,7 +81,7 @@ public class FingerPrintAnalyzer implements Serializable {
 				.mapToPair(new SeqToChainMapper()) // convert input to <pdbId.chainId, CA coordinate> pairs
 				.filter(new GapFilter(0, 0)) // keep protein chains with gap size <= 3 and <= 5 gaps
 				.filter(new LengthFilter(50,500)) // keep protein chains with at least 50 residues
-//				.mapToPair(new ChainSmootherMapper(new SavitzkyGolay7PointSmoother(1))) // add new chain smoother here ...
+				.mapToPair(new ChainSmootherMapper(new SavitzkyGolay7PointSmoother(1))) // add new chain smoother here ...
 				.collect(); // return results to master node
 
 		// Step 2.  broadcast feature vectors to all nodes
@@ -89,10 +91,8 @@ public class FingerPrintAnalyzer implements Serializable {
 		Random r = new Random(seed);
 
 		PrintWriter writer = new PrintWriter(outputFileName);
-//		GenericFingerprint fingerprint = new DCT1DFingerprint(8, 40);
 		int fragmentLength = 9;
 		GenericFingerprint fingerprint = new DCT1DOptFingerprint();
-//		GenericFingerprint fingerprint = new EndToEndDistanceFingerprint(8, 1);
 		
 		List<Tuple2<Integer, Integer>> pairs = randomPairs(nChains, nPairs, r.nextLong());
 

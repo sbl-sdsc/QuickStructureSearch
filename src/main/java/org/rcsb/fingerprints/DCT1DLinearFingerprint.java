@@ -36,6 +36,7 @@ public class DCT1DLinearFingerprint implements LinearFingerprint, Serializable {
 	private double dcCoefficient = 10.70; 
 	private double acCoefficientHigh = 3.64;
 	private double acCoefficientLow = 1.05;
+	private double distanceOffset = -13;
 	private double pNorm = 2.0;
 	private int dimensions = 200;
 
@@ -155,6 +156,7 @@ public class DCT1DLinearFingerprint implements LinearFingerprint, Serializable {
     		}
     		
     		distances = getDistancePairs(coords, i, distances);
+ //   		System.out.println("d: " + Arrays.toString(distances));
     		double[] dct = transform.getTransform(distances);
  //   		System.out.println("dct: " + Arrays.toString(dct));
             int[] dctCoeff = DiscreteCosineTransform.quantize(dct, coefficients);
@@ -198,7 +200,7 @@ public class DCT1DLinearFingerprint implements LinearFingerprint, Serializable {
 		for (int i = 0; i < distancePairs.length; i++){
 			int j = distancePairs[i][0] + index;
 			int k = distancePairs[i][1] + index;
-			distances[i] = coords[j].distance(coords[k]);
+			distances[i] = coords[j].distance(coords[k]) - this.distanceOffset;
 		}
 		return distances;
 	}

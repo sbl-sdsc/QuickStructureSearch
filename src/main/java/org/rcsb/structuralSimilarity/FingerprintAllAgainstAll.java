@@ -12,6 +12,8 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.mllib.linalg.Vector;
 import org.rcsb.fingerprints.DCT1DFingerprint;
+import org.rcsb.fingerprints.DCT1DLinearFingerprint;
+import org.rcsb.fingerprints.DCT1DOptFingerprint;
 import org.rcsb.fingerprints.EndToEndDistanceFingerprint;
 import org.rcsb.fingerprints.TetrahedronFingerprint;
 
@@ -30,15 +32,10 @@ public class FingerprintAllAgainstAll {
 
 	public static void main(String[] args ) throws FileNotFoundException
 	{
-		String sequenceFileName = "src/test/resources/protein_chains_40_20150114_141156.seq";
-		String outputFileName = args[0];
-
-		if (args.length == 2) {
-			sequenceFileName = args[0]; 
-			outputFileName = args[1];
-		}
-		FingerprintAllAgainstAll aaa = new FingerprintAllAgainstAll();
-		aaa.run(sequenceFileName, outputFileName);
+	    String sequenceFileName = args[0]; 
+	    String outputFileName = args[1];
+		FingerprintAllAgainstAll ava = new FingerprintAllAgainstAll();
+		ava.run(sequenceFileName, outputFileName);
 	}
 
 	private void run(String path, String results) throws FileNotFoundException {
@@ -57,10 +54,12 @@ public class FingerprintAllAgainstAll {
 				.sequenceFile(path, Text.class, ArrayWritable.class, NUM_THREADS)  // read protein chains
 			//	.sample(false, 0.1, 123456) // use only a random fraction, i.e., 40%
 				.mapToPair(new SeqToChainMapper()) // convert input to <pdbId.chainId, CA coordinate> pairs
-				.filter(new GapFilter(0, 5)) // keep protein chains with gap size <= 3 and <= 5 gaps
+				.filter(new GapFilter(0, 0)) // keep protein chains with gap size <= 3 and <= 5 gaps
 				.filter(new LengthFilter(50,1000)) // keep protein chains with at least 50 residues
 		   //	.mapToPair(new ChainSmootherMapper(new RogenChainSmoother(2))); // add new chain smoother here ...
-				.mapToPair(new ChainToFeatureVectorMapper(new TetrahedronFingerprint())) // calculate features
+			    .mapToPair(new ChainSmootherMapper(new SavitzkyGolay7PointSmoother(1))) 
+//				.mapToPair(new ChainToFeatureVectorMapper(new DCT1DOptFingerprint())) // calculate features
+			 .mapToPair(new ChainToLinearFeatureMapper(new DCT1DLinearFingerprint()))
 			//	.mapToPair(new ChainToFeatureVectorMapper(new EndToEndDistanceFingerprint())) // calculate features
 	       	//  .mapToPair(new ChainToFeatureVectorMapper(new DCT1DFingerprint())) // calculate features
 				.collect(); // return results to master node
@@ -90,8 +89,9 @@ public class FingerprintAllAgainstAll {
 			// calculate pairwise scores and filter with score > 0.9
 			List<Tuple2<String, Float>> list = sc
 					.parallelizePairs(pairList, NUM_THREADS*NUM_TASKS_PER_THREAD) // distribute data
-					.mapToPair(new FeatureVectorToJaccardMapper(featureVectors)) // maps pairs of feature vectors to Jaccard index
-					.filter(s -> s._2 > 0.9f) // keep only a pair with a Jaccard index > 0.9
+			//		.mapToPair(new FeatureVectorToJaccardMapper(featureVectors)) // maps pairs of feature vectors to Jaccard index
+					.mapToPair(new LinearFeatureVectorToLevenshteinMapper(featureVectors))
+					.filter(s -> s._2 > 0.5f) // keep only a pair with a Jaccard index > 0.9
 					.collect();	// copy result to master node
 
 			// write results to .csv file

@@ -3,11 +3,8 @@ package org.rcsb.fingerprints;
 import java.io.Serializable;
 import java.util.Arrays;
 
-import javax.vecmath.Point3d;
-
 /**
- * Creates a fingerprint for protein fragments that represents the overall protein chain structure
- * based on the one dimensional discrete cosine transform 
+ * Performs a one dimensional Discrete Cosine Transform on a data set.
  * 
  * @author Alan Yeung, Peter Rose
  */
@@ -79,6 +76,8 @@ public class DiscreteCosineTransform implements Serializable {
 		int[] values = new int[n];
 		for (int i = 0; i < n; i++) {
 			values[i] = (int) Math.round(data[i]/coefficients[i]);
+			// alternative quantization used in JPEG2000
+//			values[i] = (int) (Math.signum(data[i]) * Math.floor(Math.abs(data[i])/coefficients[i]));
 		}
 		return values;
 	}
