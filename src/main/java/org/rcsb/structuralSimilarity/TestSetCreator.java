@@ -3,8 +3,10 @@ package org.rcsb.structuralSimilarity;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
+import java.util.Set;
 
 import javax.vecmath.Point3d;
 
@@ -113,7 +115,7 @@ public class TestSetCreator {
 	 */
 	private List<Tuple2<Integer, Integer>> randomPairs(int n, int nPairs, long seed) {
 		Random r = new Random(seed);
-		List<Tuple2<Integer,Integer>> list = new ArrayList<>(nPairs);
+		Set<Tuple2<Integer,Integer>> set = new HashSet<>(nPairs);
 
 		for (int i = 0; i < nPairs; i++) {
 			int j = r.nextInt(n);
@@ -123,11 +125,11 @@ public class TestSetCreator {
 			}
 
 			Tuple2<Integer,Integer> tuple = new Tuple2<>(j,k);
-			if (! list.contains(tuple)) {
-			    list.add(tuple);
+			if (! set.contains(tuple)) {
+			    set.add(tuple);
 			}
 		}
-		return list;
+		return new ArrayList<Tuple2<Integer,Integer>>(set);
 	}
 }
 
