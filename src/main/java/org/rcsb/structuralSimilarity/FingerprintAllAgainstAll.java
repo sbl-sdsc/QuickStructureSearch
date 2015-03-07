@@ -90,7 +90,7 @@ public class FingerprintAllAgainstAll {
 			List<Tuple2<String, Float>> list = sc
 					.parallelizePairs(pairList, NUM_THREADS*NUM_TASKS_PER_THREAD) // distribute data
 			//		.mapToPair(new FeatureVectorToJaccardMapper(featureVectors)) // maps pairs of feature vectors to Jaccard index
-					.mapToPair(new LinearFeatureVectorToLevenshteinMapper(featureVectors))
+					.mapToPair(new LinearFeatureVectorToLevenshteinInverseMapper(featureVectors))
 					.filter(s -> s._2 > 0.5f) // keep only a pair with a Jaccard index > 0.9
 					.collect();	// copy result to master node
 
