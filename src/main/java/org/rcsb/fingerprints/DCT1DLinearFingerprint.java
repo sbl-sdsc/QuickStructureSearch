@@ -36,7 +36,6 @@ public class DCT1DLinearFingerprint implements LinearFingerprint, Serializable {
 	private double dcCoefficient = 10.70; 
 	private double acCoefficientHigh = 3.64;
 	private double acCoefficientLow = 1.05;
-	private double distanceOffset = -13;
 	private double pNorm = 2.0;
 	private int dimensions = 200;
 
@@ -95,10 +94,10 @@ public class DCT1DLinearFingerprint implements LinearFingerprint, Serializable {
 	// parameter sets: 6, 7
 	public DCT1DLinearFingerprint(int randomSeed){
 		Random r = new Random(randomSeed);
-		this.length = 8 + r.nextInt(3);
-		this.skip = 1;
-		this.minDistance = 1;
-		this.terms = 3 + r.nextInt(2);
+		this.length = 8 + r.nextInt(9);
+		this.skip = 1 + r.nextInt(8);
+		this.minDistance = 1 + r.nextInt(2);
+		this.terms = 3 + r.nextInt(3);
 		this.dcCoefficient = 10 + r.nextDouble()*10;
 		this.acCoefficientHigh = 1 + r.nextDouble()*5;
 		this.acCoefficientLow = r.nextDouble()*3;
@@ -200,7 +199,7 @@ public class DCT1DLinearFingerprint implements LinearFingerprint, Serializable {
 		for (int i = 0; i < distancePairs.length; i++){
 			int j = distancePairs[i][0] + index;
 			int k = distancePairs[i][1] + index;
-			distances[i] = coords[j].distance(coords[k]) - this.distanceOffset;
+			distances[i] = coords[j].distance(coords[k]);
 		}
 		return distances;
 	}
