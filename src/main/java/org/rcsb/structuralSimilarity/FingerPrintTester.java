@@ -138,7 +138,9 @@ public class FingerPrintTester {
 //				  .mapToPair(new FeatureVectorToJaccardMapper(featureVectorsBc)) // maps pairs of feature vectors to Jaccard index
 //                .mapToPair(new LinearFeatureVectorToLevenshteinMapper(featureVectorsBc))
 //                .mapToPair(new SmithWaterman(featureVectorsBc))
-                .mapToPair(new FeatureCombination(featureVectorsBc))
+//                .mapToPair(new FeatureCombination(featureVectorsBc))
+				.mapToPair(new LCSFeatureIndexHL(featureVectorsBc,1))
+//				.mapToPair(new SmithWatermanHL(featureVectorsBc,1))
 //                .mapToPair(new LCSFeatureIndex(featureVectorsBc))
 //			      .mapToPair(new FeatureVectorToContainmentScoreMapper(featureVectorsBc)) // maps pairs of feature vectors to Jaccard index
 //			      .mapToPair(new FeatureVectorToCosineScoreMapper(featureVectorsBc)) // maps pairs of feature vectors to Jaccard index
