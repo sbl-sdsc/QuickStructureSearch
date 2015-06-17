@@ -38,7 +38,7 @@ public class AngleSequenceFeature implements SequenceFeatureInterface<Double> {
 	@Override
 	public double similarity(SequenceFeatureInterface<?> sequence2, int i, int j) {
 		// check NaN as gap
-		if (Double.isNaN(this.get(i)) || Double.isNaN((Double)sequence2.get(j))){
+		if (this.get(i) == null || sequence2.get(j) == null){
 			return gap;
 		}
 		// check similarity
@@ -51,7 +51,7 @@ public class AngleSequenceFeature implements SequenceFeatureInterface<Double> {
 	@Override
 	public boolean identity(SequenceFeatureInterface<?> sequence2, int i, int j) {
 		// check NaN as gap
-		if (Double.isNaN(this.get(i)) || Double.isNaN((double)sequence2.get(j))){
+		if (this.get(i) == null || sequence2.get(j) == null){
 			return false;
 		}
 		// check identity
@@ -63,7 +63,10 @@ public class AngleSequenceFeature implements SequenceFeatureInterface<Double> {
 
 	@Override
 	public Double get(int index) {
-		return AngleSequence[index];
+		if (Double.isNaN(AngleSequence[index]))
+			return null;
+		else
+			return AngleSequence[index];
 	}
 
 	@Override
@@ -74,6 +77,14 @@ public class AngleSequenceFeature implements SequenceFeatureInterface<Double> {
 	@Override
 	public Double[] getSequence() {
 		return ArrayUtils.toObject(AngleSequence);
+	}
+
+	@Override
+	public String toString(int index) {
+		if (this.get(index) == null)
+			return "NULL";
+		else 			
+			return String.format("%.2f",this.get(index));
 	}
 
 }

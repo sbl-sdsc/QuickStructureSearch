@@ -127,8 +127,8 @@ public class LCSFeatureIndexP3 implements PairFunction<Tuple2<Integer,Integer>,S
 		String commonAngleV2 = " end at " + y;
 		while (x >= 0 && y >= 0) {
 			if (b[x][y] == 0) {
-				commonAngleV1 = String.format("%.2f",v1.get(x))+" \t"+commonAngleV1;
-				commonAngleV2 = String.format("%.2f",v2.get(y))+" \t"+commonAngleV2;
+				commonAngleV1 = v1.toString(x)+" \t"+commonAngleV1;
+				commonAngleV2 = v2.toString(y)+" \t"+commonAngleV2;
 				x--;
 				y--;
 			} else if (b[x][y] == 1) {
@@ -143,8 +143,10 @@ public class LCSFeatureIndexP3 implements PairFunction<Tuple2<Integer,Integer>,S
 				break;
 			}
 		}
-		x++;
-		y++;
+		if (x < 0)
+			x++;
+		if (y < 0)
+			y++;
 		commonAngleV1 = "start from "+ x + "\t" +commonAngleV1;
 		commonAngleV2 = "start from "+ y + "\t" +commonAngleV2;
 		System.out.println(commonAngleV1);
@@ -160,11 +162,11 @@ public class LCSFeatureIndexP3 implements PairFunction<Tuple2<Integer,Integer>,S
 		int v2l = v2.length();
 		// gap is not counted
 		for (int i = 0; i < v1.length(); i++) {
-			if (Double.isNaN((Double)v1.get(i)))
+			if (v1.get(i) == null)
 				v1l--;
 		}
 		for (int i = 0; i < v2.length(); i++) {
-			if (Double.isNaN((Double)v2.get(i)))
+			if (v2.get(i) == null)
 				v2l--;
 		}
 		if (v1l < v2l)

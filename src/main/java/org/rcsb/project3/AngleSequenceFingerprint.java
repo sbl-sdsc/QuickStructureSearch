@@ -13,7 +13,29 @@ import javax.vecmath.Vector3d;
 public class AngleSequenceFingerprint implements SequenceFingerprint, Serializable {
 
 	private static final long serialVersionUID = 1L;
+	
+	// Flag for if this object is created with settings
+	private boolean settingFlag = false;
+	private double diff, gap, match, mismatch;
 
+	public AngleSequenceFingerprint() {
+		settingFlag = false;
+	}
+	
+	/**
+	 * Constructor with setting options
+	 * @param diff
+	 * @param gap
+	 * @param match
+	 * @param mismatch
+	 */
+	public AngleSequenceFingerprint(double diff, double gap, double match, double mismatch) {
+		settingFlag = true;
+		this.diff = diff;
+		this.gap = gap;
+		this.match = match;
+		this.mismatch = mismatch;
+	}
 	/**
      * Returns a fingerprint as sequence for the given chain. 
      * @param coords coordinates of a macromolecule fragment
@@ -35,7 +57,10 @@ public class AngleSequenceFingerprint implements SequenceFingerprint, Serializab
 			// the angle between two vectors
 			features[i] = v2.angle(v1);
 		}
-		return new AngleSequenceFeature(features);
+		if (settingFlag)
+			return new AngleSequenceFeature(features,diff,gap,match,mismatch);
+		else
+			return new AngleSequenceFeature(features);
 	}
 
 	public String getName() {

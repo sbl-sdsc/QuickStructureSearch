@@ -39,4 +39,10 @@ public interface SequenceFeatureInterface<T> {
 	 * @return
 	 */
 	public int length();
+	/**
+	 * Cast a feature at the index to String
+	 * @param index
+	 * @return
+	 */
+	public String toString(int index);
 }
