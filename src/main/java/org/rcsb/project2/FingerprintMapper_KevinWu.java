@@ -1,4 +1,4 @@
-package org.rcsb.structuralSimilarity.project2;
+package org.rcsb.project2;
 
 import java.util.ArrayList;
 import java.util.List;
