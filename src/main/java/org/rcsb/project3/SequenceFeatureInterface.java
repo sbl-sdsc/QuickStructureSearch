@@ -14,7 +14,7 @@ public interface SequenceFeatureInterface<T> {
 	 * @param j	The feature index of sequence2
 	 * @return score for how similar
 	 */
-	public double similarity(SequenceFeatureInterface<?> sequence2, int i, int j);
+	public double similarity(SequenceFeatureInterface<T> sequence2, int i, int j);
 	/**
 	 * Check the identity of a pair of features of the current sequence and the input sequence
 	 * @param sequence2	The feature sequence that will be used to compare with
@@ -22,7 +22,7 @@ public interface SequenceFeatureInterface<T> {
 	 * @param j	The feature index of sequence2
 	 * @return true if identical, otherwise false
 	 */
-	public boolean identity(SequenceFeatureInterface<?> sequence2, int i, int j);
+	public boolean identity(SequenceFeatureInterface<T> sequence2, int i, int j);
 	/**
 	 * Get the sequence stored in
 	 * @return
