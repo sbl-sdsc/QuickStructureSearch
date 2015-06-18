@@ -2,19 +2,9 @@ package org.rcsb.project2;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.function.Consumer;
 
 import javax.vecmath.Point3d;
 
-import org.apache.hadoop.io.ArrayWritable;
-import org.apache.hadoop.io.Text;
-import org.apache.spark.SparkConf;
-/* Spark Java programming APIs. It contains the 
- * RDD classes used for Java, as well as the
- * StorageLevels and SparkContext for java.
- */
-import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.api.java.function.Function2;
 import org.biojava.nbio.structure.AminoAcidImpl;
 import org.biojava.nbio.structure.Atom;
 import org.biojava.nbio.structure.AtomImpl;
@@ -28,110 +18,37 @@ import org.biojava.nbio.structure.align.fatcat.FatCatRigid;
 import org.biojava.nbio.structure.align.fatcat.calc.FatCatParameters;
 import org.biojava.nbio.structure.align.model.AFPChain;
 import org.biojava.nbio.structure.align.util.AFPChainScorer;
-import org.jblas.util.Random;
-import org.rcsb.structuralSimilarity.GapFilter;
-import org.rcsb.structuralSimilarity.SeqToChainMapper;
-
-import scala.Tuple2;
 
 /**
  * FingerprintMapper gives a visual representation of the alignment of two protein chains.
  * 
  * @author Kevin Wu
  */
-public class FingerprintMapper_KevinWu {
-	private static int NUM_THREADS = 4;
-	private static int NUM_TASKS_PER_THREAD = 3; // Spark recommends 2-3 tasks per thread
+public final class FingerprintMapper_KevinWu {
+
 	private static final char MATCH_CHAR = '|';
 	private static final char MATCH_FRAG_CHAR = '$';
+	private static final String SPACER = "\t";
 	private static final String CA_NAME = "CA";
 	private static final String GROUP_NAME = "GLU";
-	private static final String separator = "\t";
 
-	public static void main(String[] args) {
-		String path = args[0];
-
-		// This is the default 2 line structure for spark programs in java
-		// The spark.executor.memory can only take the maximum java heapspace set by -Xmx
-		SparkConf conf = new SparkConf().setMaster("local[" + NUM_THREADS + "]").setAppName(
-				FingerprintMapper_KevinWu.class.getSimpleName());
-		JavaSparkContext sc = new JavaSparkContext(conf);
-
-		long start = System.nanoTime();
-
-		// read sequence file and map sequence length to an RDD
-		List<Tuple2<String, Point3d[]>> list = sc
-				.sequenceFile(path, Text.class, ArrayWritable.class, NUM_THREADS * NUM_TASKS_PER_THREAD)
-				.sample(false, 0.006)// sample
-				.mapToPair(new SeqToChainMapper()) // convert input to <pdbId.chainId, CA coordinate array> pairs
-				.filter(new GapFilter(0, 0)) // filter chains with zero gap length and zero gaps
-				// .filter(new org.apache.spark.api.java.function.Function<Tuple2<String, Point3d[]>, Boolean>() {
-				// @Override
-				// public Boolean call(Tuple2<String, Point3d[]> v1) throws Exception {
-				// return v1._1().toUpperCase().equals("1SRR.A") || v1._1().toUpperCase().equals("1T37.A");
-				// }
-				// })// filter test
-				.collect();
-		List<Integer> l = new ArrayList<>();
-		for (int i = 0; i < list.size() - 1; i++) {
-			Point3d[] chain1 = list.get(i)._2;
-			Point3d[] chain2 = list.get(i + 1)._2;
-			if (chain1.length == chain2.length)
-				l.add(i);
-		}
-		l.parallelStream().forEach(new Consumer<Integer>() {
-			@Override
-			public void accept(Integer i) {
-				Point3d[] chain1 = list.get(i)._2;
-				Point3d[] chain2 = list.get(i + 1)._2;
-				String chainId1 = list.get(i)._1;
-				String chainId2 = list.get(i + 1)._1;
-				int[] f1 = new int[chain1.length];
-				int[] f2 = new int[chain1.length];
-				int m = 5;
-				for (int k = 0; k < f1.length; k++) {
-					f1[k] = Random.nextInt(m);
-					f2[k] = Random.nextInt(m);
-				}
-				StringBuilder a1 = new StringBuilder(align(chain1, chain2, f1, f2,
-						new Function2<Integer, Integer, Double>() {
-							@Override
-							public Double call(Integer v1, Integer v2) throws Exception {
-								return 1 / (1d + (v1 ^ v2));
-							}
-						}));
-				a1.append(System.lineSeparator());
-				a1.append(System.lineSeparator());
-				a1.append(align(chain1, chain2));
-				a1.append(System.lineSeparator());
-				a1.append(chainId1 + ", " + chainId2);
-				System.out.println(a1);
-			}
-		});
-		sc.close();
-		System.out.println("Time: " + (System.nanoTime() - start) / 1E9 + " sec.");
+	private FingerprintMapper_KevinWu() {
 	}
 
 	/**
-	 * Gives a String that shows the alignment of two protein chains with given fragments. <br>
-	 * <br>
-	 * Row 1 has fragment IDs for chain 1<br>
-	 * Row 2 has positions of points in chain 1<br>
-	 * Row 3 has matching<br>
-	 * {@value #MATCH_CHAR} means the points at the position match (based on fatcat) <br>
-	 * {@value #MATCH_FRAG_CHAR} means the fragments at the position match<br>
-	 * Row 4 has positions of points in chain 2<br>
-	 * Row 5 has fragment IDs for chain 2<br>
+	 * Gets the Optimal Alignment of 2 protein chains, including gaps
 	 * 
 	 * @param points1
-	 *            Array of Point3d representing the first protein chain
+	 *            List of Point3d representing the first protein chain.
 	 * @param points2
-	 *            Array of Point3d representing the second protein chain
-	 * @return Optimal alignment, given by AFPChain's getOptAln()
+	 *            List of Point3d representing the second protein chain.
+	 * @return 3 dimensional array for the optimal alignment. Includes gaps.
 	 */
-	public static int[][][] getOpt(Point3d[] points1, Point3d[] points2) {
-		Atom[] ca1 = getCAAtoms(points1);
-		Atom[] ca2 = getCAAtoms(points2);
+	private static int[][][] getOptimalAlignment(Point3d[] points1, Point3d[] points2) {
+		List<Integer> gaps1 = new ArrayList<>();
+		List<Integer> gaps2 = new ArrayList<>();
+		Atom[] ca1 = getCAAtoms(points1, gaps1);
+		Atom[] ca2 = getCAAtoms(points2, gaps2);
 
 		FatCatParameters params = new FatCatParameters();
 		AFPChain afp = null;
@@ -148,346 +65,77 @@ public class FingerprintMapper_KevinWu {
 			new NullPointerException("AFP is null").printStackTrace();
 			return new int[0][0][0];
 		}
-		return afp.getOptAln();
+		int[][][] withGaps = afp.getOptAln();
+		addGaps(withGaps, gaps1, gaps2, 0);
+		return withGaps;
 	}
 
 	/**
-	 * Gives a String that shows the alignment of two protein chains with given fragments. <br>
-	 * <br>
-	 * Row 1 has fragment IDs for chain 1<br>
-	 * Row 2 has positions of points in chain 1<br>
-	 * Row 3 has matching<br>
-	 * {@value #MATCH_CHAR} means the points at the position match (based on fatcat) <br>
-	 * {@value #MATCH_FRAG_CHAR} means the fragments at the position match<br>
-	 * Row 4 has positions of points in chain 2<br>
-	 * Row 5 has fragment IDs for chain 2<br>
-	 * 
-	 * @param p1
-	 *            Array of Point3d representing the first protein chain
-	 * @param p2
-	 *            Array of Point3d representing the second protein chain
-	 * @param f1
-	 *            Array of T representing the first fragment chain
-	 * @param f2
-	 *            Array of T representing the second fragment chain
-	 * @param sim
-	 *            Function for the similarity between 2 fragments
-	 * @return String showing the alignment
-	 */
-	public static <T> String align(Point3d[] p1, Point3d[] p2, T[] f1, T[] f2, Function2<T, T, Double> sim) {
-		return align(getOpt(p1, p2), f1, f2, sim);
-	}
-
-	/**
-	 * Gives a String that shows the alignment of two protein chains with given fragments. <br>
-	 * <br>
-	 * Row 1 has fragment IDs for chain 1<br>
-	 * Row 2 has positions of points in chain 1<br>
-	 * Row 3 has matching<br>
-	 * {@value #MATCH_CHAR} means the points at the position match (based on fatcat) <br>
-	 * {@value #MATCH_FRAG_CHAR} means the fragments at the position match<br>
-	 * Row 4 has positions of points in chain 2<br>
-	 * Row 5 has fragment IDs for chain 2<br>
+	 * Adds gaps into the Optimal Alignment given by FATCAT.<br>
+	 * FATCAT can give multiple alignments, this inserts the gaps into the one given by <code>ind</code>.
 	 * 
 	 * @param optAln
-	 *            Optimal alignment, given by AFPChain's getOptAln()
-	 * @param f1
-	 *            Array of T representing the first fragment chain
-	 * @param f2
-	 *            Array of T representing the second fragment chain
-	 * @param sim
-	 *            Function for the similarity between 2 fragments
-	 * @return String showing the alignment
+	 *            3 dimensional Array of the optimal alignment given by
+	 *            {@link org.biojava.nbio.structure.align.model.AFPChain#getOptAln()}
+	 * @param gaps1
+	 *            List of Integer indexes of gaps in protein chain 1
+	 * @param gaps2
+	 *            List of Integer indexes of gaps in protein chain 2
+	 * @param index
+	 *            index in optAln to insert gaps
 	 */
-	public static <T> String align(int[][][] optAln, T[] f1, T[] f2, Function2<T, T, Double> sim) {
-		class Comp implements FragmentComparable<Comp> {
-			T t;
-
-			Comp(T t) {
-				this.t = t;
-			}
-
-			@Override
-			public double compare(Comp c) {
-				try {
-					return sim.call(t, c.t).doubleValue();
-				}
-				catch (Exception e) {
-					e.printStackTrace();
-				}
-				return 0;
-			}
-
-			@Override
-			public String toString() {
-				return t.toString();
-			}
-
-			@Override
-			public boolean equals(Object o) {
-				return t.equals(o);
-			}
+	private static void addGaps(int[][][] optAln, List<Integer> gaps1, List<Integer> gaps2, int index) {
+		final int N = Math.max(gaps1.size(), gaps2.size()) + optAln[0][0].length;
+		gaps1.add(N);
+		gaps2.add(N);
+		int[][] wg = new int[2][N];
+		for (int i = 0, j = 0; i < gaps1.size(); i++) {
+			for (; j < gaps1.get(i); j++)
+				wg[0][j] = optAln[index][0][j - i];
+			if (j != N)
+				wg[0][j++] = -1;
 		}
-		Comp[] fp1 = new Comp[f1.length];
-		Comp[] fp2 = new Comp[f1.length];
-		for (int i = 0; i < f1.length; i++) {
-			fp1[i] = new Comp(f1[i]);
-			fp2[i] = new Comp(f2[i]);
+		for (int i = 0, j = 0; i < gaps2.size(); i++) {
+			for (; j < gaps2.get(i); j++)
+				wg[1][j] = optAln[index][1][j - i];
+			if (j != N)
+				wg[1][j++] = -1;
 		}
-		return align(optAln, fp1, fp2);
+		optAln[index] = wg;
 	}
 
 	/**
-	 * Gives a String that shows the alignment of two protein chains with given fragments. <br>
-	 * <br>
-	 * Row 1 has fragment IDs for chain 1<br>
-	 * Row 2 has positions of points in chain 1<br>
-	 * Row 3 has matching<br>
-	 * {@value #MATCH_CHAR} means the points at the position match (based on fatcat) <br>
-	 * {@value #MATCH_FRAG_CHAR} means the fragments at the position match<br>
-	 * Row 4 has positions of points in chain 2<br>
-	 * Row 5 has fragment IDs for chain 2<br>
+	 * Gets Array of Atom for FATCAT algorithm. <br>
+	 * Also records the indexes of gaps in a gaps List.
 	 * 
-	 * @param p1
-	 *            Array of Point3d representing the first protein chain
-	 * @param p2
-	 *            Array of Point3d representing the second protein chain
-	 * @param f1
-	 *            Array of T representing the first fragment chain
-	 * @param f2
-	 *            Array of T representing the second fragment chain
-	 * @return String showing the alignment
+	 * @param points
+	 *            Array of Point3d for the points in the protein chain.
+	 * @param gaps
+	 *            List to add gap indexes to.
+	 * @return Array of Atom for FATCAT algorithm.
 	 */
-	public static <T extends FragmentComparable<T>> String align(Point3d[] p1, Point3d[] p2, T[] f1, T[] f2) {
-		return align(getOpt(p1, p2), f1, f2);
-	}
-
-	/**
-	 * Gives a String that shows the alignment of two protein chains with given fragments. <br>
-	 * <br>
-	 * Row 1 has fragment IDs for chain 1<br>
-	 * Row 2 has positions of points in chain 1<br>
-	 * Row 3 has matching<br>
-	 * {@value #MATCH_CHAR} means the points at the position match (based on fatcat) <br>
-	 * {@value #MATCH_FRAG_CHAR} means the fragments at the position match<br>
-	 * Row 4 has positions of points in chain 2<br>
-	 * Row 5 has fragment IDs for chain 2<br>
-	 * 
-	 * @param optAln
-	 *            Optimal alignment, given by AFPChain's getOptAln()
-	 * @param f1
-	 *            Array of T representing the first fragment chain
-	 * @param f2
-	 *            Array of T representing the second fragment chain
-	 * @return String showing the alignment
-	 */
-	public static <T extends FragmentComparable<T>> String align(int[][][] optAln, T[] f1, T[] f2) {
-		if (f1.length != optAln[0][0].length || f1.length != f2.length) {
-			throw new IllegalArgumentException("Fragment lengths do not match: " + optAln[0][0].length + ", f1: "
-					+ f1.length + ", f2: " + f2.length);
+	private static Atom[] getCAAtoms(Point3d[] points, List<Integer> gaps) {
+		if (gaps.size() != 0) {
+			new IllegalArgumentException(String.format(
+					"Error: gaps (size %d) already contains some elements. It will be cleared.", gaps.size()))
+					.printStackTrace();
+			gaps.clear();
 		}
-		int[] i1 = optAln[0][0];
-		int[] i2 = optAln[0][1];
-		StringBuilder sf1 = new StringBuilder();
-		StringBuilder si1 = new StringBuilder();
-		StringBuilder mid = new StringBuilder();
-		StringBuilder si2 = new StringBuilder();
-		StringBuilder sf2 = new StringBuilder();
-		for (int i = 0; i < f1.length; i++) {
-			if (!(i1[i] == 0 && i2[i] == 0) || i == 0) {
-				mid.append(MATCH_CHAR);
-				si1.append(i1[i]);
-				si2.append(i2[i]);
-			}
-			else {
-				si1.append(String.format("(%d)", i + i1[0]));
-				si2.append(String.format("(%d)", i + i2[0]));
-			}
-			if (f1[i].equals(f2[i]))
-				mid.append(MATCH_FRAG_CHAR);
-			else
-				mid.append(String.format("%.2f", f1[i].compare(f2[i])));
-			sf1.append(f1[i]);
-			sf2.append(f2[i]);
-			mid.append(separator);
-			si1.append(separator);
-			si2.append(separator);
-			sf1.append(separator);
-			sf2.append(separator);
-		}
-		sf1.append(System.lineSeparator());
-		sf1.append(si1);
-		sf1.append(System.lineSeparator());
-		sf1.append(mid);
-		sf1.append(System.lineSeparator());
-		sf1.append(si2);
-		sf1.append(System.lineSeparator());
-		sf1.append(sf2);
-		return sf1.toString();
-	}
 
-	/**
-	 * Gives a String that shows the alignment of two protein chains with given fragments. <br>
-	 * <br>
-	 * Row 1 has fragment IDs for chain 1<br>
-	 * Row 2 has positions of points in chain 1<br>
-	 * Row 3 has matching<br>
-	 * {@value #MATCH_CHAR} means the points at the position match (based on fatcat) <br>
-	 * {@value #MATCH_FRAG_CHAR} means the fragments at the position match<br>
-	 * Row 4 has positions of points in chain 2<br>
-	 * Row 5 has fragment IDs for chain 2<br>
-	 * 
-	 * @param p1
-	 *            Array of Point3d representing the first protein chain
-	 * @param p2
-	 *            Array of Point3d representing the second protein chain
-	 * @param f1
-	 *            Array of int representing the first fragment chain
-	 * @param f2
-	 *            Array of int representing the second fragment chain
-	 * @param sim
-	 *            Function for the similarity between 2 fragments
-	 * @return String showing the alignment
-	 */
-	public static String align(Point3d[] p1, Point3d[] p2, int[] f1, int[] f2, Function2<Integer, Integer, Double> sim) {
-		return align(getOpt(p1, p2), f1, f2, sim);
-	}
+		for (int i = 0; i < points.length; i++)
+			if (points[i] == null)
+				gaps.add(i);
 
-	/**
-	 * Gives a String that shows the alignment of two protein chains with given fragments. <br>
-	 * <br>
-	 * Row 1 has fragment IDs for chain 1<br>
-	 * Row 2 has positions of points in chain 1<br>
-	 * Row 3 has matching<br>
-	 * {@value #MATCH_CHAR} means the points at the position match (based on fatcat) <br>
-	 * {@value #MATCH_FRAG_CHAR} means the fragments at the position match<br>
-	 * Row 4 has positions of points in chain 2<br>
-	 * Row 5 has fragment IDs for chain 2<br>
-	 * 
-	 * @param optAln
-	 *            Optimal alignment, given by AFPChain's getOptAln()
-	 * @param f1
-	 *            Array of int representing the first fragment chain
-	 * @param f2
-	 *            Array of int representing the first fragment chain
-	 * @param sim
-	 *            Function for the similarity between 2 fragments
-	 * @return String showing the alignment
-	 */
-	public static String align(int[][][] optAln, int[] f1, int[] f2, Function2<Integer, Integer, Double> sim) {
-		class IntComp implements FragmentComparable<IntComp> {
-			private int i;
-
-			IntComp(int i) {
-				this.i = i;
-			}
-
-			@Override
-			public double compare(IntComp t) {
-				try {
-					return sim.call(i, t.i).doubleValue();
-				}
-				catch (Exception e) {
-					e.printStackTrace();
-				}
-				return 0;
-			}
-
-			@Override
-			public String toString() {
-				return Integer.toString(i);
-			}
-
-			@Override
-			public boolean equals(Object o) {
-				return o instanceof IntComp && i == ((IntComp) o).i;
-			}
-		}
-		IntComp[] fp1 = new IntComp[f1.length];
-		IntComp[] fp2 = new IntComp[f1.length];
-		for (int i = 0; i < fp1.length; i++) {
-			fp1[i] = new IntComp(f1[i]);
-			fp2[i] = new IntComp(f2[i]);
-		}
-		return align(optAln, fp1, fp2);
-	}
-
-	/**
-	 * Gives a String that shows the alignment of two protein chains (no fragments). <br>
-	 * <br>
-	 * Row 1 has positions of points in chain 1<br>
-	 * Row 2 has matching<br>
-	 * {@value #MATCH_CHAR} means the points at the position match (based on fatcat) <br>
-	 * Row 3 has positions of points in chain 2<br>
-	 * 
-	 * @param p1
-	 *            Array of Point3d representing the first protein chain
-	 * @param p2
-	 *            Array of Point3d representing the second protein chain
-	 * @return String showing the alignment
-	 */
-	public static String align(Point3d[] p1, Point3d[] p2) {
-		return align(getOpt(p1, p2));
-	}
-
-	/**
-	 * Gives a String that shows the alignment of two protein chains (no fragments). <br>
-	 * <br>
-	 * Row 1 has positions of points in chain 1<br>
-	 * Row 2 has matching<br>
-	 * {@value #MATCH_CHAR} means the points at the position match (based on fatcat) <br>
-	 * Row 3 has positions of points in chain 2<br>
-	 * 
-	 * @param optAln
-	 *            Optimal alignment, given by AFPChain's getOptAln()
-	 * @return String showing the alignment
-	 */
-	public static String align(int[][][] optAln) {
-		if (optAln.length != 1)
-			new IllegalArgumentException("More than 1 perfect match").printStackTrace();
-		int[] top = optAln[0][0];
-		int[] bot = optAln[0][1];
-		StringBuilder topI = new StringBuilder();
-		StringBuilder match = new StringBuilder();
-		StringBuilder botI = new StringBuilder();
-		for (int i = 0; i < top.length; i++) {
-			if (!(top[i] == 0 && bot[i] == 0) || i == 0) {
-				match.append(MATCH_CHAR);
-				topI.append(top[i]);
-				botI.append(bot[i]);
-			}
-			else {
-				topI.append(String.format("(%d)", i + top[0]));
-				botI.append(String.format("(%d)", i + bot[0]));
-			}
-			topI.append(separator);
-			match.append(separator);
-			botI.append(separator);
-		}
-		topI.append(System.lineSeparator());
-		topI.append(match);
-		topI.append(System.lineSeparator());
-		topI.append(botI);
-		return topI.toString();
-	}
-
-	// copied from TMScorer.java
-	private static Atom[] getCAAtoms(Point3d[] points) {
-		int gaps = 0;
-		for (Point3d p : points) {
-			if (p == null) {
-				gaps++;
-			}
-		}
 		Chain c = new ChainImpl();
 		c.setChainID("A");
 
-		Atom[] atoms = new Atom[points.length - gaps];
+		Atom[] atoms = new Atom[points.length - gaps.size()];
 
 		for (int i = 0, j = 0; i < points.length; i++) {
 			if (points[i] != null) {
 				atoms[j] = new AtomImpl();
 				atoms[j].setName(CA_NAME);
+
 				Group g = new AminoAcidImpl();
 				g.setPDBName(GROUP_NAME);
 				g.addAtom(atoms[j]);
@@ -500,5 +148,95 @@ public class FingerprintMapper_KevinWu {
 			}
 		}
 		return atoms;
+	}
+
+	/**
+	 * Gives a String that shows the alignment of two protein chains with given fragments. <br>
+	 * <br>
+	 * Row 1 has fragment IDs for chain 1<br>
+	 * Row 2 has positions of points in chain 1<br>
+	 * Row 3 has matching<br>
+	 * {@value #MATCH_CHAR} means the points at the position match (based on fatcat) <br>
+	 * {@value #MATCH_FRAG_CHAR} means the fragments at the position match<br>
+	 * Row 4 has positions of points in chain 2<br>
+	 * Row 5 has fragment IDs for chain 2<br>
+	 *
+	 * @param points1
+	 *            Array of Point3d representing the points of the first protein chain
+	 * @param points2
+	 *            Array of Point3d representing the points of the second protein chain
+	 * @param seqFeat1
+	 *            SequenceFeatureInterface for the first protein chain
+	 * @param seqFeat2
+	 *            SequenceFeatureInterface for the second protein chain
+	 * @return String showing the alignment
+	 */
+	public static <T> String align(Point3d[] points1, Point3d[] points2, SequenceFeatureInterface<T> seqFeat1,
+			SequenceFeatureInterface<T> seqFeat2) {
+		int[][][] optAln = getOptimalAlignment(points1, points2);
+		int[] topMatchIndexes = optAln[0][0];
+		int[] botMatchIndexes = optAln[0][1];
+
+		StringBuilder topFrag = new StringBuilder();
+		StringBuilder topIndexes = new StringBuilder();
+		StringBuilder matches = new StringBuilder();
+		StringBuilder botIndexes = new StringBuilder();
+		StringBuilder botFeats = new StringBuilder();
+		for (int matchInd = 0; matchInd < topMatchIndexes.length; matchInd++) {
+			if (topMatchIndexes[matchInd] != 0 || botMatchIndexes[matchInd] != 0 || matchInd == 0) {
+				matches.append(MATCH_CHAR);
+				topIndexes.append(topMatchIndexes[matchInd]);
+				botIndexes.append(botMatchIndexes[matchInd]);
+			}
+			else {
+				if (topMatchIndexes[matchInd] == -1)
+					topIndexes.append("nul");
+				else
+					topIndexes.append(String.format("(%d)", matchInd + topMatchIndexes[0]));
+				if (botMatchIndexes[matchInd] == -1)
+					botIndexes.append("nul");
+				else
+					botIndexes.append(String.format("(%d)", matchInd + botMatchIndexes[0]));
+			}
+			if (seqFeat1 != null && seqFeat2 != null)
+				if (seqFeat1.identity(seqFeat2, matchInd, matchInd))
+					matches.append(MATCH_FRAG_CHAR);
+				else
+					matches.append(String.format("%.2f", seqFeat1.similarity(seqFeat2, matchInd, matchInd)));
+			topFrag.append(seqFeat1 == null ? "" : seqFeat1.get(matchInd));
+			botFeats.append(seqFeat2 == null ? "" : seqFeat2.get(matchInd));
+			matches.append(SPACER);
+			topIndexes.append(SPACER);
+			botIndexes.append(SPACER);
+			topFrag.append(seqFeat1 == null ? "" : SPACER);
+			botFeats.append(seqFeat1 == null ? "" : SPACER);
+		}
+		topFrag.append(seqFeat1 == null ? "" : System.lineSeparator());
+		topFrag.append(topIndexes);
+		topFrag.append(System.lineSeparator());
+		topFrag.append(matches);
+		topFrag.append(System.lineSeparator());
+		topFrag.append(botIndexes);
+		topFrag.append(seqFeat2 == null ? "" : System.lineSeparator());
+		topFrag.append(seqFeat2 == null ? "" : botFeats);
+		return topFrag.toString();
+	}
+
+	/**
+	 * Gives a String that shows the alignment of two protein chains (no fragments). <br>
+	 * <br>
+	 * Row 1 has positions of points in chain 1<br>
+	 * Row 2 has matching<br>
+	 * {@value #MATCH_CHAR} means the points at the position match (based on fatcat) <br>
+	 * Row 3 has positions of points in chain 2<br>
+	 * 
+	 * @param points1
+	 *            Array of Point3d representing the points of the first protein chain
+	 * @param points2
+	 *            Array of Point3d representing the points of the second protein chain
+	 * @return String showing the alignment
+	 */
+	public static String align(Point3d[] points1, Point3d[] points2) {
+		return align(points1, points2, null, null);
 	}
 }
