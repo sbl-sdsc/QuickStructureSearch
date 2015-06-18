@@ -18,6 +18,7 @@ import org.biojava.nbio.structure.align.fatcat.FatCatRigid;
 import org.biojava.nbio.structure.align.fatcat.calc.FatCatParameters;
 import org.biojava.nbio.structure.align.model.AFPChain;
 import org.biojava.nbio.structure.align.util.AFPChainScorer;
+import org.rcsb.project3.SequenceFeatureInterface;
 
 /**
  * FingerprintMapper gives a visual representation of the alignment of two protein chains.

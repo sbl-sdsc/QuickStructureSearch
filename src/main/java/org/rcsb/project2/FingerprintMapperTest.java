@@ -12,6 +12,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.jblas.util.Random;
+import org.rcsb.project3.SequenceFeatureInterface;
 import org.rcsb.structuralSimilarity.SeqToChainMapper;
 
 import scala.Tuple2;
