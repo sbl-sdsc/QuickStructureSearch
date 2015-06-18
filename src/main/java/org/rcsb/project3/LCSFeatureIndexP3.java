@@ -52,15 +52,17 @@ public class LCSFeatureIndexP3 implements PairFunction<Tuple2<Integer,Integer>,S
 	
 	/**
 	 * Get the length of the longest common substring
+	 * @param <K>
 	 */
-	private int LCS(SequenceFeatureInterface<?> v1, SequenceFeatureInterface<?> v2) {
+	@SuppressWarnings("unchecked")
+	private <T, K> int LCS(SequenceFeatureInterface<T> v1, SequenceFeatureInterface<K> v2) {
 		// the length of LCS at each pair of values
 		int c[][] = new int[v1.length()][v2.length()];
 		// traceback
 		int b[][] = new int[v1.length()][v2.length()];
 		// the first row
 		for (int i = 0; i < v1.length(); i++) {
-			if (v1.identity(v2, i, 0)) {
+			if (v1.identity((SequenceFeatureInterface<T>)v2, i, 0)) {
 				c[i][0] = 1;
 				b[i][0] = 0;
 			} else {
@@ -70,7 +72,7 @@ public class LCSFeatureIndexP3 implements PairFunction<Tuple2<Integer,Integer>,S
 		}
 		// the first column
 		for (int j = 0; j < v2.length(); j++) {
-			if (v1.identity(v2, 0, j)) {
+			if (v1.identity((SequenceFeatureInterface<T>)v2, 0, j)) {
 				c[0][j] = 1;
 				b[0][j] = 0;
 			}
@@ -82,7 +84,7 @@ public class LCSFeatureIndexP3 implements PairFunction<Tuple2<Integer,Integer>,S
 		// the rest
 		for (int i = 1; i < v1.length(); i++) {
 			for (int j = 1; j < v2.length(); j++) {
-				if (v1.identity(v2, i, j)) {
+				if (v1.identity((SequenceFeatureInterface<T>)v2, i, j)) {
 					c[i][j] = c[i-1][j-1] + 1;
 					b[i][j] = 0;
 				}

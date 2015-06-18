@@ -4,6 +4,7 @@ import java.util.List;
 
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
+
 import scala.Tuple2;
 
 /**
@@ -70,7 +71,7 @@ public class SmithWatermanP3 implements PairFunction<Tuple2<Integer,Integer>,Str
 		}
 		for (int i = 1; i <= v1length; i++) {
 		    for (int j = 1; j <= v2length; j++) {
-		    	double diagScore = score[i - 1][j - 1] + v1.similarity(v2,i-1,j-1);
+		    	double diagScore = score[i - 1][j - 1] + calSimilarity(v1,v2,i-1,j-1);
 		    	double upScore = score[i][j - 1] + indel;
 		    	double leftScore = score[i - 1][j] + indel;
 		    	double maxScore = maximum(diagScore, upScore,leftScore, 0);
@@ -97,6 +98,11 @@ public class SmithWatermanP3 implements PairFunction<Tuple2<Integer,Integer>,Str
 			System.out.println();
 		}
 		return new Tuple2<String, Float>(key.toString(), value);
+	}
+	
+	@SuppressWarnings("unchecked")
+	private <T,K> double calSimilarity(SequenceFeatureInterface<T> v1,SequenceFeatureInterface<K> v2,int i,int j) {
+		return v1.similarity((SequenceFeatureInterface<T>)v2,i,j);
 	}
 	
 	/**

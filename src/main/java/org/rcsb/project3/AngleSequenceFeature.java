@@ -36,7 +36,7 @@ public class AngleSequenceFeature implements SequenceFeatureInterface<Double> {
 	}
 		
 	@Override
-	public double similarity(SequenceFeatureInterface<?> sequence2, int i, int j) {
+	public double similarity(SequenceFeatureInterface<Double> sequence2, int i, int j) {
 		// check NaN as gap
 		if (this.get(i) == null || sequence2.get(j) == null){
 			return gap;
@@ -49,7 +49,7 @@ public class AngleSequenceFeature implements SequenceFeatureInterface<Double> {
 	}
 
 	@Override
-	public boolean identity(SequenceFeatureInterface<?> sequence2, int i, int j) {
+	public boolean identity(SequenceFeatureInterface<Double> sequence2, int i, int j) {
 		// check NaN as gap
 		if (this.get(i) == null || sequence2.get(j) == null){
 			return false;
