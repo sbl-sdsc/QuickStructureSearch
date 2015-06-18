@@ -114,8 +114,9 @@ public class FingerPrintTesterForP3 {
 	    List<Tuple2<String, Tuple2<Float, String>>> results = pairs
 				.filter(new ChainIdPairFilter(availableChainIdsBc)) // only keep pairs that have feature vectors available
 				.mapToPair(new ChainIdToIndexMapper(availableChainIdsBc)) // map chain ids to indices into feature vector
-//				.mapToPair(new LCSFeatureIndexP3(featureVectorsBc,1))
-				.mapToPair(new SmithWatermanP3(featureVectorsBc,1))
+				.mapToPair(new LCSFeatureIndexP3(featureVectorsBc,0))
+//				.mapToPair(new SmithWatermanP3(featureVectorsBc,1))
+//				.mapToPair(new SmithWatermanGotohP3(featureVectorsBc,1))
 				.join(trainingData) // join with TM metrics from the input file
 				.sortByKey()
 				.collect();
