@@ -9,6 +9,7 @@ import scala.Tuple2;
 
 /**
  * This class maps a pair of chains to the longest local common subsequence over the length of the chains
+ * using the SmithWaterman algorithm
  * @author Chris Li
  */
 public class SmithWatermanP3 implements PairFunction<Tuple2<Integer,Integer>,String,Float> {
@@ -16,7 +17,7 @@ public class SmithWatermanP3 implements PairFunction<Tuple2<Integer,Integer>,Str
 	private static final long serialVersionUID = 1L;
 	private Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> data = null;
     // score of indel
-    private double indel = -1;
+    private double indel = 1;
     // length of v1
     private int v1length;
     // length of v2
@@ -100,6 +101,14 @@ public class SmithWatermanP3 implements PairFunction<Tuple2<Integer,Integer>,Str
 		return new Tuple2<String, Float>(key.toString(), value);
 	}
 	
+	/**
+	 * Calculate the similarity. Object class casting.
+	 * @param v1
+	 * @param v2
+	 * @param i
+	 * @param j
+	 * @return
+	 */
 	@SuppressWarnings("unchecked")
 	private <T,K> double calSimilarity(SequenceFeatureInterface<T> v1,SequenceFeatureInterface<K> v2,int i,int j) {
 		return v1.similarity((SequenceFeatureInterface<T>)v2,i,j);
@@ -114,21 +123,21 @@ public class SmithWatermanP3 implements PairFunction<Tuple2<Integer,Integer>,Str
 	private void printTraceback(SequenceFeatureInterface<?> v1,SequenceFeatureInterface<?> v2,int[][] b) {
 		int x = maxX;
 		int y = maxY;
-		String commonAngleV1 = " end at " + x;
-		String commonAngleV2 = " end at " + y;
+		String commonV1 = " end at " + x;
+		String commonV2 = " end at " + y;
 		while (x >= 0 && y >= 0 && b[x][y] >= 0) {
 			if (b[x][y] == 0) {
-				commonAngleV1 = v1.toString(x)+" \t"+commonAngleV1;
-				commonAngleV2 = v2.toString(y)+" \t"+commonAngleV2;
+				commonV1 = v1.toString(x)+" \t"+commonV1;
+				commonV2 = v2.toString(y)+" \t"+commonV2;
 				x--;
 				y--;
 			} else if (b[x][y] == 1) {
-				commonAngleV1 = "xxx \t"+commonAngleV1;
-				commonAngleV2 = "--- \t"+commonAngleV2;
+				commonV1 = "xxx \t"+commonV1;
+				commonV2 = "--- \t"+commonV2;
 				x--;
 			} else if (b[x][y] == 2) {
-				commonAngleV1 = "--- \t"+commonAngleV1;
-				commonAngleV2 = "xxx \t"+commonAngleV2;
+				commonV1 = "--- \t"+commonV1;
+				commonV2 = "xxx \t"+commonV2;
 				y--;
 			} else if (b[x][y] == -1) {
 				break;
@@ -138,10 +147,10 @@ public class SmithWatermanP3 implements PairFunction<Tuple2<Integer,Integer>,Str
 			x++;
 		if (y < 0)
 			y++;
-		commonAngleV1 = "start from "+ x + "\t" +commonAngleV1;
-		commonAngleV2 = "start from "+ y + "\t" +commonAngleV2;
-		System.out.println(commonAngleV1);
-		System.out.println(commonAngleV2);
+		commonV1 = "start from "+ x + "\t" +commonV1;
+		commonV2 = "start from "+ y + "\t" +commonV2;
+		System.out.println(commonV1);
+		System.out.println(commonV2);
 	}
 	
 	/**

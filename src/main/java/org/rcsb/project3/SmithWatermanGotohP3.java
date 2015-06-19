@@ -9,6 +9,7 @@ import scala.Tuple2;
 
 /**
  * This class maps a pair of chains to the longest local common subsequence over the length of the chains
+ * using SmithWaterman algorithm and Gotoh's improvement
  * @author Chris Li
  */
 public class SmithWatermanGotohP3 implements PairFunction<Tuple2<Integer,Integer>,String,Float> {
@@ -17,15 +18,25 @@ public class SmithWatermanGotohP3 implements PairFunction<Tuple2<Integer,Integer
 	private Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> data = null;
     // print traceback if it is greater than 0
     private int traceback = 0;
+    /* With different open and extend penalty, this class could function the same as LCS or SmithWaterman
+     * LCS: open = extend = 0;
+     * SmithWaterman = open = extend = 1;
+     */
     // open gap penalty
     private double open = 1;
     // extend gap penalty
-    private double extend = 1;
+    private double extend = 0;
 
     public SmithWatermanGotohP3(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> data) {
 		this.data = data;
 	}
     
+    /***
+     * Constructor with setting options
+     * @param data
+     * @param open
+     * @param extend
+     */
     public SmithWatermanGotohP3(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> data, double open, double extend) {
 		this.data = data;
 		this.open = open;
@@ -57,66 +68,61 @@ public class SmithWatermanGotohP3 implements PairFunction<Tuple2<Integer,Integer
 		
 		Alignment<?> SWAlignment = getAlignment(v1, v2, open, extend);
 		float value = (float) SWAlignment.calculateScore();
-		//value = value/v1.length();;
-		//printTraceback(v1,v2,SWAlignment.getSequence1(),SWAlignment.getSequence2());
 		int v1L = v1.length();
 		int v2L = v2.length();
 		if (v1L > v2L)
 			value = value/v2L;
 		else
 			value = value/v1L;
+		// Traceback
+		if (traceback > 0)  {
+			printTraceback(v1,v2,SWAlignment.getSequence1(),SWAlignment.getSequence2());
+		}
 		return new Tuple2<String, Float>(key.toString(), value);
 	}
 	
+	/**
+	 * Get alignment for the two sequence. Object class casting.
+	 * @param v1
+	 * @param v2
+	 * @param o
+	 * @param e
+	 * @return
+	 */
 	@SuppressWarnings("unchecked")
 	private <T,K> Alignment<T> getAlignment(SequenceFeatureInterface<T> v1,SequenceFeatureInterface<K> v2,double o, double e) {
 		return SmithWatermanGotoh.align(v1, (SequenceFeatureInterface<T>)v2, o, e);
 	}
 	
+	/**
+	 * Print the SmithWatermanGotoh traceback
+	 * @param v1
+	 * @param v2
+	 * @param b
+	 */
 	private void printTraceback(SequenceFeatureInterface<?> v1,SequenceFeatureInterface<?> v2,Integer[] v1Order,Integer[] v2Order) {
-		//System.out.println("v1 length "+v1.length());
-		//System.out.println("v2 length "+v2.length());
-		//System.out.println("alignment length "+v1Order.length);
-		System.out.print("v1 sequence ");
+		Integer c1 = v1Order[0];
+		Integer c2 = v2Order[0];
+		String commonV1 = "start from " + c1 + "\t";
+		String commonV2 = "start from " + c2 + "\t";
 		for (int i = 0; i < v1Order.length; i++) {
-			System.out.print(v1Order[i] + " ");
-		}
-		System.out.println();
-		System.out.print("v2 sequence ");
-		for (int i = 0; i < v2Order.length; i++) {
-			System.out.print(v2Order[i] + " ");
-		}
-		System.out.println();
-		System.out.println();
-		/*int x = maxX;
-		int y = maxY;
-		String commonAngleV1 = " end at " + x;
-		String commonAngleV2 = " end at " + y;
-		while (x >= 0 && y >= 0 && b[x][y] >= 0) {
-			if (b[x][y] == 0) {
-				commonAngleV1 = v1.toString(x)+" \t"+commonAngleV1;
-				commonAngleV2 = v2.toString(y)+" \t"+commonAngleV2;
-				x--;
-				y--;
-			} else if (b[x][y] == 1) {
-				commonAngleV1 = "xxx \t"+commonAngleV1;
-				commonAngleV2 = "--- \t"+commonAngleV2;
-				x--;
-			} else if (b[x][y] == 2) {
-				commonAngleV1 = "--- \t"+commonAngleV1;
-				commonAngleV2 = "xxx \t"+commonAngleV2;
-				y--;
-			} else if (b[x][y] == -1) {
-				break;
+			c1 = v1Order[i];
+			c2 = v2Order[i];
+			if (c1 == null) {
+				commonV1 += "--- \t";
+				commonV2 += "xxx \t";
+			} else if (c2 == null) {
+				commonV1 += "xxx \t";
+				commonV2 += "--- \t";
+			} else {
+				commonV1 += v1.toString(c1) + " \t";
+				commonV2 += v2.toString(c2) + " \t";
 			}
 		}
-		if (x < 0)
-			x++;
-		if (y < 0)
-			y++;
-		commonAngleV1 = "start from "+ x + "\t" +commonAngleV1;
-		commonAngleV2 = "start from "+ y + "\t" +commonAngleV2;
-		System.out.println(commonAngleV1);
-		System.out.println(commonAngleV2);*/
+		commonV1 += " end at " + c1;
+		commonV2 += " end at " + c2;
+		System.out.println(commonV1);
+		System.out.println(commonV2);
+		System.out.println();
 	}
 }

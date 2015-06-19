@@ -125,21 +125,21 @@ public class LCSFeatureIndexP3 implements PairFunction<Tuple2<Integer,Integer>,S
 				break;
 			}
 		}
-		String commonAngleV1 = " end at " + x;
-		String commonAngleV2 = " end at " + y;
+		String commonV1 = " end at " + x;
+		String commonV2 = " end at " + y;
 		while (x >= 0 && y >= 0) {
 			if (b[x][y] == 0) {
-				commonAngleV1 = v1.toString(x)+" \t"+commonAngleV1;
-				commonAngleV2 = v2.toString(y)+" \t"+commonAngleV2;
+				commonV1 = v1.toString(x)+" \t"+commonV1;
+				commonV2 = v2.toString(y)+" \t"+commonV2;
 				x--;
 				y--;
 			} else if (b[x][y] == 1) {
-				commonAngleV1 = "xxx \t"+commonAngleV1;
-				commonAngleV2 = "--- \t"+commonAngleV2;
+				commonV1 = "xxx \t"+commonV1;
+				commonV2 = "--- \t"+commonV2;
 				x--;
 			} else if (b[x][y] == 2) {
-				commonAngleV1 = "--- \t"+commonAngleV1;
-				commonAngleV2 = "xxx \t"+commonAngleV2;
+				commonV1 = "--- \t"+commonV1;
+				commonV2 = "xxx \t"+commonV2;
 				y--;
 			} else if (b[x][y] == -1) {
 				break;
@@ -149,10 +149,10 @@ public class LCSFeatureIndexP3 implements PairFunction<Tuple2<Integer,Integer>,S
 			x++;
 		if (y < 0)
 			y++;
-		commonAngleV1 = "start from "+ x + "\t" +commonAngleV1;
-		commonAngleV2 = "start from "+ y + "\t" +commonAngleV2;
-		System.out.println(commonAngleV1);
-		System.out.println(commonAngleV2);
+		commonV1 = "start from "+ x + "\t" +commonV1;
+		commonV2 = "start from "+ y + "\t" +commonV2;
+		System.out.println(commonV1);
+		System.out.println(commonV2);
 		System.out.println();
 	}
 	
