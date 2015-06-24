@@ -25,7 +25,7 @@ public class SmithWatermanGotohP3 implements PairFunction<Tuple2<Integer,Integer
     // open gap penalty
     private double open = 1;
     // extend gap penalty
-    private double extend = 0;
+    private double extend = 0.2;
 
     public SmithWatermanGotohP3(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> data) {
 		this.data = data;
