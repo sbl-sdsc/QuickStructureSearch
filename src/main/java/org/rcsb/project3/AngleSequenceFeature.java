@@ -87,4 +87,8 @@ public class AngleSequenceFeature implements SequenceFeatureInterface<Double> {
 			return String.format("%.2f",this.get(index));
 	}
 
+	@Override
+	public double todouble(int index) {
+		return (double)this.get(index);
+	}
 }

@@ -93,8 +93,8 @@ public class FingerPrintTesterForP3 {
 				.filter(new LengthFilter(50,500)) // keep protein chains with at least 50 residues
 				.filter(new ChainIdFilter<Point3d[]>(chainIdsBc)) // calculate feature vectors for chains in the training set only
 		        .mapToPair(new ChainSmootherMapper(new SavitzkyGolay7PointSmoother(1))) // add new chain smoother here ...
-	       	    .mapToPair(new ChainToSequenceFeatureVectorMapper(new AngleSequenceFingerprint()))
-//	       	    .mapToPair(new ChainToSequenceFeatureVectorMapper(new DCT1DSequenceFingerprint()))
+//	       	    .mapToPair(new ChainToSequenceFeatureVectorMapper(new AngleSequenceFingerprint()))
+	       	    .mapToPair(new ChainToSequenceFeatureVectorMapper(new DCT1DSequenceFingerprint()))
 	       	    .cache();
       
         // broadcast feature vectors
@@ -117,6 +117,8 @@ public class FingerPrintTesterForP3 {
 				.mapToPair(new LCSFeatureIndexP3(featureVectorsBc,0))
 //				.mapToPair(new SmithWatermanP3(featureVectorsBc,0))
 //				.mapToPair(new SmithWatermanGotohP3(featureVectorsBc,0))
+//				.mapToPair(new JaccardScoreMapperP3(featureVectorsBc))
+//				.mapToPair(new LevenshteinMapperP3(featureVectorsBc))
 				.join(trainingData) // join with TM metrics from the input file
 				.sortByKey()
 				.collect();

@@ -82,4 +82,8 @@ public class DCT1DSequenceFeature implements SequenceFeatureInterface<Integer> {
 			return this.get(index).toString();
 	}
 
+	@Override
+	public double todouble(int index) {
+		return (double)(int)this.get(index);
+	}
 }

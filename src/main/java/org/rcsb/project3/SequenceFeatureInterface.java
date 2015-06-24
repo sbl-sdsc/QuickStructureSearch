@@ -45,4 +45,10 @@ public interface SequenceFeatureInterface<T> {
 	 * @return
 	 */
 	public String toString(int index);
+	/**
+	 * Cast the feature value to double
+	 * @param index
+	 * @return
+	 */
+	public double todouble(int index);
 }
