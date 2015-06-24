@@ -20,7 +20,7 @@ import org.apache.spark.api.java.JavaSparkContext;
  */
 public class SequenceCounter {    
 	private static int NUM_THREADS = 4;
-	private static int NUM_TASKS_PER_THREAD = 1; // Spark recommends 2-3 tasks per thread
+	private static int NUM_TASKS_PER_THREAD = 3; // Spark recommends 2-3 tasks per thread
 	
 	public static void main(String[] args ) throws FileNotFoundException
 	{
@@ -37,7 +37,7 @@ public class SequenceCounter {
 		JavaRDD<Integer> len = sc
 				.sequenceFile(path, Text.class, ArrayWritable.class,NUM_THREADS*NUM_TASKS_PER_THREAD)
 				.mapToPair(new SeqToChainMapper()) // convert input to <pdbId.chainId, CA coordinate array> pairs
-				.filter(new GapFilter(0, 0)) // filter chains with zero gap length and zero gaps
+				.filter(new GapFilter(100, 100)) // filter chains with zero gap length and zero gaps
 				.map(s -> s._2.length)
 				.cache(); // cache since we are using the JavaRDD multiple times below
 		

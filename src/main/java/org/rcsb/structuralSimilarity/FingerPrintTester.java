@@ -103,7 +103,8 @@ public class FingerPrintTester {
 				.filter(new GapFilter(0, 0)) // keep protein chains with gap size <= 3 and <= 5 gaps
 				.filter(new LengthFilter(50,500)) // keep protein chains with at least 50 residues
 				.filter(new ChainIdFilter<Point3d[]>(chainIdsBc)) // calculate feature vectors for chains in the training set only
-//		     	.mapToPair(new ChainSmootherMapper(new RogenChainSmoother(2))) // add new chain smoother here ...
+//                .filter(s -> s._1.equals("4HHB.A")||s._1.equals("4HHB.B"))
+				//		     	.mapToPair(new ChainSmootherMapper(new RogenChainSmoother(2))) // add new chain smoother here ...
 		        .mapToPair(new ChainSmootherMapper(new SavitzkyGolay7PointSmoother(1))) // add new chain smoother here ...
 //				.mapToPair(new ChainToFeatureVectorMapper(new TetrahedronFingerprint())) // calculate features
 //				.mapToPair(new ChainToFeatureVectorMapper(new EndToEndDistanceFingerprint())) // calculate features
@@ -111,8 +112,8 @@ public class FingerPrintTester {
 //		        .mapToPair(new ChainToFeatureVectorMapper(combined)) // calculate features
 //	       	    .mapToPair(new ChainToFeatureVectorMapper(new DCT1DFingerprint())) // calculate features
 //	       	    .mapToPair(new ChainToFeatureVectorMapper(new DCT1DOptFingerprint())) // calculate features
-//	       	    .mapToPair(new ChainToLinearFeatureMapper(new DCT1DLinearFingerprint()))
-	       	    .mapToPair(new ChainToFeatureVectorMapper(new AngleVectorFingerprint()))
+	       	    .mapToPair(new ChainToLinearFeatureMapper(new DCT1DLinearFingerprint()))
+//	       	    .mapToPair(new ChainToFeatureVectorMapper(new AngleVectorFingerprint()))
 //	       	    .mapToPair(new ChainToFeatureVectorMapper(new WrithingNumberFingerprint()))
 //	       	    .mapToPair(new ChainToFeatureVectorMapper(new DCT1DFingerprint(16,40))) // calculate features
 //	       	    .mapToPair(new ChainToFeatureVectorMapper(new PointToPointDistanceFingerprint(200, 20, 5))) // calculate features
@@ -139,7 +140,9 @@ public class FingerPrintTester {
 //                .mapToPair(new LinearFeatureVectorToLevenshteinMapper(featureVectorsBc))
 //                .mapToPair(new SmithWaterman(featureVectorsBc))
 //                .mapToPair(new FeatureCombination(featureVectorsBc))
-				.mapToPair(new LCSFeatureIndexHL(featureVectorsBc,1))
+//				.mapToPair(new LCSFeatureIndexHL(featureVectorsBc,1))
+//								.mapToPair(new LCSFeatureIndexForIntHL(featureVectorsBc,1))
+				.mapToPair(new SmithWatermanForIntHL(featureVectorsBc,1))
 //				.mapToPair(new SmithWatermanHL(featureVectorsBc,1))
 //                .mapToPair(new LCSFeatureIndex(featureVectorsBc))
 //			      .mapToPair(new FeatureVectorToContainmentScoreMapper(featureVectorsBc)) // maps pairs of feature vectors to Jaccard index

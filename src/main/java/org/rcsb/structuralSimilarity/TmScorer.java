@@ -39,7 +39,11 @@ public class TmScorer implements Serializable {
 		} catch (StructureException e) {
 			e.printStackTrace();
 			return scores;
-		}        
+		}  
+//		int[][] alignment = afp.getAfpIndex();
+//		for (int i = 0; i < alignment.length; i++) {
+//			System.out.println(alignment[i][0] + " - " + alignment[i][1]);
+//		}
 
 		scores[0] = (float) afp.getTMScore();
 		scores[1] = (float) afp.getTotalRmsdOpt();

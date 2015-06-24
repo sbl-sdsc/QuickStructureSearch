@@ -43,7 +43,7 @@ public class Demo1 {
 		// read sequence file and map sequence length to an RDD
 		List<Tuple2<String, Point3d[]>> list = sc
 				.sequenceFile(path, Text.class, ArrayWritable.class,NUM_THREADS*NUM_TASKS_PER_THREAD)
-				.sample(false, 0.002)
+				.sample(false, 0.002, 123)
 				.mapToPair(new SeqToChainMapper()) // convert input to <pdbId.chainId, CA coordinate array> pairs
 				.filter(new GapFilter(0, 0)) // filter chains with zero gap length and zero gaps
 				.collect();

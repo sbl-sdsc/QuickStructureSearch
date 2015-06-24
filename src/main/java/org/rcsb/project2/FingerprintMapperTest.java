@@ -87,6 +87,12 @@ public class FingerprintMapperTest {
 					public String toString(int index) {
 						return get(i).toString();
 					}
+
+					@Override
+					public double todouble(int index) {
+						// TODO Auto-generated method stub
+						return 0;
+					}
 				}
 				StringBuilder test = new StringBuilder(chainId1 + ", " + chainId2);
 				test.append(System.lineSeparator());
