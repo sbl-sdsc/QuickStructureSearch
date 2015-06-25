@@ -3,6 +3,8 @@ package org.rcsb.project4;
 import java.util.ArrayList;
 import java.util.List;
 
+import javax.vecmath.Point3d;
+
 import org.apache.spark.Accumulator;
 import org.biojava.nbio.structure.Atom;
 import org.biojava.nbio.structure.AtomImpl;
@@ -20,6 +22,7 @@ import org.biojava.nbio.structure.align.model.AFP;
 import org.biojava.nbio.structure.align.model.AFPChain;
 import org.biojava.nbio.structure.align.util.AFPAlignmentDisplay;
 import org.biojava.nbio.structure.jama.Matrix;
+import org.rcsb.structuralAlignment.SuperPositionQCP;
 
 public class FatCatRigidP4{
 
@@ -79,13 +82,9 @@ public class FatCatRigidP4{
 
 		AFPOptimizer.updateScore(params,afpChain);
 
-		startTime = System.nanoTime();
 		AFPAlignmentDisplay.getAlign(afpChain,ca1,ca2);
-		timers.get(0).add(System.nanoTime() - startTime);
 
-		startTime = System.nanoTime();
 		AFPTwister.twistPDB(afpChain, ca1, ca2clone);
-		timers.get(2).add(System.nanoTime() - startTime);
 
 		SigEva sig =  new SigEva();
 		double probability = sig.calSigAll(params, afpChain);
@@ -144,7 +143,7 @@ public class FatCatRigidP4{
 				// here FATCAT does a a jacobi transformation
 				//rmsd = kearsay(fragLen, ca1[p1], ca2[p2], r, t);
 				// we use the BioJava SVD instead...
-				rmsd = getRmsd(ca1,ca2,fragLen, p1,p2,r,t);
+				rmsd = getRmsdP3d(ca1,ca2,fragLen, p1,p2,r,t);
 
 				if(rmsd < rmsdCut)      {
 					AFP     afptmp = new AFP();
@@ -234,6 +233,7 @@ public class FatCatRigidP4{
 	}
 	
 	private double getRmsd(Atom[] ca1, Atom[] ca2, int fragLen, int p1, int p2, Matrix m, Atom t) throws StructureException {
+		long startTime = System.nanoTime();
 		double rmsd = 99.9;
 		Atom[] catmp1 = getFragment(ca1, p1, fragLen,false);
 		Atom[] catmp2 = getFragment(ca2, p2, fragLen,true); // clone the atoms for fragment 2 so we can manipulate them...
@@ -257,9 +257,29 @@ public class FatCatRigidP4{
 			Calc.rotate(a,m);
 			Calc.shift(a,t);
 		}
-
 		rmsd = SVDSuperimposer.getRMS(catmp1,catmp2);
+		timers.get(0).add(System.nanoTime() - startTime);
+		return rmsd;
+	}
+	
+	private double getRmsdP3d(Atom[] ca1, Atom[] ca2, int fragLen, int p1, int p2, Matrix m, Atom t) throws StructureException {
+		long startTime = System.nanoTime();
+		double rmsd = 99.9;
+		Point3d[] catmp1 = getFragmentP3d(ca1, p1, fragLen,false);
+		Point3d[] catmp2 = getFragmentP3d(ca2, p2, fragLen,true); // clone the atoms for fragment 2 so we can manipulate them...
+		if ( catmp1 == null) {
+			System.err.println("could not get fragment for ca1 " + p1 + " " + fragLen );
+			return rmsd;
+		}
 
+		if ( catmp2 == null) {
+			System.err.println("could not get fragment for ca2 " + p2 + " " + fragLen );
+			return rmsd;
+		}
+		SuperPositionQCP qcp = new SuperPositionQCP();
+		qcp.set(catmp1, catmp2);
+		rmsd = qcp.getRmsd();
+		timers.get(0).add(System.nanoTime() - startTime);
 		return rmsd;
 	}
 	
@@ -278,6 +298,27 @@ public class FatCatRigidP4{
 		}
 		return tmp;
 	}
+	
+	private Point3d[] getFragmentP3d(Atom[] caall, int pos, int fragmentLength , boolean clone){
+		if ( pos+fragmentLength > caall.length)
+			return null;
+
+		Atom[] tmp = new Atom[fragmentLength];
+
+		for (int i=0;i< fragmentLength;i++){
+			if (clone){
+				tmp[i] = (Atom)caall[i+pos].clone();
+			} else {
+				tmp[i] = caall[i+pos];
+			}
+		}
+		
+		Point3d[] chain = new Point3d[tmp.length];
+		for (int i=0;i<tmp.length;i++) {
+			chain[i] = new Point3d(tmp[i].getX(),tmp[i].getY(),tmp[i].getZ());
+		}
+		return chain;
+}
 	
 	private double scoreAfp(AFP afp, double badRmsd, double fragScore)
 	{

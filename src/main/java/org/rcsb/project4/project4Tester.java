@@ -57,6 +57,7 @@ public class project4Tester {
 
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		
+		long startTime1 = System.nanoTime();
 		// Step 1. calculate <pdbId.chainId, feature vector> pairs
         List<Tuple2<String, Point3d[]>> chains = sc
 				.sequenceFile(path, Text.class, ArrayWritable.class, NUM_THREADS)  // read protein chains
@@ -65,7 +66,8 @@ public class project4Tester {
 				.filter(new GapFilter(0, 0)) // keep protein chains with gap size <= 0 and 0 gaps
 				.filter(new LengthFilter(50,500)) // keep protein chains with 50 - 500 residues
 				.collect(); // return results to master node
-
+        
+        long endTime1 = System.nanoTime();
 		// Step 2.  broadcast feature vectors to all nodes
 		final Broadcast<List<Tuple2<String,Point3d[]>>> chainsBc = sc.broadcast(chains);
 		final Accumulator<Long> timer1 = sc.accumulator(new Long(0),new TimeAccumulator());
@@ -83,6 +85,8 @@ public class project4Tester {
 
 		PrintWriter writer = new PrintWriter(outputFileName);
 		
+		long startTime = System.nanoTime();
+		
 		for (int i = 0; i < nPairs; i+=BATCH_SIZE) {
 			List<Tuple2<Integer,Integer>> pairs = randomPairs(nChains, BATCH_SIZE, r.nextLong());
 
@@ -99,10 +103,12 @@ public class project4Tester {
 
 		writer.close();
 		
+		System.out.println("Generate pairs cost	: " + (endTime1 - startTime1)/1E9 + " s");
+		System.out.println("CPU time cost		: " + (System.nanoTime() - startTime)/1E9 + " s");
 		System.out.println("Total time cost		: " + timers.get(3).value()/1E9 + " s");
-		System.out.println("blockInfo			: " + timers.get(0).value()/1E9 + " s");
+		System.out.println("getRmsd				: " + timers.get(0).value()/1E9 + " s");
 		System.out.println("doChainAfp			: " + timers.get(1).value()/1E9 + " s");
-		System.out.println("updateScore			: " + timers.get(2).value()/1E9 + " s");
+		//System.out.println("updateScore			: " + timers.get(2).value()/1E9 + " s");
 		
 		sc.stop();
 		sc.close();
