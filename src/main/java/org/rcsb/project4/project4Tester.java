@@ -99,10 +99,10 @@ public class project4Tester {
 
 		writer.close();
 		
-		System.out.println("Total time cost    	: " + timers.get(3).value()/1E9 + " s");
-		System.out.println("Atom time cost     	: " + timers.get(0).value()/1E9 + " s");
-		System.out.println("Algorithm time cost	: " + timers.get(1).value()/1E9 + " s");
-		System.out.println("Get TM time cost   	: " + timers.get(2).value()/1E9 + " s");
+		System.out.println("Total time cost		: " + timers.get(3).value()/1E9 + " s");
+		System.out.println("blockInfo			: " + timers.get(0).value()/1E9 + " s");
+		System.out.println("doChainAfp			: " + timers.get(1).value()/1E9 + " s");
+		System.out.println("updateScore			: " + timers.get(2).value()/1E9 + " s");
 		
 		sc.stop();
 		sc.close();

@@ -13,7 +13,6 @@ import org.biojava.nbio.structure.Chain;
 import org.biojava.nbio.structure.ChainImpl;
 import org.biojava.nbio.structure.Group;
 import org.biojava.nbio.structure.StructureException;
-import org.biojava.nbio.structure.align.fatcat.calc.FatCatParameters;
 import org.biojava.nbio.structure.align.model.AFPChain;
 import org.biojava.nbio.structure.align.util.AFPChainScorer;
 
@@ -25,26 +24,19 @@ public class TmScorerP4 implements Serializable {
 	public static Float[] getFatCatTmScore(Point3d[] points1, Point3d[] points2, List<Accumulator<Long>> timers) {
 		Float[] scores = new Float[6];
 		
-		long startTime = System.nanoTime();
 		Atom[] ca1 = getCAAtoms(points1);
 		Atom[] ca2 = getCAAtoms(points2);
-		timers.get(0).add(System.nanoTime() - startTime);
-		startTime = System.nanoTime();
 		
-		FatCatParameters params = new FatCatParameters();
 		AFPChain afp = null;
 		try {
 			FatCatRigidP4 fatCat  = new FatCatRigidP4();
-			timers.get(1).add(System.nanoTime() - startTime);
-			startTime = System.nanoTime();
-			afp = fatCat.align(ca1,ca2,params);
+			afp = fatCat.align(ca1,ca2,timers);
 			double tmScore = AFPChainScorer.getTMScore(afp, ca1, ca2);
 			afp.setTMScore(tmScore);
 		} catch (StructureException e) {
 			e.printStackTrace();
 			return scores;
 		}        
-		timers.get(2).add(System.nanoTime() - startTime);
 
 		scores[0] = (float) afp.getTMScore();
 		scores[1] = (float) afp.getTotalRmsdOpt();
