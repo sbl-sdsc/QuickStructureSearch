@@ -39,14 +39,15 @@ public class RandomFragmentCreator {
 		int nPairs = Integer.parseInt(args[2]);
 		int seed = Integer.parseInt(args[3]);
 		int length = Integer.parseInt(args[4]);
+		String fileName = args[5];
 		
 		long t1 = System.nanoTime();
 		RandomFragmentCreator creator = new RandomFragmentCreator();
-		creator.run(sequenceFileName, outputFileName, nPairs, seed, length);
+		creator.run(sequenceFileName, outputFileName, nPairs, seed, length, fileName);
 		System.out.println("Time: " + ((System.nanoTime()-t1)/1E9) + " s");
 	}
 
-	private void run(String path, String outputFileName, int nPairs, int seed, int length) throws FileNotFoundException {
+	private void run(String path, String outputFileName, int nPairs, int seed, int length, String fileName) throws FileNotFoundException {
 		// setup spark
 		SparkConf conf = new SparkConf()
 				.setMaster("local[" + NUM_THREADS + "]")
@@ -78,7 +79,7 @@ public class RandomFragmentCreator {
 
 			List<Tuple2<String, Double[]>> list = sc
 					.parallelizePairs(pairs, NUM_THREADS*NUM_TASKS_PER_THREAD) // distribute data
-					.mapToPair(new RandomFragmentMapper(chainsBc, length, r.nextInt())) // maps pairs of chain id indices to chain id, TM score pairs
+					.mapToPair(new RandomFragmentMapper(chainsBc, length, r.nextInt(), fileName))// maps pairs of chain id indices to chain id, TM score pairs
 					//				.filter(s -> s._2 > 0.9f) //
 					.collect();	// copy result to master node
 

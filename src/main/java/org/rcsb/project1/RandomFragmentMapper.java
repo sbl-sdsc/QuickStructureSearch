@@ -27,12 +27,14 @@ public class RandomFragmentMapper implements PairFunction<Tuple2<Integer,Integer
 	private int length;
 	private int seed;
 	private SuperPositionQCP qcp = new SuperPositionQCP();
+	private String fileName;
 
 
-	public RandomFragmentMapper(Broadcast<List<Tuple2<String,Point3d[]>>> data, int length, int seed) {
+	public RandomFragmentMapper(Broadcast<List<Tuple2<String,Point3d[]>>> data, int length, int seed, String fileName) {
 		this.data = data;
 		this.length = length;
 		this.seed = seed;
+		this.fileName = fileName;
 	}
 
 	/**
@@ -95,9 +97,15 @@ public class RandomFragmentMapper implements PairFunction<Tuple2<Integer,Integer
         
         // Find the dRMSD
         long t3 = System.nanoTime();
-        rmsds[1] = DistanceRmsd.getDistanceRmsd(fragment1, fragment2);
+        double drmsd = DistanceRmsd.getDistanceRmsd(fragment1, fragment2);
+        rmsds[1] = drmsd;
         long t4 = System.nanoTime();
         
+        if (drmsd < 0.5 && crmsd > 1.0) {
+    		Point3d[] fragment2Transformed = qcp.getTransformedCoordinates();
+        	VisualizeFragmentPair.writeFragmentPair(fragment1, fragment2Transformed, fileName);
+        	System.out.println("Found cRMSD vs. dRMSD inconsistency: " + crmsd + ", " + drmsd);
+        }
         double t12 = t2 - t1;
         double t34 = t4 - t3;
         rmsds[2] = t12;

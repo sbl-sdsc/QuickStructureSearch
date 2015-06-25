@@ -1,10 +1,10 @@
-package org.rcsb.structuralSimilarity;
+package org.rcsb.project5;
 
 import java.util.List;
 
 import org.rcsb.utils.BlastClustReader;
 
-public class Demo_pr {
+public class ClusterDemo {
 
 	public static void main(String[] args) {
 		
