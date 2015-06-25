@@ -2,6 +2,12 @@ package org.rcsb.project3;
 
 import org.apache.commons.lang.ArrayUtils;
 
+/**
+ * This class implements the SequenceFeatureInterface.
+ * It is used for the calculation for DCT1DSequenceFingerprint
+ * 
+ * @author Chris Li
+ */
 public class DCT1DSequenceFeature implements SequenceFeatureInterface<Integer> {
 
 	private int[] DCT1DSequence;

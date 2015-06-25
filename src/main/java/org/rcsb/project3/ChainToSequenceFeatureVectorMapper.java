@@ -8,8 +8,8 @@ import scala.Tuple2;
 
 /**
  * This class is used to map the chain to sequence feature
+ * 
  * @author Chris Li
- *
  */
 public class ChainToSequenceFeatureVectorMapper implements PairFunction<Tuple2<String,Point3d[]>, String, SequenceFeatureInterface<?>> {
 	private static final long serialVersionUID = 1L;

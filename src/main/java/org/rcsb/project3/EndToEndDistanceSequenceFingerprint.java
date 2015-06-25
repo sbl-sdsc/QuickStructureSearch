@@ -59,7 +59,6 @@ public class EndToEndDistanceSequenceFingerprint implements SequenceFingerprint,
 	@Override
 	public EndToEndDistanceSequenceFeature getFingerprint(Point3d[] coords) {
 		int[] features = new int[coords.length-this.length+1];
-
     	double scale = 1/this.binSize;
     	if (coords.length-this.length < 0) {
     		return new EndToEndDistanceSequenceFeature(features);
@@ -68,12 +67,10 @@ public class EndToEndDistanceSequenceFingerprint implements SequenceFingerprint,
     	for (int i = 0; i < coords.length-this.length+1; i++) {
     		Point3d first = coords[i];
     		Point3d last = coords[i+this.length-1];
-    		
     		// skip gaps
     		if (first == null || last  == null) {
     			continue;
     		}
-
     		// calculate end to end distance of fragment
     		// and bin values
     		features[i] = (int)Math.round(scale*first.distance(last));

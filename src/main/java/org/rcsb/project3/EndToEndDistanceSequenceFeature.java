@@ -2,6 +2,12 @@ package org.rcsb.project3;
 
 import org.apache.commons.lang.ArrayUtils;
 
+/**
+ * This class implements the SequenceFeatureInterface.
+ * It is used for the calculation for EndToEndDistanceSequenceFingerprint
+ * 
+ * @author Chris Li
+ */
 public class EndToEndDistanceSequenceFeature implements SequenceFeatureInterface<Integer> {
 
 	private int[] EndToEndSequence;
@@ -11,7 +17,7 @@ public class EndToEndDistanceSequenceFeature implements SequenceFeatureInterface
 	private double gap = -1;
 	    
     /**
-     * Constructor that will store a int array of DCT1D feature
+     * Constructor that will store an int array of DCT1D feature
      * @param DCT1DSequence
      */
 	public EndToEndDistanceSequenceFeature(int[] EndToEndSequence) {
@@ -19,7 +25,7 @@ public class EndToEndDistanceSequenceFeature implements SequenceFeatureInterface
 	}
 	
 	/**
-	 * Constructor that will store a int array of DCT1D feature and update the settings
+	 * Constructor that will store an int array of DCT1D feature and update the settings
 	 * @param DCT1DSequence
 	 * @param gap
 	 * @param match

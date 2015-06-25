@@ -1,5 +1,10 @@
 package org.rcsb.project3;
 
+/**
+ * This class maps a pair of chains to calculate the Levenshtein Distance between the two chains 
+ * 
+ * @author Chris Li
+ */
 public class LevenshteinDistanceP3 {
 	// http://en.wikipedia.org/wiki/Levenshtein_distance
 	

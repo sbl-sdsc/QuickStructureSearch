@@ -1,14 +1,13 @@
 package org.rcsb.project3;
 
 import java.io.Serializable;
-
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
 /**
  * This class generate fingerprint that is a sequence of angles which is the angle 
  * between each three points.
- * @author Chris Li
  * 
+ * @author Chris Li
  */
 public class AngleSequenceFingerprint implements SequenceFingerprint, Serializable {
 

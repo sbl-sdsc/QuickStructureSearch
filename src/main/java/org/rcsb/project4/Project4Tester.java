@@ -7,20 +7,17 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
 import java.util.Set;
-
 import javax.vecmath.Point3d;
-
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.Text;
+import org.apache.spark.Accumulator;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
 import org.rcsb.structuralSimilarity.ChainPairLengthFilter;
-import org.rcsb.structuralSimilarity.ChainPairToTmMapper;
 import org.rcsb.structuralSimilarity.GapFilter;
 import org.rcsb.structuralSimilarity.LengthFilter;
 import org.rcsb.structuralSimilarity.SeqToChainMapper;
-
 import scala.Tuple2;
 
 /**
@@ -29,7 +26,7 @@ import scala.Tuple2;
  * 
  * @author  Peter Rose
  */
-public class project4Tester { 
+public class Project4Tester { 
 	private static int NUM_THREADS = 8;
 	private static int NUM_TASKS_PER_THREAD = 3; // Spark recommends 2-3 tasks per thread
 	private static int BATCH_SIZE = 50;
@@ -42,37 +39,62 @@ public class project4Tester {
 		int seed = Integer.parseInt(args[3]);
 		
 		long t1 = System.nanoTime();
-		project4Tester creator = new project4Tester();
+		Project4Tester creator = new Project4Tester();
 		creator.run(sequenceFileName, outputFileName, nPairs, seed);
-		System.out.println("Time: " + ((System.nanoTime()-t1)/1E9) + " s");
+		System.out.println("Running Time		: " + ((System.nanoTime()-t1)/1E9) + " s");
 	}
 
 	private void run(String path, String outputFileName, int nPairs, int seed) throws FileNotFoundException {
 		// setup spark
+		// Timer 0
+		long startTime0 = System.nanoTime();
+		
 		SparkConf conf = new SparkConf()
 				.setMaster("local[" + NUM_THREADS + "]")
 				.setAppName("1" + this.getClass().getSimpleName())
 				.set("spark.driver.maxResultSize", "2g");
-//				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
 
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		
+		long endTime0 = System.nanoTime();
+
 		// Step 1. calculate <pdbId.chainId, feature vector> pairs
+		// Timer 1
+		long startTime1 = System.nanoTime();
+		
         List<Tuple2<String, Point3d[]>> chains = sc
 				.sequenceFile(path, Text.class, ArrayWritable.class, NUM_THREADS)  // read protein chains
-			//	.sample(false, 0.1, 123456) // use only a random fraction, i.e., 10%
 				.mapToPair(new SeqToChainMapper()) // convert input to <pdbId.chainId, CA coordinate> pairs
 				.filter(new GapFilter(0, 0)) // keep protein chains with gap size <= 0 and 0 gaps
 				.filter(new LengthFilter(50,500)) // keep protein chains with 50 - 500 residues
 				.collect(); // return results to master node
-
+        
+        long endTime1 = System.nanoTime();
+        
 		// Step 2.  broadcast feature vectors to all nodes
+        // Timer 2
+        long startTime2 = System.nanoTime();
+
 		final Broadcast<List<Tuple2<String,Point3d[]>>> chainsBc = sc.broadcast(chains);
+		// Timers for parallel threads
+		final Accumulator<Long> timer1 = sc.accumulator(new Long(0),new TimeAccumulator());
+		final Accumulator<Long> timer2 = sc.accumulator(new Long(0),new TimeAccumulator());
+		final Accumulator<Long> timer3 = sc.accumulator(new Long(0),new TimeAccumulator());
+		final Accumulator<Long> timer4 = sc.accumulator(new Long(0),new TimeAccumulator());
+		List<Accumulator<Long>> timers = new ArrayList<Accumulator<Long>>();
+		timers.add(timer1);
+		timers.add(timer2);
+		timers.add(timer3);
+		timers.add(timer4);
 		int nChains = chains.size();
-
 		Random r = new Random(seed);
-
 		PrintWriter writer = new PrintWriter(outputFileName);
+		
+        long endTime2 = System.nanoTime();
+		
+        // Step 3. map through all pairs for TM score
+        // Timer 3
+		long startTime3 = System.nanoTime();
 		
 		for (int i = 0; i < nPairs; i+=BATCH_SIZE) {
 			List<Tuple2<Integer,Integer>> pairs = randomPairs(nChains, BATCH_SIZE, r.nextLong());
@@ -80,20 +102,29 @@ public class project4Tester {
 			List<Tuple2<String, Float[]>> list = sc
 					.parallelizePairs(pairs, NUM_THREADS*NUM_TASKS_PER_THREAD) // distribute data
 					.filter(new ChainPairLengthFilter(chainsBc, 0.5, 1.0)) // restrict the difference in chain length
-					.mapToPair(new ChainPairToTmMapper(chainsBc)) // maps pairs of chain id indices to chain id, TM score pairs
-					//				.filter(s -> s._2 > 0.9f) //
+					.mapToPair(new ChainPairToTmMapperP4(chainsBc,timers)) // maps pairs of chain id indices to chain id, TM score pairs
 					.collect();	// copy result to master node
 
 			// write results to .csv file
 			writeToCsv(writer, list);
 		}
-
 		writer.close();
+		
+		long endTime3 = System.nanoTime();
+		
+		System.out.println("Setup time			: " + (endTime0 - startTime0)/1E9 + " s");
+		System.out.println("First step time		: " + (endTime1 - startTime1)/1E9 + " s");
+		System.out.println("Second step time	: " + (endTime2 - startTime2)/1E9 + " s");
+		System.out.println("Third step time		: " + (endTime3 - startTime3)/1E9 + " s");
+		System.out.println("Third parallel time	: " + timers.get(3).value()/1E9 + " s");
+		System.out.println("getRmsd	time		: " + timers.get(0).value()/1E9 + " s");
+		System.out.println("doChainAfp time		: " + timers.get(1).value()/1E9 + " s");
+		
 		sc.stop();
 		sc.close();
 
-		System.out.println("protein chains     : " + nChains);
-		System.out.println("ramdom pairs        : " + nPairs);
+		System.out.println("protein chains     	: " + nChains);
+		System.out.println("ramdom pairs       	: " + nPairs);
 	}
 
 	/**
