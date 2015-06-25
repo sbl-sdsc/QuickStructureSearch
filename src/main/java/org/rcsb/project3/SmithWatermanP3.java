@@ -10,6 +10,7 @@ import scala.Tuple2;
 /**
  * This class maps a pair of chains to the longest local common subsequence over the length of the chains
  * using the SmithWaterman algorithm
+ * 
  * @author Chris Li
  */
 public class SmithWatermanP3 implements PairFunction<Tuple2<Integer,Integer>,String,Float> {
@@ -175,6 +176,14 @@ public class SmithWatermanP3 implements PairFunction<Tuple2<Integer,Integer>,Str
 		return maxScore;
     }
 	
+    /**
+     * Get the maximum value of the inputs
+     * @param a
+     * @param b
+     * @param c
+     * @param d
+     * @return
+     */
 	private static double maximum(double a, double b, double c, double d) {
 		if (a > b) {
 			if (a > c) {

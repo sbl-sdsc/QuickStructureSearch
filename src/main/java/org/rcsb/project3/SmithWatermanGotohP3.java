@@ -10,6 +10,7 @@ import scala.Tuple2;
 /**
  * This class maps a pair of chains to the longest local common subsequence over the length of the chains
  * using SmithWaterman algorithm and Gotoh's improvement
+ * 
  * @author Chris Li
  */
 public class SmithWatermanGotohP3 implements PairFunction<Tuple2<Integer,Integer>,String,Float> {

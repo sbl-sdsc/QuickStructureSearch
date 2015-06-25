@@ -9,6 +9,7 @@ import scala.Tuple2;
 
 /**
  * This class maps a pair of chains to the length longest common subsequence over the length of the chains
+ * 
  * @author Chris Li
  */
 public class LCSFeatureIndexP3 implements PairFunction<Tuple2<Integer,Integer>,String,Float> {

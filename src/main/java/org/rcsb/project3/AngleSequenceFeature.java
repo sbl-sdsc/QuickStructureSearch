@@ -2,6 +2,12 @@ package org.rcsb.project3;
 
 import org.apache.commons.lang.ArrayUtils;
 
+/**
+ * This class implements the SequenceFeatureInterface.
+ * It is used for the calculation for AngleSequenceFingerprint
+ * 
+ * @author Chris Li
+ */
 public class AngleSequenceFeature implements SequenceFeatureInterface<Double> {
 
 	private double[] AngleSequence;
