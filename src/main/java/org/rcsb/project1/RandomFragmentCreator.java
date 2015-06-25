@@ -15,8 +15,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
-import org.rcsb.structuralSimilarity.ChainPairLengthFilter;
-import org.rcsb.structuralSimilarity.ChainPairToTmMapper;
 import org.rcsb.structuralSimilarity.GapFilter;
 import org.rcsb.structuralSimilarity.LengthFilter;
 import org.rcsb.structuralSimilarity.SeqToChainMapper;
@@ -30,9 +28,9 @@ import scala.Tuple2;
  * @author  Peter Rose
  */
 public class RandomFragmentCreator { 
-	private static int NUM_THREADS = 8;
-	private static int NUM_TASKS_PER_THREAD = 3; // Spark recommends 2-3 tasks per thread
-	private static int BATCH_SIZE = 1000;
+	private static int NUM_THREADS = 4;
+	private static int NUM_TASKS_PER_THREAD = 2; // Spark recommends 2-3 tasks per thread
+	private static int BATCH_SIZE = 10000;
 
 	public static void main(String[] args ) throws FileNotFoundException
 	{
@@ -40,14 +38,15 @@ public class RandomFragmentCreator {
 		String outputFileName = args[1];
 		int nPairs = Integer.parseInt(args[2]);
 		int seed = Integer.parseInt(args[3]);
+		int length = Integer.parseInt(args[4]);
 		
 		long t1 = System.nanoTime();
 		RandomFragmentCreator creator = new RandomFragmentCreator();
-		creator.run(sequenceFileName, outputFileName, nPairs, seed);
+		creator.run(sequenceFileName, outputFileName, nPairs, seed, length);
 		System.out.println("Time: " + ((System.nanoTime()-t1)/1E9) + " s");
 	}
 
-	private void run(String path, String outputFileName, int nPairs, int seed) throws FileNotFoundException {
+	private void run(String path, String outputFileName, int nPairs, int seed, int length) throws FileNotFoundException {
 		// setup spark
 		SparkConf conf = new SparkConf()
 				.setMaster("local[" + NUM_THREADS + "]")
@@ -79,7 +78,7 @@ public class RandomFragmentCreator {
 
 			List<Tuple2<String, Double[]>> list = sc
 					.parallelizePairs(pairs, NUM_THREADS*NUM_TASKS_PER_THREAD) // distribute data
-					.mapToPair(new RandomFragmentMapper(chainsBc)) // maps pairs of chain id indices to chain id, TM score pairs
+					.mapToPair(new RandomFragmentMapper(chainsBc, length, r.nextInt())) // maps pairs of chain id indices to chain id, TM score pairs
 					//				.filter(s -> s._2 > 0.9f) //
 					.collect();	// copy result to master node
 

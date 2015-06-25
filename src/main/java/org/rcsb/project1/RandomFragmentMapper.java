@@ -7,60 +7,101 @@ import javax.vecmath.Point3d;
 
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
-import org.apache.spark.mllib.linalg.Vector;
-import org.rcsb.structuralSimilarity.TmScorer;
+import org.rcsb.structuralAlignment.DistanceRmsd;
+import org.rcsb.structuralAlignment.SuperPositionQCP;
 
 import scala.Tuple2;
 
 /**
- * This class maps a pair of chains, specified by two indices into the broadcasted data
- * to a vector of alignment scores
+ * This class generates two random fragments and calculates the cRMSD and dRMSD for each pair.
  * 
- * @author  Peter Rose
+ * @author Peter Rose
+ * @author Dane Malangone
+ * @author Justin Li
+ * @author Reyd Nguyen
+ * @author Joe Sun
  */
 public class RandomFragmentMapper implements PairFunction<Tuple2<Integer,Integer>,String,Double[]> {
 	private static final long serialVersionUID = 1L;
 	private Broadcast<List<Tuple2<String, Point3d[]>>> data = null;
+	private int length;
+	private int seed;
+	private SuperPositionQCP qcp = new SuperPositionQCP();
 
 
-	public RandomFragmentMapper(Broadcast<List<Tuple2<String,Point3d[]>>> data) {
+	public RandomFragmentMapper(Broadcast<List<Tuple2<String,Point3d[]>>> data, int length, int seed) {
 		this.data = data;
+		this.length = length;
+		this.seed = seed;
 	}
 
 	/**
-	 * Returns a chainId pair with the TM scores
+	 * Returns a tuple2 made of a string and a double array.
+	 * 
+	 * The string returned consists of the PDBid, ChainId and starting points for both fragments.
+	 * The double array consists of the cRMSD and dRMSD values with the time taken for each.
 	 */
 	public Tuple2<String, Double[]> call(Tuple2<Integer, Integer> tuple) throws Exception {
-		Tuple2<String,Point3d[]> t1 = this.data.getValue().get(tuple._1);
-		Tuple2<String,Point3d[]> t2 = this.data.getValue().get(tuple._2);
+		Tuple2<String,Point3d[]> tuple1 = this.data.getValue().get(tuple._1);
+		Tuple2<String,Point3d[]> tuple2 = this.data.getValue().get(tuple._2);
 		
 		
 		
-		Point3d[] points1 = t1._2;
-		Point3d[] points2 = t2._2;
+		Point3d[] points1 = tuple1._2;
+		Point3d[] points2 = tuple2._2;
 		
-		int len1 = points1.length - 8;
-		int len2 = points2.length - 8;
-		Random r = new Random();
+		int len1 = points1.length - length;
+		int len2 = points2.length - length;
+		Random r = new Random(seed);
 		
 		int start1 = r.nextInt(len1);
 		int start2 = r.nextInt(len2);
 		
+		// Make the comma seperated values
 		StringBuilder key = new StringBuilder();
-		key.append(t1._1);
+		key.append(tuple1._1);
 		key.append(",");
-		key.append(t2._1);
+		key.append(tuple2._1);
 		key.append(",");
 		key.append(start1);
 		key.append(",");
 		key.append(start2);
 
-		Double[] rmsds = new Double[2];
+		Double[] rmsds = new Double[4];
+
+		// New Code
 		
-        // rmsds[0] = ... crmsd
-		// rmsds[1] = ... drmsd
+		Point3d[] fragment1 = new Point3d[length];
+		Point3d[] fragment2 = new Point3d[length];
 		
-		System.out.println(key);
+		//Make random (length) long chains
+		for (int i = 0; i < length; i++) {
+			int place = i + start1;
+			fragment1[i] = points1[place];
+		}
+		
+		for (int j = 0; j < length; j++) {
+			int place = j + start2;
+			fragment2[j] = points2[place];
+		}
+
+		// Find the cRMSD
+		long t1 = System.nanoTime();
+		qcp.set(fragment1, fragment2);
+		double crmsd = qcp.getRmsd();
+		long t2 = System.nanoTime();
+		
+        rmsds[0] = crmsd;
+        
+        // Find the dRMSD
+        long t3 = System.nanoTime();
+        rmsds[1] = DistanceRmsd.getDistanceRmsd(fragment1, fragment2);
+        long t4 = System.nanoTime();
+        
+        double t12 = t2 - t1;
+        double t34 = t4 - t3;
+        rmsds[2] = t12;
+        rmsds[3] = t34;
 		
 		return new Tuple2<String, Double[]>(key.toString(), rmsds);
     }
