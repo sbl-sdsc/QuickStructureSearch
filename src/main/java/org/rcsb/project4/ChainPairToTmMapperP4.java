@@ -1,9 +1,7 @@
 package org.rcsb.project4;
 
 import java.util.List;
-
 import javax.vecmath.Point3d;
-
 import org.apache.spark.Accumulator;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
@@ -25,6 +23,11 @@ public class ChainPairToTmMapperP4 implements PairFunction<Tuple2<Integer,Intege
 		this.data = data;
 	}
 	
+	/**
+	 * Constructor with timers
+	 * @param data
+	 * @param timers
+	 */
 	public ChainPairToTmMapperP4(Broadcast<List<Tuple2<String,Point3d[]>>> data, List<Accumulator<Long>> timers) {
 		this.data = data;
 		this.timers = timers;
@@ -44,6 +47,7 @@ public class ChainPairToTmMapperP4 implements PairFunction<Tuple2<Integer,Intege
 		
 		Point3d[] points1 = t1._2;
 		Point3d[] points2 = t2._2;
+		// Timer for overall parallel threads time cost
 		long startTime = System.nanoTime();
 		Float[] scores = TmScorerP4.getFatCatTmScore(points1, points2, timers);
 		//Float[] scores = TmScorerOrigin.getFatCatTmScore(points1, points2, timers);

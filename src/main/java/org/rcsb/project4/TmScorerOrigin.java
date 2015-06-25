@@ -2,9 +2,7 @@ package org.rcsb.project4;
 
 import java.io.Serializable;
 import java.util.List;
-
 import javax.vecmath.Point3d;
-
 import org.apache.spark.Accumulator;
 import org.biojava.nbio.structure.AminoAcidImpl;
 import org.biojava.nbio.structure.Atom;
@@ -20,6 +18,10 @@ import org.biojava.nbio.structure.align.fatcat.calc.FatCatParameters;
 import org.biojava.nbio.structure.align.model.AFPChain;
 import org.biojava.nbio.structure.align.util.AFPChainScorer;
 
+/**
+ * The original class to get the TM score of two protein
+ * Use for comparing the performance
+ */
 public class TmScorerOrigin implements Serializable {
 	private static final long serialVersionUID = 1L;
 	private static final String CA_NAME = "CA";
@@ -27,21 +29,18 @@ public class TmScorerOrigin implements Serializable {
 
 	public static Float[] getFatCatTmScore(Point3d[] points1, Point3d[] points2, List<Accumulator<Long>> timers) {
 		Float[] scores = new Float[6];
-		
-		long startTime = System.nanoTime();
+		long startTime;
+
 		Atom[] ca1 = getCAAtoms(points1);
 		Atom[] ca2 = getCAAtoms(points2);
-		timers.get(0).add(System.nanoTime() - startTime);
-		startTime = System.nanoTime();
 		
 		FatCatParameters params = new FatCatParameters();
 		AFPChain afp = null;
 		try {
 			StructureAlignment algorithm  = StructureAlignmentFactory.getAlgorithm(FatCatRigid.algorithmName);
 			
-			timers.get(1).add(System.nanoTime() - startTime);
+			// Timer for align two protein
 			startTime = System.nanoTime();
-			
 			afp = algorithm.align(ca1,ca2,params);
 			double tmScore = AFPChainScorer.getTMScore(afp, ca1, ca2);
 			afp.setTMScore(tmScore);
@@ -49,12 +48,7 @@ public class TmScorerOrigin implements Serializable {
 			e.printStackTrace();
 			return scores;
 		}  
-//		int[][] alignment = afp.getAfpIndex();
-//		for (int i = 0; i < alignment.length; i++) {
-//			System.out.println(alignment[i][0] + " - " + alignment[i][1]);
-//		}
-		timers.get(2).add(System.nanoTime() - startTime);
-		startTime = System.nanoTime();
+		timers.get(1).add(System.nanoTime() - startTime);
 
 		scores[0] = (float) afp.getTMScore();
 		scores[1] = (float) afp.getTotalRmsdOpt();
@@ -92,7 +86,6 @@ public class TmScorerOrigin implements Serializable {
 				j++;
 			}
 		}
-
 		return atoms;
 	}
 }

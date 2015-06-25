@@ -2,9 +2,7 @@ package org.rcsb.project4;
 
 import java.util.ArrayList;
 import java.util.List;
-
 import javax.vecmath.Point3d;
-
 import org.apache.spark.Accumulator;
 import org.biojava.nbio.structure.Atom;
 import org.biojava.nbio.structure.AtomImpl;
@@ -24,9 +22,16 @@ import org.biojava.nbio.structure.align.util.AFPAlignmentDisplay;
 import org.biojava.nbio.structure.jama.Matrix;
 import org.rcsb.structuralAlignment.SuperPositionQCP;
 
+/**
+ * This class calculates the TM score of two protein chains using the FatCatRigid.
+ * Use the new QCP method to improve the speed of getting RMSD
+ * 
+ * @author Chris Li
+ */
 public class FatCatRigidP4{
-
+	// Parameters of FatCatRigid
 	FatCatParameters params;
+	// Timers for parallel time counting
 	List<Accumulator<Long>> timers;
 
 	public FatCatRigidP4(){
@@ -34,7 +39,16 @@ public class FatCatRigidP4{
 		params.setMaxTra(0);		
 	}
 
+	/**
+	 * Align two protein chains
+	 * @param ca1
+	 * @param ca2
+	 * @param timers
+	 * @return
+	 * @throws StructureException
+	 */
 	public AFPChain align(Atom[] ca1, Atom[] ca2, List<Accumulator<Long>> timers) throws StructureException {			
+		// Load timers
 		this.timers = timers;
 		AFPChain afpChain = new AFPChain();
 		afpChain.setCa1Length(ca1.length);
@@ -47,43 +61,41 @@ public class FatCatRigidP4{
 		return afpChain;
 	}
 
+	/**
+	 * Chain AFP, mainly use the doChainAfp (major time consuming)
+	 * @param afpChain
+	 * @param ca1
+	 * @param ca2
+	 * @throws StructureException
+	 */
 	private void chainAfp(AFPChain afpChain, Atom[] ca1, Atom[] ca2) throws StructureException{
 		params.setMaxTra(0);
 		afpChain.setMaxTra(0);
-		// we don;t want to rotate input atoms, do we?
+		// we don't want to rotate input atoms, do we?
 		Atom[] ca2clone = StructureTools.cloneCAArray(ca2);
 		List<AFP> afpSet = afpChain.getAfpSet();
 		int afpNum = afpSet.size();
-		if ( afpNum < 1)
+		if (afpNum < 1)
 			return;
-		
-		long startTime = System.nanoTime();
-
 		//run AFP chaining
+		// Timer for doChainAfp
+		long startTime = System.nanoTime();
 		AFPChainer.doChainAfp(params,afpChain ,ca1,ca2);
-		
 		timers.get(1).add(System.nanoTime() - startTime);
-
 		
 		int afpChainLen = afpChain.getAfpChainLen();
-
-		if(afpChainLen < 1)     {
+		if (afpChainLen < 1)     {
 			afpChain.setShortAlign(true);
 			return;
 		} //very short alignment
 
 		// do post processing
-		AFPPostProcessor.postProcess(params, afpChain,ca1,ca2);
-					
+		AFPPostProcessor.postProcess(params, afpChain,ca1,ca2);		
 		// Optimize the final alignment 
 		AFPOptimizer.optimizeAln(params, afpChain,ca1,ca2);
-		
 		AFPOptimizer.blockInfo( afpChain);
-
 		AFPOptimizer.updateScore(params,afpChain);
-
 		AFPAlignmentDisplay.getAlign(afpChain,ca1,ca2);
-
 		AFPTwister.twistPDB(afpChain, ca1, ca2clone);
 
 		SigEva sig =  new SigEva();
@@ -94,17 +106,21 @@ public class FatCatRigidP4{
 		return;
 	}
 
+	/**
+	 * Extract AFP
+	 * @param afpChain
+	 * @param ca1
+	 * @param ca2
+	 * @throws StructureException
+	 */
 	private void extractAFPChains(AFPChain afpChain,Atom[] ca1,Atom[] ca2) throws StructureException {
 		List<AFP> afpSet = new ArrayList<AFP>();
 		afpChain.setAfpSet(afpSet);
-
 		int p1, p2;
 		double filter1;
 		double rmsd = 0;
-
 		Matrix r = new Matrix(3,3);
 		Atom   t = new AtomImpl();
-
 		int sparse = params.getSparse();
 		int maxTra = params.getMaxTra();
 		int fragLen = params.getFragLen();
@@ -112,13 +128,10 @@ public class FatCatRigidP4{
 		double rmsdCut = params.getRmsdCut();
 		double badRmsd = params.getBadRmsd();
 		double fragScore = params.getFragScore();
-
 		int add = sparse + 1; //if add > 1, use sparse sampling
-
 		int minLen = 0;
 		int prot1Length = ca1.length;
 		int prot2Length = ca2.length;
-
 		if(prot1Length < prot2Length)
 			minLen = prot1Length;
 		else
@@ -131,7 +144,7 @@ public class FatCatRigidP4{
 		for(p1 = 0; p1 < prot1Length - fragLen; p1 += add )    {
 			for(p2 = 0; p2 < prot2Length - fragLen; p2 += add)     {
 				filter1 = getEnd2EndDistance(ca1, ca2, p1, p1 + fragLen - 1, p2, p2 + fragLen - 1);
-				//difference bewteen end-to-end distances
+				//difference between end-to-end distances
 				if(filter1 > disFilter) { 
 					continue;
 				}
@@ -140,13 +153,18 @@ public class FatCatRigidP4{
 					continue;
 				} //be cautious to use this filter !!
 
+				// Timers for getRmsd
+				long startTime = System.nanoTime();
 				// here FATCAT does a a jacobi transformation
 				//rmsd = kearsay(fragLen, ca1[p1], ca2[p2], r, t);
-				// we use the BioJava SVD instead...
-				rmsd = getRmsdP3d(ca1,ca2,fragLen, p1,p2,r,t);
+				// Use the BioJava SVD instead:
+				//rmsd = getRmsd(ca1,ca2,fragLen, p1,p2,r,t);
+				// Use QCP instead:
+				rmsd = getRmsdP3d(ca1,ca2,fragLen, p1,p2);
+				timers.get(0).add(System.nanoTime() - startTime);
 
 				if(rmsd < rmsdCut)      {
-					AFP     afptmp = new AFP();
+					AFP afptmp = new AFP();
 					afptmp.setP1(p1);
 					afptmp.setP2(p2);
 					afptmp.setFragLen(fragLen);
@@ -160,15 +178,21 @@ public class FatCatRigidP4{
 		}
 	}
 	
+	/**
+	 * Sort AFP
+	 * @param afpChain
+	 * @param ca1
+	 * @param ca2
+	 */
 	private void sortAfps(AFPChain afpChain, Atom[] ca1, Atom[] ca2) {
 		List<AFP> afpSet = afpChain.getAfpSet();
-
+		// Get length
 		int pro1Len = ca1.length;
 		int pro2Len = ca2.length;
 
-		afpChain.setAfpIndex(      new int[pro1Len][pro2Len]); //the index of (i,j) pair in AFP list, otherwise -1
-		afpChain.setAfpAftIndex(   new int[pro1Len][pro2Len]);  //the index of AFP (i,j*) nearest to (i,j), j*<j. if a AFP exits for (i,j), it equals to afpIndex
-		afpChain.setAfpBefIndex(   new int[pro1Len][pro2Len]); //the index of AFP (i,j*) nearest to (i,j), j*>j. if a AFP exits for (i,j), it equals to afpIndex
+		afpChain.setAfpIndex(new int[pro1Len][pro2Len]); //the index of (i,j) pair in AFP list, otherwise -1
+		afpChain.setAfpAftIndex(new int[pro1Len][pro2Len]);  //the index of AFP (i,j*) nearest to (i,j), j*<j. if a AFP exits for (i,j), it equals to afpIndex
+		afpChain.setAfpBefIndex(new int[pro1Len][pro2Len]); //the index of AFP (i,j*) nearest to (i,j), j*>j. if a AFP exits for (i,j), it equals to afpIndex
 
 		int[][] afpIndex       = afpChain.getAfpIndex();
 		int[][] afpAftIndex    = afpChain.getAfpAftIndex();
@@ -176,15 +200,13 @@ public class FatCatRigidP4{
 
 		for(int i = 0; i < pro1Len; i ++)   {
 			for(int j = 0; j < pro2Len; j ++)   {
-
 				afpIndex[i][j] = afpAftIndex[i][j] = afpBefIndex[i][j] = -1;
 			}
 		}
 
 		//index the AFP for easy extraction of compatible AFPs
 		int afpNum = afpSet.size();
-
-		int     b0 = 0;
+		int b0 = 0;
 		for(int a = 0; a < afpNum; a ++)    {
 			if(a == afpNum - 1 || afpSet.get(a).getP1() != afpSet.get(a+1).getP1())   {
 				int i = afpSet.get(a).getP1();
@@ -213,6 +235,16 @@ public class FatCatRigidP4{
 		}
 	}
 	
+	/**
+	 * Get the end to end distance of two chains
+	 * @param ca1
+	 * @param ca2
+	 * @param p1b
+	 * @param p1e
+	 * @param p2b
+	 * @param p2e
+	 * @return
+	 */
 	private double getEnd2EndDistance(Atom[] ca1, Atom[] ca2, int p1b, int p1e, int p2b, int p2e)
 	{
 		double min = 99;
@@ -222,6 +254,18 @@ public class FatCatRigidP4{
 		return Math.abs(min);
 	}
 	
+	/**
+	 * Check if the filter is terminal
+	 * @param ca1
+	 * @param ca2
+	 * @param p1b
+	 * @param p1e
+	 * @param p2b
+	 * @param p2e
+	 * @param fragLen
+	 * @param minLen
+	 * @return
+	 */
 	private boolean filterTerminal(Atom[] ca1, Atom[] ca2, int p1b, int p1e, int p2b, int p2e, int fragLen, int minLen)
 	{
 		int d1 = (p1b < p2b)?p1b:p2b;
@@ -232,22 +276,31 @@ public class FatCatRigidP4{
 		return d3 < d4;
 	}
 	
+	/**
+	 * Use BioJava SVD to get RMSD
+	 * @param ca1
+	 * @param ca2
+	 * @param fragLen
+	 * @param p1
+	 * @param p2
+	 * @param m
+	 * @param t
+	 * @return
+	 * @throws StructureException
+	 */
+	@SuppressWarnings("unused")
 	private double getRmsd(Atom[] ca1, Atom[] ca2, int fragLen, int p1, int p2, Matrix m, Atom t) throws StructureException {
-		long startTime = System.nanoTime();
 		double rmsd = 99.9;
 		Atom[] catmp1 = getFragment(ca1, p1, fragLen,false);
 		Atom[] catmp2 = getFragment(ca2, p2, fragLen,true); // clone the atoms for fragment 2 so we can manipulate them...
-
 		if ( catmp1 == null) {
 			System.err.println("could not get fragment for ca1 " + p1 + " " + fragLen );
 			return rmsd;
 		}
-
 		if ( catmp2 == null) {
 			System.err.println("could not get fragment for ca2 " + p2 + " " + fragLen );
 			return rmsd;
 		}
-
 		SVDSuperimposer svd = new SVDSuperimposer(catmp1, catmp2);
 
 		m = svd.getRotation();
@@ -258,12 +311,20 @@ public class FatCatRigidP4{
 			Calc.shift(a,t);
 		}
 		rmsd = SVDSuperimposer.getRMS(catmp1,catmp2);
-		timers.get(0).add(System.nanoTime() - startTime);
 		return rmsd;
 	}
 	
-	private double getRmsdP3d(Atom[] ca1, Atom[] ca2, int fragLen, int p1, int p2, Matrix m, Atom t) throws StructureException {
-		long startTime = System.nanoTime();
+	/**
+	 * Use the new QCP SuperPosition method to get RMSD
+	 * @param ca1
+	 * @param ca2
+	 * @param fragLen
+	 * @param p1
+	 * @param p2
+	 * @return
+	 * @throws StructureException
+	 */
+	private double getRmsdP3d(Atom[] ca1, Atom[] ca2, int fragLen, int p1, int p2) throws StructureException {
 		double rmsd = 99.9;
 		Point3d[] catmp1 = getFragmentP3d(ca1, p1, fragLen,false);
 		Point3d[] catmp2 = getFragmentP3d(ca2, p2, fragLen,true); // clone the atoms for fragment 2 so we can manipulate them...
@@ -271,7 +332,6 @@ public class FatCatRigidP4{
 			System.err.println("could not get fragment for ca1 " + p1 + " " + fragLen );
 			return rmsd;
 		}
-
 		if ( catmp2 == null) {
 			System.err.println("could not get fragment for ca2 " + p2 + " " + fragLen );
 			return rmsd;
@@ -279,16 +339,21 @@ public class FatCatRigidP4{
 		SuperPositionQCP qcp = new SuperPositionQCP();
 		qcp.set(catmp1, catmp2);
 		rmsd = qcp.getRmsd();
-		timers.get(0).add(System.nanoTime() - startTime);
 		return rmsd;
 	}
 	
+	/** 
+	 * Get a fragment of a chain
+	 * @param caall
+	 * @param pos
+	 * @param fragmentLength
+	 * @param clone
+	 * @return
+	 */
 	private Atom[] getFragment(Atom[] caall, int pos, int fragmentLength , boolean clone){
 		if ( pos+fragmentLength > caall.length)
 			return null;
-
 		Atom[] tmp = new Atom[fragmentLength];
-
 		for (int i=0;i< fragmentLength;i++){
 			if (clone){
 				tmp[i] = (Atom)caall[i+pos].clone();
@@ -299,12 +364,18 @@ public class FatCatRigidP4{
 		return tmp;
 	}
 	
+	/**
+	 * Get a fragment of a chain, and return it as Point3d array
+	 * @param caall
+	 * @param pos
+	 * @param fragmentLength
+	 * @param clone
+	 * @return
+	 */
 	private Point3d[] getFragmentP3d(Atom[] caall, int pos, int fragmentLength , boolean clone){
 		if ( pos+fragmentLength > caall.length)
 			return null;
-
 		Atom[] tmp = new Atom[fragmentLength];
-
 		for (int i=0;i< fragmentLength;i++){
 			if (clone){
 				tmp[i] = (Atom)caall[i+pos].clone();
@@ -312,18 +383,25 @@ public class FatCatRigidP4{
 				tmp[i] = caall[i+pos];
 			}
 		}
-		
+		// Change to Point3d
 		Point3d[] chain = new Point3d[tmp.length];
 		for (int i=0;i<tmp.length;i++) {
 			chain[i] = new Point3d(tmp[i].getX(),tmp[i].getY(),tmp[i].getZ());
 		}
 		return chain;
-}
+	}
 	
+	/**
+	 * Get the score
+	 * @param afp
+	 * @param badRmsd
+	 * @param fragScore
+	 * @return
+	 */
 	private double scoreAfp(AFP afp, double badRmsd, double fragScore)
 	{
 		//longer AFP with low rmsd is better
-		double  s, w;
+		double s, w;
 		w = afp.getRmsd() / badRmsd;
 		w = w * w;
 		s = fragScore * (1.0 - w);
