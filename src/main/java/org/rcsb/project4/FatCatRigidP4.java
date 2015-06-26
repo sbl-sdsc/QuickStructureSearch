@@ -80,7 +80,7 @@ public class FatCatRigidP4{
 		//run AFP chaining
 		// Timer for doChainAfp
 		long startTime = System.nanoTime();
-		AFPChainer.doChainAfp(params,afpChain ,ca1,ca2);
+		AFPChainerP4.doChainAfp(params,afpChain,ca1,ca2,timers.get(2));
 		timers.get(1).add(System.nanoTime() - startTime);
 		
 		int afpChainLen = afpChain.getAfpChainLen();

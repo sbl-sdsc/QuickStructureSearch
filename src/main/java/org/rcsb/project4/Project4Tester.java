@@ -119,6 +119,7 @@ public class Project4Tester {
 		System.out.println("Third parallel time	: " + timers.get(3).value()/1E9 + " s");
 		System.out.println("getRmsd	time		: " + timers.get(0).value()/1E9 + " s");
 		System.out.println("doChainAfp time		: " + timers.get(1).value()/1E9 + " s");
+		System.out.println("getDisTable time	: " + timers.get(2).value()/1E9 + " s");
 		
 		sc.stop();
 		sc.close();
