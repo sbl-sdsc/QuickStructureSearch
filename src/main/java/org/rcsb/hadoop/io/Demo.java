@@ -45,29 +45,20 @@ public class Demo {
 		// read sequence file and map to PdbId.chainId, C-alpha coordinate pairs
 		List<Tuple2<String, Point3d[]>> coordinates = sc
 				.sequenceFile(path, Text.class, ArrayWritable.class,NUM_THREADS*NUM_TASKS_PER_THREAD)
-				.sample(false, 0.001, 123)
-				.mapToPair(new HadoopToCoordinateMapper()) // convert input to <pdbId.chainId, CA coordinate array> pairs
+				.sample(false, 0.01, 123)
+				.mapToPair(new HadoopToSimpleChainMapper()) // convert input to <pdbId.chainId, protein sequence> pairs
+				.filter(t -> t._2.isProtein())
+				.mapToPair(t -> new Tuple2<String, Point3d[]>(t._1, t._2.getCoordinates()))
 				.collect();
 
 		for (Tuple2<String, Point3d[]> t: coordinates) {
 			System.out.println(t._1 + ": " + Arrays.toString(t._2));
 		}
 
-		// read sequence file and map to PdbId.chainId, protein sequence pairs
-		List<Tuple2<String, String>> sequences = sc
-				.sequenceFile(path, Text.class, ArrayWritable.class,NUM_THREADS*NUM_TASKS_PER_THREAD)
-				.sample(false, 0.001, 123)
-				.mapToPair(new HadoopToSequenceMapper()) // convert input to <pdbId.chainId, protein sequence> pairs
-				.collect();
-
-		for (Tuple2<String, String> t: sequences) {
-			System.out.println(t._1 + ": " + t._2);
-		}
-
 		// read sequence file and map to PdbId.chainId, SimplePolymerChain pairs
 		List<Tuple2<String, SimplePolymerChain>> chains = sc
 				.sequenceFile(path, Text.class, ArrayWritable.class,NUM_THREADS*NUM_TASKS_PER_THREAD)
-				.sample(false, 0.1, 123)
+				.sample(false, 0.01, 123)
 				.mapToPair(new HadoopToSimpleChainMapper()) // convert input to <pdbId.chainId, protein sequence> pairs
 				.filter(t -> t._2.isProtein())
 				.collect();
