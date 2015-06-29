@@ -10,6 +10,7 @@ import org.biojava.nbio.structure.AtomImpl;
 import org.biojava.nbio.structure.Chain;
 import org.biojava.nbio.structure.ChainImpl;
 import org.biojava.nbio.structure.Group;
+import org.biojava.nbio.structure.StandardAminoAcid;
 import org.biojava.nbio.structure.StructureException;
 import org.biojava.nbio.structure.align.StructureAlignment;
 import org.biojava.nbio.structure.align.StructureAlignmentFactory;
@@ -17,17 +18,18 @@ import org.biojava.nbio.structure.align.fatcat.FatCatRigid;
 import org.biojava.nbio.structure.align.fatcat.calc.FatCatParameters;
 import org.biojava.nbio.structure.align.model.AFPChain;
 import org.biojava.nbio.structure.align.util.AFPChainScorer;
+import org.rcsb.hadoop.io.SimplePolymerChain;
 
 public class TmScorerNew implements Serializable {
 	private static final long serialVersionUID = 1L;
 	private static final String CA_NAME = "CA";
 	private static final String GROUP_NAME = "GLU";
 
-	public static Float[] getFatCatTmScore(Point3d[] points1, Point3d[] points2) {
+	public static Float[] getFatCatTmScore(SimplePolymerChain chain1, SimplePolymerChain chain2) {
 		Float[] scores = new Float[6];
 		
-		Atom[] ca1 = getCAAtoms(points1);
-		Atom[] ca2 = getCAAtoms(points2);
+		Atom[] ca1 = getCAAtoms(chain1);
+		Atom[] ca2 = getCAAtoms(chain2);
 		
 		FatCatParameters params = new FatCatParameters();
 		AFPChain afp = null;
@@ -54,13 +56,18 @@ public class TmScorerNew implements Serializable {
 		return scores;
 	}
 
-	private static Atom[] getCAAtoms(Point3d[] points) {
+	private static Atom[] getCAAtoms(SimplePolymerChain chain) {
 		int gaps = 0;
+		Point3d[] points = chain.getCoordinates();
+		
 		for (Point3d p: points) {
 			if (p == null) {
 				gaps++;
 			}
 		}
+		
+		String sequence = chain.getSequence();
+		
 		Chain c = new ChainImpl();
 		c.setChainID("A");		
 
@@ -70,8 +77,9 @@ public class TmScorerNew implements Serializable {
 			if (points[i] != null) {
 				atoms[j] = new AtomImpl();
 				atoms[j].setName(CA_NAME);
-				Group g = new AminoAcidImpl();
-				g.setPDBName(GROUP_NAME);
+//				Group g = new AminoAcidImpl();
+//				g.setPDBName(GROUP_NAME);
+				Group g = StandardAminoAcid.getAminoAcid(sequence.substring(i, i+1));
 				g.addAtom(atoms[j]);
 				c.addGroup(g);
 
