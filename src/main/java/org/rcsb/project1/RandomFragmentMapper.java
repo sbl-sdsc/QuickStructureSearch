@@ -1,5 +1,6 @@
 package org.rcsb.project1;
 
+import java.util.Arrays;
 import java.util.List;
 import java.util.Random;
 
@@ -13,7 +14,9 @@ import org.rcsb.structuralAlignment.SuperPositionQCP;
 import scala.Tuple2;
 
 /**
- * This class generates two random fragments and calculates the cRMSD and dRMSD for each pair.
+ * This class generates two random polymer fragments and calculates the cRMSD and dRMSD.
+ * In addition, it calculates the end to end length of the two fragments, the length difference, 
+ * and the time to calculate the cRMSD and dRMSD in nanoseconds.
  * 
  * @author Peter Rose
  * @author Dane Malangone
@@ -27,14 +30,12 @@ public class RandomFragmentMapper implements PairFunction<Tuple2<Integer,Integer
 	private int length;
 	private int seed;
 	private SuperPositionQCP qcp = new SuperPositionQCP();
-	private String fileName;
 
 
-	public RandomFragmentMapper(Broadcast<List<Tuple2<String,Point3d[]>>> data, int length, int seed, String fileName) {
+	public RandomFragmentMapper(Broadcast<List<Tuple2<String,Point3d[]>>> data, int length, int seed) {
 		this.data = data;
 		this.length = length;
 		this.seed = seed;
-		this.fileName = fileName;
 	}
 
 	/**
@@ -46,20 +47,21 @@ public class RandomFragmentMapper implements PairFunction<Tuple2<Integer,Integer
 	public Tuple2<String, Double[]> call(Tuple2<Integer, Integer> tuple) throws Exception {
 		Tuple2<String,Point3d[]> tuple1 = this.data.getValue().get(tuple._1);
 		Tuple2<String,Point3d[]> tuple2 = this.data.getValue().get(tuple._2);
-		
-		
-		
+			
 		Point3d[] points1 = tuple1._2;
 		Point3d[] points2 = tuple2._2;
 		
-		int len1 = points1.length - length;
-		int len2 = points2.length - length;
+		// Find the last possible start position for a random fragment
+		int last1 = points1.length - length;
+		int last2 = points2.length - length;
+
+		// Get random fragment start positions (0 .. last-1)
 		Random r = new Random(seed);
+		int start1 = r.nextInt(last1);
+		int start2 = r.nextInt(last2);
 		
-		int start1 = r.nextInt(len1);
-		int start2 = r.nextInt(len2);
-		
-		// Make the comma seperated values
+		// Create a key consisting of the PdbId.ChainId and 
+		// fragment start position of the two polymer chains
 		StringBuilder key = new StringBuilder();
 		key.append(tuple1._1);
 		key.append(",");
@@ -69,47 +71,37 @@ public class RandomFragmentMapper implements PairFunction<Tuple2<Integer,Integer
 		key.append(",");
 		key.append(start2);
 
-		Double[] rmsds = new Double[4];
-
-		// New Code
+		Double[] rmsds = new Double[7];
 		
-		Point3d[] fragment1 = new Point3d[length];
-		Point3d[] fragment2 = new Point3d[length];
-		
-		//Make random (length) long chains
-		for (int i = 0; i < length; i++) {
-			int place = i + start1;
-			fragment1[i] = points1[place];
-		}
-		
-		for (int j = 0; j < length; j++) {
-			int place = j + start2;
-			fragment2[j] = points2[place];
-		}
+		// create two random fragments
+		Point3d[] fragment1 = Arrays.copyOfRange(points1, start1, start1+length);		
+		Point3d[] fragment2 = Arrays.copyOfRange(points2, start2, start2+length);
 
 		// Find the cRMSD
 		long t1 = System.nanoTime();
 		qcp.set(fragment1, fragment2);
-		double crmsd = qcp.getRmsd();
+		double crmsd = qcp.getRmsd();	
 		long t2 = System.nanoTime();
-		
         rmsds[0] = crmsd;
         
         // Find the dRMSD
         long t3 = System.nanoTime();
         double drmsd = DistanceRmsd.getDistanceRmsd(fragment1, fragment2);
-        rmsds[1] = drmsd;
         long t4 = System.nanoTime();
+        rmsds[1] = drmsd;
         
-        if (drmsd < 0.5 && crmsd > 1.0) {
-    		Point3d[] fragment2Transformed = qcp.getTransformedCoordinates();
-        	VisualizeFragmentPair.writeFragmentPair(fragment1, fragment2Transformed, fileName);
-        	System.out.println("Found cRMSD vs. dRMSD inconsistency: " + crmsd + ", " + drmsd);
-        }
+        // Calculate end to end distance for the two random fragments
+        rmsds[2] = fragment1[0].distance(fragment1[length-1]);
+        rmsds[3] = fragment2[0].distance(fragment2[length-1]);
+        
+        // Calculate the difference in length between the two fragments
+        rmsds[4] = Math.abs(rmsds[2]-rmsds[3]);
+        
+        // Save timing information for cRMSD and dRMSD calculation
         double t12 = t2 - t1;
         double t34 = t4 - t3;
-        rmsds[2] = t12;
-        rmsds[3] = t34;
+        rmsds[5] = t12;
+        rmsds[6] = t34;
 		
 		return new Tuple2<String, Double[]>(key.toString(), rmsds);
     }

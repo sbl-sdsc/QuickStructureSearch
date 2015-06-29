@@ -52,8 +52,8 @@ public class RandomFragmentCreator {
 		SparkConf conf = new SparkConf()
 				.setMaster("local[" + NUM_THREADS + "]")
 				.setAppName("1" + this.getClass().getSimpleName())
-				.set("spark.driver.maxResultSize", "2g");
-//				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
+				.set("spark.driver.maxResultSize", "2g")
+				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
 
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		
@@ -73,14 +73,15 @@ public class RandomFragmentCreator {
 		Random r = new Random(seed);
 
 		PrintWriter writer = new PrintWriter(outputFileName);
+		writer.println("PdbId.ChainId1, PdbId.ChainId2, start1, start2, cRMSD, dRMSD, distance1, distance2, distanceDifference, cRMSDTime, dRmsdTime");
 		
 		for (int i = 0; i < nPairs; i+=BATCH_SIZE) {
 			List<Tuple2<Integer,Integer>> pairs = randomPairs(nChains, BATCH_SIZE, r.nextLong());
 
 			List<Tuple2<String, Double[]>> list = sc
 					.parallelizePairs(pairs, NUM_THREADS*NUM_TASKS_PER_THREAD) // distribute data
-					.mapToPair(new RandomFragmentMapper(chainsBc, length, r.nextInt(), fileName))// maps pairs of chain id indices to chain id, TM score pairs
-					//				.filter(s -> s._2 > 0.9f) //
+					.mapToPair(new RandomFragmentMapper(chainsBc, length, r.nextInt()))
+					.filter(t -> t._2[0] < 5.0) // keep only data points with cRMSD < 5 (cRMSD is 0th element in Double[])
 					.collect();	// copy result to master node
 
 			// write results to .csv file
