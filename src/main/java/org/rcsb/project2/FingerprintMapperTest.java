@@ -11,7 +11,6 @@ import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.jblas.util.Random;
 import org.rcsb.project3.SequenceFeatureInterface;
 import org.rcsb.structuralSimilarity.SeqToChainMapper;
 
@@ -73,7 +72,7 @@ public class FingerprintMapperTest {
 					@Override
 					public Integer get(int index) {
 						while (rand.size() <= index) {
-							rand.add(Random.nextInt(m));
+							rand.add((int) (Math.random() * m));
 						}
 						return rand.get(index);
 					}
