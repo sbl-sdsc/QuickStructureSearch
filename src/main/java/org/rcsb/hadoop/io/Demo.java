@@ -37,8 +37,12 @@ public class Demo {
 
 		// This is the default 2 line structure for spark programs in java
 		// The spark.executor.memory can only take the maximum java heapspace set by -Xmx
-		SparkConf conf = new SparkConf().setMaster("local[" + NUM_THREADS + "]").setAppName(Demo.class.getSimpleName());
+		SparkConf conf = new SparkConf().setMaster("local[" + NUM_THREADS + "]")
+				.setAppName(Demo.class.getSimpleName())
+				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
+		
 		JavaSparkContext sc = new JavaSparkContext(conf);
+		
 
 		long start = System.nanoTime();
 
@@ -59,7 +63,7 @@ public class Demo {
 		List<Tuple2<String, SimplePolymerChain>> chains = sc
 				.sequenceFile(path, Text.class, ArrayWritable.class,NUM_THREADS*NUM_TASKS_PER_THREAD)
 				.sample(false, 0.01, 123)
-				.mapToPair(new HadoopToSimpleChainMapper()) // convert input to <pdbId.chainId, protein sequence> pairs
+				.mapToPair(new HadoopToSimpleChainMapper()) // convert input to <pdbId.chainId, SimplePolymerChain> pairs
 				.filter(t -> t._2.isProtein())
 				.collect();
 
