@@ -11,7 +11,6 @@ import org.biojava.nbio.structure.SVDSuperimposer;
 import org.biojava.nbio.structure.StructureException;
 import org.biojava.nbio.structure.StructureTools;
 import org.biojava.nbio.structure.align.AFPTwister;
-import org.biojava.nbio.structure.align.fatcat.calc.AFPChainer;
 import org.biojava.nbio.structure.align.fatcat.calc.AFPOptimizer;
 import org.biojava.nbio.structure.align.fatcat.calc.AFPPostProcessor;
 import org.biojava.nbio.structure.align.fatcat.calc.FatCatParameters;
@@ -80,8 +79,9 @@ public class FatCatRigidP4{
 		//run AFP chaining
 		// Timer for doChainAfp
 		long startTime = System.nanoTime();
-		AFPChainerP4.doChainAfp(params,afpChain,ca1,ca2,timers.get(2));
-		timers.get(1).add(System.nanoTime() - startTime);
+		AFPChainerP4.doChainAfp(params,afpChain,ca1,ca2,timers);
+		//AFPChainer.doChainAfp(params,afpChain,ca1,ca2);
+		timers.get(0).add(System.nanoTime() - startTime);
 		
 		int afpChainLen = afpChain.getAfpChainLen();
 		if (afpChainLen < 1)     {
@@ -161,7 +161,7 @@ public class FatCatRigidP4{
 				//rmsd = getRmsd(ca1,ca2,fragLen, p1,p2,r,t);
 				// Use QCP instead:
 				rmsd = getRmsdP3d(ca1,ca2,fragLen, p1,p2);
-				timers.get(0).add(System.nanoTime() - startTime);
+				timers.get(1).add(System.nanoTime() - startTime);
 
 				if(rmsd < rmsdCut)      {
 					AFP afptmp = new AFP();
@@ -375,18 +375,18 @@ public class FatCatRigidP4{
 	private Point3d[] getFragmentP3d(Atom[] caall, int pos, int fragmentLength , boolean clone){
 		if ( pos+fragmentLength > caall.length)
 			return null;
-		Atom[] tmp = new Atom[fragmentLength];
-		for (int i=0;i< fragmentLength;i++){
-			if (clone){
-				tmp[i] = (Atom)caall[i+pos].clone();
-			} else {
-				tmp[i] = caall[i+pos];
-			}
-		}
+//		Atom[] tmp = new Atom[fragmentLength];
+//		for (int i=0;i< fragmentLength;i++){
+//			if (clone){
+//				tmp[i] = (Atom)caall[i+pos].clone();
+//			} else {
+//				tmp[i] = caall[i+pos];
+//			}
+//		}
 		// Change to Point3d
-		Point3d[] chain = new Point3d[tmp.length];
-		for (int i=0;i<tmp.length;i++) {
-			chain[i] = new Point3d(tmp[i].getX(),tmp[i].getY(),tmp[i].getZ());
+		Point3d[] chain = new Point3d[fragmentLength];
+		for (int i = 0; i < fragmentLength; i++) {
+			chain[i] = new Point3d(caall[i+pos].getCoords());
 		}
 		return chain;
 	}

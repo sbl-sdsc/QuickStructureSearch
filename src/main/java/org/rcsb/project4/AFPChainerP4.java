@@ -44,6 +44,7 @@ import java.util.List;
  */
 public class AFPChainerP4
 {
+	static List<Accumulator<Long>> classTimers; 
 	/**
   // Key function: chain (assembly) the AFPs
   // a AFP (k) is defined as (i, j, k), with i and j are staring points
@@ -69,9 +70,10 @@ public class AFPChainerP4
   //              n  |                         |
   //              2  ---------------------------
   //                  schematic of AFP chaining
-	 * @param timer 
+	 * @param timers 
 	 */
-	public static void doChainAfp(FatCatParameters params, AFPChain afpChain,Atom[] ca1, Atom[] ca2, Accumulator<Long> timer){
+	public static void doChainAfp(FatCatParameters params, AFPChain afpChain,Atom[] ca1, Atom[] ca2, List<Accumulator<Long>> timers){
+		classTimers = timers;
 		List<AFP> afpSet = afpChain.getAfpSet();
 
 		afpChain.setConn(0d);
@@ -107,14 +109,13 @@ public class AFPChainerP4
 		int fragLen = params.getFragLen();
 		int maxTra = params.getMaxTra();
 
-		long startTime = System.nanoTime();
 		Matrix disTable1 = getDisTable(maxGap + 2 * fragLen + 1,ca1);
 		Matrix disTable2 = getDisTable(maxGap + 2 * fragLen + 1,ca2);
-		timer.add(System.nanoTime() - startTime);
+		
 
 		afpChain.setDisTable1(disTable1);
 		afpChain.setDisTable2(disTable2);
-
+		
 		for(i = 0; i < afpNum; i ++)    {
 			sco[i] = afpSet.get(i).getScore(); //start from itself
 			pre[i] = -1;
@@ -126,6 +127,8 @@ public class AFPChainerP4
 			//printf("afp %d, compatible %d\n", i, n);
 			for(j0 = 0; j0 < n; j0 ++)      {
 				j = list[j0];
+				if (twi[j] > 0)
+					continue;
 				isConnected = afpPairConn(j, i, params,afpChain); //note: j, i
 				Double conn = afpChain.getConn();
 				int t = 0;
@@ -140,12 +143,14 @@ public class AFPChainerP4
 					pre[i] = j;
 				}
 			}
+
 			if(maxsco < sco[i])     {
 				maxsco = sco[i];
 				maxafp = i;
 			}
 		}
-
+		
+		
 		int     currafp = maxafp;
 		
 		//trace-back from maxafp (maxsco)
@@ -153,10 +158,8 @@ public class AFPChainerP4
 		afpChain.setAlignScore(maxsco);
 		afpChain.setAlignScoreUpdate(maxsco);
 		afpChain.setAfpChainTwiNum(0);
-
+	
 		traceBack(pre, currafp, twi[currafp],params,afpChain,ca1,ca2);
-
-
 	}
 
 	private static Matrix getDisTable(int maxlen, Atom[]ca)
@@ -298,7 +301,6 @@ public class AFPChainerP4
 	public static boolean afpPairConn(int afp1, int afp2,  FatCatParameters params, AFPChain afpChain)
 
 	{
-
 		Double conn = afpChain.getConn();
 		Double dvar = afpChain.getDVar();
 
@@ -409,6 +411,7 @@ public class AFPChainerP4
 		int     i, j, ai, bi, aj, bj;
 		double  d;
 		double  rms = 0;
+		String txt = "start \n";
 		for(i = 0; i < fragLen; i ++)   {
 			ai = afpSet.get(afp1).getP1() + i;
 			bi = afpSet.get(afp1).getP2() + i;
@@ -420,6 +423,8 @@ public class AFPChainerP4
 				if(rms > afpDisCut)     { return (disCut); }
 			}
 		}
+		txt += "\nend";
+		//System.out.println(txt);
 		return (Math.sqrt(rms / fragLenSq));
 	}
 
@@ -479,11 +484,6 @@ public class AFPChainerP4
 			afptwibin[s - 1] = 1;
 		else
 			afptwibin[s - 1] = 0;
-
-		//if(debug)
-		//   System.out.println(String.format("including %d AFPs, %d residues\n", afpChainLen, alnlen));
-
-		//record the optimal alignment in afpChainList (afpChainLen)
 
 		int[] afpChainList = afpChain.getAfpChainList();
 		double[] afpChainTwiBin = afpChain.getAfpChainTwiBin();
