@@ -54,6 +54,7 @@ public class GapFilter implements Function<Tuple2<String,Point3d[]>, Boolean> {
 		// scan the truncated chain for gaps
 		int gapSize = 0;
 		int gapCount = 0;
+		int maximumGapSize = 0;
 		boolean hasGap = false;
 		
 		for (int i = start; i <= end; i++) {
@@ -61,13 +62,15 @@ public class GapFilter implements Function<Tuple2<String,Point3d[]>, Boolean> {
 				gapSize++;
 				hasGap = true;
 			} else {
+				maximumGapSize = Math.max(gapSize, maximumGapSize);
 				gapSize = 0;
 				if (hasGap) {
 					gapCount++;
 					hasGap = false;
 				}
 			}
-			if (gapSize > this.maxGapSize || gapCount > this.maxGapCount) {
+			maximumGapSize = Math.max(gapSize, maximumGapSize);
+			if (maximumGapSize > this.maxGapSize || gapCount > this.maxGapCount) {
 				return false;
 			}
 		}
