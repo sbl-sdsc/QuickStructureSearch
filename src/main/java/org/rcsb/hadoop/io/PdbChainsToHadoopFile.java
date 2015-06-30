@@ -71,12 +71,11 @@ public class PdbChainsToHadoopFile {
 		//		List<String> dna = Arrays.asList("4RNK","4RO4","4RO7");
 		//		List<String> protein = Arrays.asList("4HHB","1STP");
 		//		List<String> pdbIds = dna;
-		//		Set<String> pdbIds = getAll();
+		Set<String> pdbIds = getAll();
 
 		// create a subset
-		List<String> subset = new ArrayList<>(getAll());
-		Collections.shuffle(subset);
-		List<String> pdbIds = subset.subList(0, 1000);
+	//	List<String> subset = new ArrayList<>(getAll());
+
 
 		StructureIO.setAtomCache(cache);
 		cache.setPath("/Users/peter/Data/PDB/");
@@ -147,6 +146,8 @@ public class PdbChainsToHadoopFile {
 
 		for (Chain c: s.getChains()) {
 			List<Group> groups = c.getSeqResGroups(GroupType.AMINOACID);
+			System.out.println("seq len: " + c.getSeqResSequence().length());
+			System.out.println("seqresgroups.size(): " + c.getSeqResGroups(GroupType.AMINOACID).size());
 			List<Group> nAcids = c.getSeqResGroups(GroupType.NUCLEOTIDE);
 
 			boolean aminoAcid = true;

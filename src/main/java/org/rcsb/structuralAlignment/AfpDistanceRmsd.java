@@ -3,45 +3,64 @@ package org.rcsb.structuralAlignment;
 import javax.vecmath.Point3d;
 
 /**
- * This class calculates the distance RMSD between two Point3d arrays.
+ * This class calculates the distance RMSD between two Aligned Fragment Pairs (AFPs).
  * 
- * @author Dane Malangone
- * @author Justin Li
- * @author Reyd Nguyen
- * @author Joe Sun
- */
-public class DistanceRmsd {
+ * @author Peter Rose
 
+ */
+public class AfpDistanceRmsd {
+	private static SuperPositionQCP qcp = new SuperPositionQCP();
+   
 	/**
-	 * Returns the distance RMSD between two Point3d arrays
+	 * Returns the distance RMSD between two aligned fragment pairs (AFPs)
 	 * 
-	 * @param x the first Point3d array
+	 * @param x1 coordinates of first fragment in first afp
+	 * @param y1 coordinates of second fragment in first afp
+	 * @param x2 coordinates of first fragment in first afp
+	 * @param y2 coordinates of second fragment in first afp
 	 * @param y the second Point3d array
-	 * @return distance RMSD
 	 */
-	public static double getDistanceRmsd (Point3d[] x, Point3d[] y) {
-		if (x.length != y.length) {
-			throw new IllegalArgumentException("x and y length needs to be identical. x.length = " + x.length + " and y.length = " + y.length);	
+	public static double getAfpCoordinateRmsd (Point3d[] x1, Point3d[] y1, Point3d[] x2, Point3d[] y2) {
+		if (x1.length != y2.length) {
+			throw new IllegalArgumentException("x and y length needs to be identical. x.length = " + x1.length + " and y1.length = " + y1.length);	
+		}
+		
+		Point3d[] afp1 = new Point3d[x1.length+x1.length];
+		System.arraycopy(x1, 0, afp1, 0, x1.length);
+		System.arraycopy(y1, 0, afp1, x1.length, x1.length);
+		
+		Point3d[] afp2 = new Point3d[x1.length+x1.length];
+		System.arraycopy(x2, 0, afp2, 0, x2.length);
+		System.arraycopy(y2, 0, afp2, x2.length, x2.length);
+
+        qcp.set(afp1, afp2);
+        return qcp.getRmsd();
+	}
+	
+	/**
+	 * Returns the distance RMSD between two aligned fragment pairs (AFPs)
+	 * 
+	 * @param x1 coordinates of first fragment in first afp
+	 * @param y1 coordinates of second fragment in first afp
+	 * @param x2 coordinates of first fragment in first afp
+	 * @param y2 coordinates of second fragment in first afp
+	 * @param y the second Point3d array
+	 */
+	public static double getAfpDistanceRmsd (Point3d[] x1, Point3d[] y1, Point3d[] x2, Point3d[] y2) {
+		if (x1.length != y2.length) {
+			throw new IllegalArgumentException("x and y length needs to be identical. x.length = " + x1.length + " and y1.length = " + y1.length);	
 		}
 
 		double sum = 0.0;
 		
-		for (int i = 0; i < x.length-1; i++) {
-			for (int j = i + 1; j < x.length; j++) {
-				// faster version
-				double diff = x[i].distance(x[j]) - y[i].distance(y[j]);
+		for (int i = 0; i < x1.length; i++) {
+			for (int j = 0; j < x1.length; j++) {
+				double diff = x1[i].distance(y1[j]) - x2[i].distance(y2[j]);
 				sum += diff * diff;
-				// original version
-				//				double dist1 = x[i].distance(x[j]);
-				//				double dist2 = y[i].distance(y[j]);
-				//				sum += Math.pow((dist1 - dist2),2);
 			}
 		}
 
-//		drmsd = sum * 2 / (length * (length-1));
-//		drmsd = Math.sqrt(drmsd);
-
-		return Math.sqrt(sum * 2.0 / (x.length * (x.length-1)));
+		return Math.sqrt(sum /(x1.length)*x1.length);
 	}
 	
 	
