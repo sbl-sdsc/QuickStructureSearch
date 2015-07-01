@@ -42,6 +42,10 @@ public class GapFilter implements Function<Tuple2<String,Point3d[]>, Boolean> {
 			}
 		}
 		
+		if (start == points.length-1) {
+			return false;
+		}
+		
 		// skip C-terminal gap (end of chain)
 		int end = points.length-1;
 		for (int i = points.length-1; i > start; i--) {

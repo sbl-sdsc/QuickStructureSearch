@@ -14,7 +14,6 @@ import org.apache.spark.Accumulator;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
-import org.rcsb.structuralSimilarity.ChainPairLengthFilter;
 import org.rcsb.structuralSimilarity.GapFilter;
 import org.rcsb.structuralSimilarity.LengthFilter;
 import org.rcsb.structuralSimilarity.SeqToChainMapper;
@@ -89,7 +88,7 @@ public class Project4Tester {
 		int nChains = chains.size();
 		Random r = new Random(seed);
 		PrintWriter writer = new PrintWriter(outputFileName);
-		
+				
         long endTime2 = System.nanoTime();
 		
         // Step 3. map through all pairs for TM score
@@ -101,7 +100,7 @@ public class Project4Tester {
 
 			List<Tuple2<String, Float[]>> list = sc
 					.parallelizePairs(pairs, NUM_THREADS*NUM_TASKS_PER_THREAD) // distribute data
-					.filter(new ChainPairLengthFilter(chainsBc, 0.5, 1.0)) // restrict the difference in chain length
+					//.filter(new ChainPairLengthFilter(chainsBc, 0.5, 1.0)) // restrict the difference in chain length
 					.mapToPair(new ChainPairToTmMapperP4(chainsBc,timers)) // maps pairs of chain id indices to chain id, TM score pairs
 					.collect();	// copy result to master node
 
@@ -116,10 +115,11 @@ public class Project4Tester {
 		System.out.println("First step time		: " + (endTime1 - startTime1)/1E9 + " s");
 		System.out.println("Second step time	: " + (endTime2 - startTime2)/1E9 + " s");
 		System.out.println("Third step time		: " + (endTime3 - startTime3)/1E9 + " s");
-		System.out.println("Third parallel time	: " + timers.get(3).value()/1E9 + " s");
-		System.out.println("getRmsd	time		: " + timers.get(0).value()/1E9 + " s");
-		System.out.println("doChainAfp time		: " + timers.get(1).value()/1E9 + " s");
-		System.out.println("getDisTable time	: " + timers.get(2).value()/1E9 + " s");
+		System.out.println("doChainAfp time		: " + timers.get(0).value()/1E9 + " s");
+		System.out.println("rmsd calculate time	: " + timers.get(1).value()/1E9 + " s");
+		//System.out.println("calAfpDis time		: " + timers.get(2).value()/1E9 + " s");
+		//System.out.println("max d2 value		: " + timers.get(3).value() + " s");
+
 		
 		sc.stop();
 		sc.close();
