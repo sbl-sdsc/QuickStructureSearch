@@ -82,7 +82,6 @@ public class SimplePolymerChainCodec {
 		
 		String s = sb.toString();
 		return s.substring(start, end+1);
-	//	return sb.toString();
 	}
 	
 	public static Point3d[] decodeCoordinates(Writable[] encodedPolymerChain, int start, int end) {
@@ -131,8 +130,8 @@ public class SimplePolymerChainCodec {
 		int len = ((IntWritable)encodedPolymerChain[1]).get();
 		
 		// find N-terminal start of chain with atom coordinates
-		for (int i = 2; i < len+2; i++) {
-			int v = ((IntWritable)encodedPolymerChain[i]).get();
+		for (int i = 0; i < len; i++) {
+			int v = ((IntWritable)encodedPolymerChain[i+2]).get();
 			if (v != Integer.MAX_VALUE) {
 				return i;
 			}

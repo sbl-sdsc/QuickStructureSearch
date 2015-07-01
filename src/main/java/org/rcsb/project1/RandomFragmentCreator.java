@@ -135,7 +135,7 @@ public class RandomFragmentCreator {
 	private JavaSparkContext getSparkContext() {
 		SparkConf conf = new SparkConf()
 				.setMaster("local[" + NUM_THREADS + "]")
-				.setAppName("1" + this.getClass().getSimpleName())
+				.setAppName(this.getClass().getSimpleName())
 				.set("spark.driver.maxResultSize", "2g")
 				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
 

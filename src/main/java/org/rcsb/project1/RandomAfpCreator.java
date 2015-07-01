@@ -3,6 +3,7 @@ package org.rcsb.project1;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
+import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
@@ -60,7 +61,11 @@ public class RandomAfpCreator {
 				.filter(new GapFilter(0, 0)) // keep protein chains with gap size <= 0 and 0 gaps
 				.filter(new LengthFilter(50,500)) // keep protein chains with 50 - 500 residues
 				.collect(); // return results to master node
-
+//
+        for (Tuple2<String, Point3d[]> t: chains) {
+        	System.out.println(t._1 + ": " + Arrays.toString(t._2));
+        }
+        
 		// Step 2.  broadcast feature vectors to all nodes
 		final Broadcast<List<Tuple2<String,Point3d[]>>> chainsBc = sc.broadcast(chains);
 		int nChains = chains.size();
@@ -76,7 +81,7 @@ public class RandomAfpCreator {
 			List<Tuple2<String, Double[]>> list = sc
 					.parallelizePairs(pairs, NUM_THREADS*NUM_TASKS_PER_THREAD) // distribute data
 					.mapToPair(new RandomAfpMapper(chainsBc, length, r.nextInt()))
-					.filter(t -> t._2[1] < 6.0) // keep only dRMSD < 6 (dRMSD is 1th element in Double[])
+					.filter(t -> t._2[1] < 12.0) // keep only dRMSD < 6 (dRMSD is 1th element in Double[])
 					.collect();	// copy result to master node
 
 			// write results to .csv file
@@ -137,10 +142,11 @@ public class RandomAfpCreator {
 	private JavaSparkContext getSparkContext() {
 		SparkConf conf = new SparkConf()
 				.setMaster("local[" + NUM_THREADS + "]")
-				.setAppName("1" + this.getClass().getSimpleName())
-				.set("spark.driver.maxResultSize", "2g")
-				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
-
+				.setAppName(this.getClass().getSimpleName())
+				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+				.set("spark.kryoserializer.buffer.max", "1000m")
+				.set("spark.driver.maxResultSize", "1000m");
+				
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		return sc;
 	}
