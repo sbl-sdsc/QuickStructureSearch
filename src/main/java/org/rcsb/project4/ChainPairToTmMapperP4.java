@@ -47,11 +47,7 @@ public class ChainPairToTmMapperP4 implements PairFunction<Tuple2<Integer,Intege
 		
 		Point3d[] points1 = t1._2;
 		Point3d[] points2 = t2._2;
-		// Timer for overall parallel threads time cost
-		long startTime = System.nanoTime();
 		Float[] scores = TmScorerP4.getFatCatTmScore(points1, points2, timers);
-		//Float[] scores = TmScorerOrigin.getFatCatTmScore(points1, points2, timers);
-		timers.get(3).add(System.nanoTime() - startTime);
         return new Tuple2<String, Float[]>(key.toString(), scores);
     }
 }
