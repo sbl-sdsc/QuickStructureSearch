@@ -15,10 +15,8 @@ import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
-import org.rcsb.hadoop.io.HadoopToSimpleChainMapper;
 import org.rcsb.structuralSimilarity.GapFilter;
 import org.rcsb.structuralSimilarity.LengthFilter;
-import org.rcsb.structuralSimilarity.SeqToChainMapper;
 
 import scala.Tuple2;
 
@@ -40,37 +38,29 @@ public class RandomFragmentCreator {
 		int nPairs = Integer.parseInt(args[2]);
 		int seed = Integer.parseInt(args[3]);
 		int length = Integer.parseInt(args[4]);
-//		String fileName = args[5];
-		String fileName = null;
 		
 		long t1 = System.nanoTime();
 		RandomFragmentCreator creator = new RandomFragmentCreator();
-		creator.run(sequenceFileName, outputFileName, nPairs, seed, length, fileName);
+		creator.run(sequenceFileName, outputFileName, nPairs, seed, length);
 		System.out.println("Time: " + ((System.nanoTime()-t1)/1E9) + " s");
 	}
 
-	private void run(String path, String outputFileName, int nPairs, int seed, int length, String fileName) throws FileNotFoundException {
+	private void run(String path, String outputFileName, int nPairs, int seed, int length) throws FileNotFoundException {
 		// setup spark
-		SparkConf conf = new SparkConf()
-				.setMaster("local[" + NUM_THREADS + "]")
-				.setAppName("1" + this.getClass().getSimpleName())
-				.set("spark.driver.maxResultSize", "2g")
-				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
-
-		JavaSparkContext sc = new JavaSparkContext(conf);
+		JavaSparkContext sc = getSparkContext();
 		
-		// Step 1. calculate <pdbId.chainId, feature vector> pairs
+		// Step 1. get <pdbId.chainId, coordinate> pairs
         List<Tuple2<String, Point3d[]>> chains = sc
 				.sequenceFile(path, Text.class, ArrayWritable.class, NUM_THREADS)  // read protein chains
 				.sample(false, 0.1, 123456) // use only a random fraction, i.e., 10%
-				.mapToPair(new HadoopToSimpleChainMapper()) // convert input to <pdbId.chainId, SimplePolymerChain> pairs
+				.mapToPair(new org.rcsb.hadoop.io.HadoopToSimpleChainMapper()) // convert input to <pdbId.chainId, SimplePolymerChain> pairs
 				.filter(t -> t._2.isProtein())
 				.mapToPair(t -> new Tuple2<String, Point3d[]>(t._1, t._2.getCoordinates()))
 				.filter(new GapFilter(0, 0)) // keep protein chains with gap size <= 0 and 0 gaps
 				.filter(new LengthFilter(50,500)) // keep protein chains with 50 - 500 residues
 				.collect(); // return results to master node
 
-		// Step 2.  broadcast feature vectors to all nodes
+		// Step 2.  broadcast coordinates to all nodes
 		final Broadcast<List<Tuple2<String,Point3d[]>>> chainsBc = sc.broadcast(chains);
 		int nChains = chains.size();
 
@@ -100,6 +90,7 @@ public class RandomFragmentCreator {
 		System.out.println("ramdom pairs        : " + nPairs);
 	}
 
+	
 	/**
 	 * Writes pairs of chain ids and calculated similarity score to a csv file
 	 * @param writer
@@ -140,5 +131,17 @@ public class RandomFragmentCreator {
 		}
 		return new ArrayList<Tuple2<Integer,Integer>>(set);
 	}
+	
+	private JavaSparkContext getSparkContext() {
+		SparkConf conf = new SparkConf()
+				.setMaster("local[" + NUM_THREADS + "]")
+				.setAppName("1" + this.getClass().getSimpleName())
+				.set("spark.driver.maxResultSize", "2g")
+				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
+
+		JavaSparkContext sc = new JavaSparkContext(conf);
+		return sc;
+	}
+
 }
 

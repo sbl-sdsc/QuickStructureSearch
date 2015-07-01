@@ -11,11 +11,11 @@ import scala.Tuple2;
 public class StructureClusterer implements VoidFunction<Tuple2<Integer, Iterable<String>>> {
 	private static final long serialVersionUID = 1L;
 	private Broadcast<Map<String, SimplePolymerChain>> chainMap;
-
-	public StructureClusterer(Broadcast<Map<String, SimplePolymerChain>> chainMap) {
-		this.chainMap = chainMap;	
-	}
 	
+	public StructureClusterer(Broadcast<Map<String, SimplePolymerChain>> chainMap) {
+		this.chainMap = chainMap;
+	}
+
 	@Override
 	public void call(Tuple2<Integer, Iterable<String>> tuple) throws Exception {
 		Map<String, SimplePolymerChain> map = chainMap.getValue();
@@ -24,7 +24,7 @@ public class StructureClusterer implements VoidFunction<Tuple2<Integer, Iterable
 
 		for (String id: tuple._2) {
 			SimplePolymerChain c = map.get(id);
-			System.out.println(id + ": " + c);
+			System.out.println(id + ": " + c.getSequence());
 		}
 	}
 }

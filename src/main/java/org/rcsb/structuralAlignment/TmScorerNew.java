@@ -4,7 +4,6 @@ import java.io.Serializable;
 
 import javax.vecmath.Point3d;
 
-import org.biojava.nbio.structure.AminoAcidImpl;
 import org.biojava.nbio.structure.Atom;
 import org.biojava.nbio.structure.AtomImpl;
 import org.biojava.nbio.structure.Chain;
@@ -23,7 +22,6 @@ import org.rcsb.hadoop.io.SimplePolymerChain;
 public class TmScorerNew implements Serializable {
 	private static final long serialVersionUID = 1L;
 	private static final String CA_NAME = "CA";
-	private static final String GROUP_NAME = "GLU";
 
 	public static Float[] getFatCatTmScore(SimplePolymerChain chain1, SimplePolymerChain chain2) {
 		Float[] scores = new Float[6];
