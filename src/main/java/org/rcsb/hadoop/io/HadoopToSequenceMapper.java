@@ -26,9 +26,9 @@ public class HadoopToSequenceMapper implements PairFunction<Tuple2<Text,ArrayWri
 	 */
 	@Override
 	public Tuple2<String, String> call(Tuple2<Text, ArrayWritable> tuple) throws Exception {
-		Writable[] w = tuple._2.get();	
-		String sequence = ChainEncoderDecoder.writableToSequence(w);
+		Writable[] encodedPolymerChain = tuple._2.get();	
+		SimplePolymerChain chain = new SimplePolymerChain(encodedPolymerChain);
 		
-		return new Tuple2<String, String>(tuple._1.toString(), sequence);
+		return new Tuple2<String, String>(tuple._1.toString(), chain.getSequence());
 	}
 }

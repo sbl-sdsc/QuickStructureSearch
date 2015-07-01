@@ -29,8 +29,9 @@ public class HadoopToCoordinateMapper implements PairFunction<Tuple2<Text,ArrayW
 	 */
 	@Override
 	public Tuple2<String, Point3d[]> call(Tuple2<Text, ArrayWritable> tuple) throws Exception {
-		Writable[] w = tuple._2.get();
-		Point3d[] points = ChainEncoderDecoder.writableToCoordinates(w);
-		return new Tuple2<String,Point3d[]>(tuple._1.toString(), points);
+		Writable[] encodedPolymerChain = tuple._2.get();
+        SimplePolymerChain chain = new SimplePolymerChain(encodedPolymerChain);
+        
+		return new Tuple2<String,Point3d[]>(tuple._1.toString(), chain.getCoordinates());
 	}
 }

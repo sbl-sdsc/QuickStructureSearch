@@ -7,11 +7,12 @@ import javax.vecmath.Point3d;
 import org.apache.hadoop.io.IntWritable;
 import org.apache.hadoop.io.Writable;
 
-public class ChainEncoderDecoder {
+
+public class SimplePolymerChainCodec {
 	private static final int SCALE = 1000; 
-	private static boolean truncateTermini = true;
+	private static final double INVERSE_SCALE = 0.001; 
 	
-	public static Writable[] chainToWritable(int type, Point3d[] coords, Integer[] sequence, int gaps) {
+	public static Writable[] encodePolymerChain(int type, Point3d[] coords, Integer[] sequence, int gaps) {
 		Writable[] writable = new Writable[(coords.length+1)*3 - 2*gaps + 2 + coords.length];
 		int n = 0;
 
@@ -60,25 +61,32 @@ public class ChainEncoderDecoder {
 		
 		return writable;
 	}
+
+	public static SimplePolymerType decodePolymerType(Writable[] w) {
+		int type = ((IntWritable)w[0]).get();
+		return SimplePolymerType.values()[type];
+	}
 	
-	public static String writableToSequence(Writable[] w) {
-		int len = ((IntWritable)w[1]).get();	
+	public static String decodeSequence(Writable[] encodedPolymerChain, int start, int end) {
+		int len = ((IntWritable)encodedPolymerChain[1]).get();	
 		
 		// skip to position where protein sequence is encoded
-		int start = w.length - len;
+		int begin = encodedPolymerChain.length - len;
 		
 		StringBuilder sb = new StringBuilder();
-		for (int i = start; i < w.length; i++) {	
+		for (int i = begin; i < encodedPolymerChain.length; i++) {	
 			// amino acid one letter code is encoded as integer that represents its char value
-			int charValue = ((IntWritable)w[i]).get();	
+			int charValue = ((IntWritable)encodedPolymerChain[i]).get();	
 			sb.append((char)charValue);
 		}
 		
-		return sb.toString();
+		String s = sb.toString();
+		return s.substring(start, end+1);
+	//	return sb.toString();
 	}
 	
-	public static Point3d[] writableToCoordinates(Writable[] w) {
-		int len = ((IntWritable)w[1]).get();
+	public static Point3d[] decodeCoordinates(Writable[] encodedPolymerChain, int start, int end) {
+		int len = ((IntWritable)encodedPolymerChain[1]).get();
 		Point3d[] points = new Point3d[len];
 		
 		int j = 2;
@@ -87,69 +95,69 @@ public class ChainEncoderDecoder {
 		int z = 0;
 
 		for (int i = 0; i < points.length; i++) {
-			int v = ((IntWritable)w[j++]).get();
+			int v = ((IntWritable)encodedPolymerChain[j++]).get();
 			if (v == Integer.MAX_VALUE) {
 				points[i] = null; // a gap in the coordinates is represented by a null value
 			} else {
 				x += v;
-				y += ((IntWritable)w[j++]).get();
-				z += ((IntWritable)w[j++]).get();
-				points[i] = new Point3d(x*SCALE, y*SCALE, z*SCALE);
+				y += ((IntWritable)encodedPolymerChain[j++]).get();
+				z += ((IntWritable)encodedPolymerChain[j++]).get();
+				points[i] = new Point3d(x*INVERSE_SCALE, y*INVERSE_SCALE, z*INVERSE_SCALE);
 			}
 		}
 		
 		// compare the last x, y, z values with the expected values
-		if (x != ((IntWritable)w[j++]).get()) {
+		if (x != ((IntWritable)encodedPolymerChain[j++]).get()) {
 			throw new RuntimeException("ERROR: Input file is corrupted");
 		}
-		if (y != ((IntWritable)w[j++]).get()) {
+		if (y != ((IntWritable)encodedPolymerChain[j++]).get()) {
 			throw new RuntimeException("ERROR: Input file is corrupted");
 		}
-		if (z != ((IntWritable)w[j++]).get()) {
+		if (z != ((IntWritable)encodedPolymerChain[j++]).get()) {
 			throw new RuntimeException("ERROR: Input file is corrupted");
 		}
 		
+		points = Arrays.copyOfRange(points, start, end+1);
 		return points;
 	}
 	
-	public static SimplePolymerType writableToPolymerType(Writable[] w) {
-		int type = ((IntWritable)w[0]).get();
-		return SimplePolymerType.values()[type];
-	}
+	/**
+	 * Returns the first N-terminal position that has atom coordinates.
+	 * 
+	 * @param points
+	 * @return start position
+	 */
+	public static int getStartPosition(Writable[] encodedPolymerChain) {
+		int len = ((IntWritable)encodedPolymerChain[1]).get();
 		
-	public static SimplePolymerChain writableToSimplePolymerChain(Writable[] w) {
-		SimplePolymerType polymerType = writableToPolymerType(w);
-		Point3d[] coordinates = writableToCoordinates(w);
-		String sequence = writableToSequence(w);
-		if (truncateTermini) {
-			int start = getStartPosition(coordinates);
-			int end = getEndPosition(coordinates);
-			coordinates = Arrays.copyOfRange(coordinates, start, end);
-			sequence = sequence.substring(start, end+1);
-		}
-		return new SimplePolymerChain(polymerType, coordinates, sequence);
-	}
-	
-	private static int getStartPosition(Point3d[] points) {
-		int start = 0;
-		// N-terminal gap (start of chain)
-		for (int i = 0; i < points.length; i++) {
-			if (points[i] != null) {
-				start = i;
-				break;
+		// find N-terminal start of chain with atom coordinates
+		for (int i = 2; i < len+2; i++) {
+			int v = ((IntWritable)encodedPolymerChain[i]).get();
+			if (v != Integer.MAX_VALUE) {
+				return i;
 			}
 		}
-		return start;
+		return 0;
 	}
 	
-	private static int getEndPosition(Point3d[] points) {
-		int end = points.length-1;
-		for (int i = points.length-1; i > 0; i--) {
-			if (points[i] != null) {
+	/**
+	 * Returns the last (C-terminal) position that has atom coordinates.
+	 * 
+	 * @param points
+	 * @return start position
+	 */
+	public static int getEndPosition(Writable[] encodedPolymerChain) {
+		int len = ((IntWritable)encodedPolymerChain[1]).get();
+		int end = 0;
+
+		for (int i = 0, j = 2; i < len; i++) {
+			int v = ((IntWritable)encodedPolymerChain[j++]).get();
+			if (v != Integer.MAX_VALUE) {
+				j+=2;
 				end = i;
-				break;
 			}
 		}
+		
 		return end;
 	}
 }

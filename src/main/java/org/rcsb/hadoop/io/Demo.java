@@ -2,7 +2,6 @@ package org.rcsb.hadoop.io;
 
 import java.io.FileNotFoundException;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 
 import javax.vecmath.Point3d;
@@ -10,15 +9,11 @@ import javax.vecmath.Point3d;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaRDD;
 /* Spark Java programming APIs. It contains the 
  * RDD classes used for Java, as well as the
  * StorageLevels and SparkContext for java.
  */
 import org.apache.spark.api.java.JavaSparkContext;
-import org.rcsb.structuralAlignment.SuperPositionQCP;
-import org.rcsb.structuralSimilarity.GapFilter;
-import org.rcsb.structuralSimilarity.SeqToChainMapper;
 
 import scala.Tuple2;
 
@@ -45,7 +40,21 @@ public class Demo {
 		
 
 		long start = System.nanoTime();
+		
+		// if you need both the coordinates and the sequences, use this section of code
+		// read sequence file and map to PdbId.chainId, SimplePolymerChain pairs
+		List<Tuple2<String, SimplePolymerChain>> chains = sc
+				.sequenceFile(path, Text.class, ArrayWritable.class,NUM_THREADS*NUM_TASKS_PER_THREAD)
+				.sample(false, 0.01, 123)
+				.mapToPair(new HadoopToSimpleChainMapper()) // convert input to <pdbId.chainId, SimplePolymerChain> pairs
+				.filter(t -> t._2.isProtein())
+				.collect();
 
+		for (Tuple2<String, SimplePolymerChain> t: chains) {
+			System.out.println(t._1 + ": " + t._2);
+		}
+		
+		// if you need just the coordinates, use this section of code
 		// read sequence file and map to PdbId.chainId, C-alpha coordinate pairs
 		List<Tuple2<String, Point3d[]>> coordinates = sc
 				.sequenceFile(path, Text.class, ArrayWritable.class,NUM_THREADS*NUM_TASKS_PER_THREAD)
@@ -59,17 +68,6 @@ public class Demo {
 			System.out.println(t._1 + ": " + Arrays.toString(t._2));
 		}
 
-		// read sequence file and map to PdbId.chainId, SimplePolymerChain pairs
-		List<Tuple2<String, SimplePolymerChain>> chains = sc
-				.sequenceFile(path, Text.class, ArrayWritable.class,NUM_THREADS*NUM_TASKS_PER_THREAD)
-				.sample(false, 0.01, 123)
-				.mapToPair(new HadoopToSimpleChainMapper()) // convert input to <pdbId.chainId, SimplePolymerChain> pairs
-				.filter(t -> t._2.isProtein())
-				.collect();
-
-		for (Tuple2<String, SimplePolymerChain> t: chains) {
-			System.out.println(t._1 + ": " + t._2);
-		}
 		sc.close();
 
 		System.out.println("Time: " + (System.nanoTime() - start)/1E9 + " sec.");

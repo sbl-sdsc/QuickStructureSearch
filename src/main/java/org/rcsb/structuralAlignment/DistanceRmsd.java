@@ -31,15 +31,8 @@ public class DistanceRmsd {
 				// faster version
 				double diff = x[i].distance(x[j]) - y[i].distance(y[j]);
 				sum += diff * diff;
-				// original version
-				//				double dist1 = x[i].distance(x[j]);
-				//				double dist2 = y[i].distance(y[j]);
-				//				sum += Math.pow((dist1 - dist2),2);
 			}
-		}
-
-//		drmsd = sum * 2 / (length * (length-1));
-//		drmsd = Math.sqrt(drmsd);
+		};
 
 		return Math.sqrt(sum * 2.0 / (x.length * (x.length-1)));
 	}
