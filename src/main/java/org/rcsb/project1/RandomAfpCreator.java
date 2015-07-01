@@ -18,7 +18,6 @@ import org.apache.spark.broadcast.Broadcast;
 import org.rcsb.hadoop.io.HadoopToSimpleChainMapper;
 import org.rcsb.structuralSimilarity.GapFilter;
 import org.rcsb.structuralSimilarity.LengthFilter;
-import org.rcsb.structuralSimilarity.SeqToChainMapper;
 
 import scala.Tuple2;
 
@@ -40,24 +39,16 @@ public class RandomAfpCreator {
 		int nPairs = Integer.parseInt(args[2]);
 		int seed = Integer.parseInt(args[3]);
 		int length = Integer.parseInt(args[4]);
-//		String fileName = args[5];
-		String fileName = null;
 		
 		long t1 = System.nanoTime();
 		RandomAfpCreator creator = new RandomAfpCreator();
-		creator.run(sequenceFileName, outputFileName, nPairs, seed, length, fileName);
+		creator.run(sequenceFileName, outputFileName, nPairs, seed, length);
 		System.out.println("Time: " + ((System.nanoTime()-t1)/1E9) + " s");
 	}
 
-	private void run(String path, String outputFileName, int nPairs, int seed, int length, String fileName) throws FileNotFoundException {
+	private void run(String path, String outputFileName, int nPairs, int seed, int length) throws FileNotFoundException {
 		// setup spark
-		SparkConf conf = new SparkConf()
-				.setMaster("local[" + NUM_THREADS + "]")
-				.setAppName("1" + this.getClass().getSimpleName())
-				.set("spark.driver.maxResultSize", "2g")
-				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
-
-		JavaSparkContext sc = new JavaSparkContext(conf);
+		JavaSparkContext sc = getSparkContext();
 		
 		// Step 1. calculate <pdbId.chainId, feature vector> pairs
         List<Tuple2<String, Point3d[]>> chains = sc
@@ -100,6 +91,8 @@ public class RandomAfpCreator {
 		System.out.println("ramdom pairs        : " + nPairs);
 	}
 
+
+
 	/**
 	 * Writes pairs of chain ids and calculated similarity score to a csv file
 	 * @param writer
@@ -139,6 +132,17 @@ public class RandomAfpCreator {
 			}
 		}
 		return new ArrayList<Tuple2<Integer,Integer>>(set);
+	}
+	
+	private JavaSparkContext getSparkContext() {
+		SparkConf conf = new SparkConf()
+				.setMaster("local[" + NUM_THREADS + "]")
+				.setAppName("1" + this.getClass().getSimpleName())
+				.set("spark.driver.maxResultSize", "2g")
+				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
+
+		JavaSparkContext sc = new JavaSparkContext(conf);
+		return sc;
 	}
 }
 

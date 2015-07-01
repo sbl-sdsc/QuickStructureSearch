@@ -43,7 +43,6 @@ public class HadoopSequenceFileStatistics {
 		// read sequence file and map sequence length to an RDD
 		JavaRDD<Integer> len = sc
 				.sequenceFile(path, Text.class, ArrayWritable.class,NUM_THREADS*NUM_TASKS_PER_THREAD)
-		//		.mapToPair(new HadoopToCoordinateMapper()) // convert input to <pdbId.chainId, CA coordinate array> pairs
 				.mapToPair(new HadoopToSimpleChainMapper())
 				.filter(t -> t._2.isProtein())
 				.map(t -> new Tuple2<String, Point3d[]>(t._1, t._2.getCoordinates()))

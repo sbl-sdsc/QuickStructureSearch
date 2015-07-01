@@ -4,6 +4,8 @@ import java.io.Serializable;
 import java.util.Arrays;
 
 import javax.vecmath.Point3d;
+
+import org.apache.hadoop.io.Writable;
 /**
  * This class represents a simple biopolymer chain. It supports biopolymers of type: protein, DNA, and RNA chains 
  * and contains the polymer one-letter sequence and the C-alpha atom coordinates of proteins or the
@@ -14,74 +16,56 @@ import javax.vecmath.Point3d;
  */
 public class SimplePolymerChain implements Serializable {
 	private static final long serialVersionUID = 1L;
-	private SimplePolymerType polymerType;
-	private Point3d[] coordinates;
-	private String sequence;
+	private Writable[] encodedPolymerChain;
+	private int start;
+	private int end;
 	
-	public SimplePolymerChain(SimplePolymerType polymerType,
-			Point3d[] coordinates, String sequence) {
-		this.polymerType = polymerType;
-		this.coordinates = coordinates;
-		this.sequence = sequence;
+	public SimplePolymerChain(Writable[] encodedPolymerChain) {
+		this.encodedPolymerChain = encodedPolymerChain;
+		this.start = SimplePolymerChainCodec.getStartPosition(encodedPolymerChain);
+		this.end = SimplePolymerChainCodec.getEndPosition(encodedPolymerChain);
+//		System.out.println("New chain: " + start + " - " + end);
 	}
 	
 	/**
 	 * @return the polymerType
 	 */
 	public SimplePolymerType getPolymerType() {
-		return polymerType;
+		return SimplePolymerChainCodec.decodePolymerType(encodedPolymerChain);
 	}
 	/**
 	 * @return the coordinates
 	 */
 	public Point3d[] getCoordinates() {
-		return coordinates;
+		return SimplePolymerChainCodec.decodeCoordinates(encodedPolymerChain, start, end);
 	}
 	/**
 	 * @return the sequence
 	 */
 	public String getSequence() {
-		return sequence;
+		return SimplePolymerChainCodec.decodeSequence(encodedPolymerChain, start, end);
 	}
 	
 	public boolean isProtein() {
-		return polymerType.equals(SimplePolymerType.PROTEIN);
+		return getPolymerType().equals(SimplePolymerType.PROTEIN);
 	}
 	
 	public boolean isDNA() {
-		return polymerType.equals(SimplePolymerType.DNA);
+		return getPolymerType().equals(SimplePolymerType.DNA);
 	}
 	
 	public boolean isRNA() {
-		return polymerType.equals(SimplePolymerType.RNA);
-	}
-	
-	/**
-	 * @param polymerType the polymerType to set
-	 */
-	public void setPolymerType(SimplePolymerType polymerType) {
-		this.polymerType = polymerType;
-	}
-	/**
-	 * @param coordinates the coordinates to set
-	 */
-	public void setCoordinates(Point3d[] coordinates) {
-		this.coordinates = coordinates;
-	}
-	/**
-	 * @param sequence the sequence to set
-	 */
-	public void setSequence(String sequence) {
-		this.sequence = sequence;
+		return getPolymerType().equals(SimplePolymerType.RNA);
 	}
 	
 	public String toString() {
 		StringBuilder sb = new StringBuilder();
-		sb.append(polymerType);
+		
+		sb.append(getPolymerType());
 		sb.append(": ");
-		sb.append(sequence);
+		sb.append(getSequence());
 		sb.append(", ");
-		sb.append(Arrays.toString(coordinates));
+		sb.append(Arrays.toString(getCoordinates()));
 
 		return sb.toString();
 	}

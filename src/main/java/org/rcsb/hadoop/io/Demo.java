@@ -40,7 +40,21 @@ public class Demo {
 		
 
 		long start = System.nanoTime();
+		
+		// if you need both the coordinates and the sequences, use this section of code
+		// read sequence file and map to PdbId.chainId, SimplePolymerChain pairs
+		List<Tuple2<String, SimplePolymerChain>> chains = sc
+				.sequenceFile(path, Text.class, ArrayWritable.class,NUM_THREADS*NUM_TASKS_PER_THREAD)
+				.sample(false, 0.01, 123)
+				.mapToPair(new HadoopToSimpleChainMapper()) // convert input to <pdbId.chainId, SimplePolymerChain> pairs
+				.filter(t -> t._2.isProtein())
+				.collect();
 
+		for (Tuple2<String, SimplePolymerChain> t: chains) {
+			System.out.println(t._1 + ": " + t._2);
+		}
+		
+		// if you need just the coordinates, use this section of code
 		// read sequence file and map to PdbId.chainId, C-alpha coordinate pairs
 		List<Tuple2<String, Point3d[]>> coordinates = sc
 				.sequenceFile(path, Text.class, ArrayWritable.class,NUM_THREADS*NUM_TASKS_PER_THREAD)
@@ -54,17 +68,6 @@ public class Demo {
 			System.out.println(t._1 + ": " + Arrays.toString(t._2));
 		}
 
-		// read sequence file and map to PdbId.chainId, SimplePolymerChain pairs
-		List<Tuple2<String, SimplePolymerChain>> chains = sc
-				.sequenceFile(path, Text.class, ArrayWritable.class,NUM_THREADS*NUM_TASKS_PER_THREAD)
-				.sample(false, 0.01, 123)
-				.mapToPair(new HadoopToSimpleChainMapper()) // convert input to <pdbId.chainId, SimplePolymerChain> pairs
-				.filter(t -> t._2.isProtein())
-				.collect();
-
-		for (Tuple2<String, SimplePolymerChain> t: chains) {
-			System.out.println(t._1 + ": " + t._2);
-		}
 		sc.close();
 
 		System.out.println("Time: " + (System.nanoTime() - start)/1E9 + " sec.");

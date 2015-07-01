@@ -240,7 +240,7 @@ public class PdbChainsToHadoopFile {
 
 			Text key1 = new Text(pdbId + "." + c.getChainID());
 			ArrayWritable value1 = new IntArrayWritable();	
-			value1.set(ChainEncoderDecoder.chainToWritable(polymerType.ordinal(), coords, sequence, gaps));
+			value1.set(SimplePolymerChainCodec.encodePolymerChain(polymerType.ordinal(), coords, sequence, gaps));
 			writer.append(key1, value1);
 		}
 		return chainCount;
