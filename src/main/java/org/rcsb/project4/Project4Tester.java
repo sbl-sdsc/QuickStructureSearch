@@ -88,7 +88,7 @@ public class Project4Tester {
 		int nChains = chains.size();
 		Random r = new Random(seed);
 		PrintWriter writer = new PrintWriter(outputFileName);
-		
+				
         long endTime2 = System.nanoTime();
 		
         // Step 3. map through all pairs for TM score
@@ -118,7 +118,7 @@ public class Project4Tester {
 		System.out.println("doChainAfp time		: " + timers.get(0).value()/1E9 + " s");
 		System.out.println("rmsd calculate time	: " + timers.get(1).value()/1E9 + " s");
 		//System.out.println("calAfpDis time		: " + timers.get(2).value()/1E9 + " s");
-		//System.out.println("for loop time		: " + timers.get(3).value()/1E9 + " s");
+		//System.out.println("max d2 value		: " + timers.get(3).value() + " s");
 
 		
 		sc.stop();

@@ -45,6 +45,7 @@ import java.util.List;
 public class AFPChainerP4
 {
 	static List<Accumulator<Long>> classTimers; 
+	static double max;
 	/**
   // Key function: chain (assembly) the AFPs
   // a AFP (k) is defined as (i, j, k), with i and j are staring points
@@ -74,6 +75,7 @@ public class AFPChainerP4
 	 */
 	public static void doChainAfp(FatCatParameters params, AFPChain afpChain,Atom[] ca1, Atom[] ca2, List<Accumulator<Long>> timers){
 		classTimers = timers;
+		max = 0;
 		List<AFP> afpSet = afpChain.getAfpSet();
 
 		afpChain.setConn(0d);
@@ -325,7 +327,13 @@ public class AFPChainerP4
 		//note: use < (smaller) instead of >, because maxPenalty is a negative number
 
 		double  d;
-		d = calAfpDis(afp1, afp2,params, afpChain);
+		//TODO
+		double d2 = calAfpDisPo2(afp1, afp2,params, afpChain);
+		if (d2 < 7)
+			d = calAfpDis(afp1, afp2,params, afpChain);
+		else 
+			d = disCut;
+		
 		//note: the 'dis' value is numerically equivalent to the 'rms' with exceptions
 
 		boolean     ch = false;
@@ -411,7 +419,6 @@ public class AFPChainerP4
 		int     i, j, ai, bi, aj, bj;
 		double  d;
 		double  rms = 0;
-		String txt = "start \n";
 		for(i = 0; i < fragLen; i ++)   {
 			ai = afpSet.get(afp1).getP1() + i;
 			bi = afpSet.get(afp1).getP2() + i;
@@ -423,9 +430,84 @@ public class AFPChainerP4
 				if(rms > afpDisCut)     { return (disCut); }
 			}
 		}
-		txt += "\nend";
-		//System.out.println(txt);
 		return (Math.sqrt(rms / fragLenSq));
+	}
+	
+	private static double calAfpDisPo(int afp1, int afp2, FatCatParameters params, AFPChain afpChain)
+	{
+
+		List<AFP> afpSet = afpChain.getAfpSet();
+
+		Matrix disTable1 = afpChain.getDisTable1();
+		Matrix disTable2 = afpChain.getDisTable2();
+
+		int fragLen = params.getFragLen();
+		double afpDisCut = params.getAfpDisCut();
+		double disCut = params.getDisCut();
+		double fragLenSq = params.getFragLenSq();
+
+		int     i, j, ai1, bi1, aj1, bj1;
+		int 	ai2, bi2, aj2, bj2;
+		double  d1, d2, d3, d4;
+		double  rms = 0;
+		ai1 = afpSet.get(afp1).getP1();
+		bi1 = afpSet.get(afp1).getP2();
+		aj1 = afpSet.get(afp2).getP1();
+		bj1 = afpSet.get(afp2).getP2();
+		d1 = disTable1.get(aj1,ai1) - disTable2.get(bj1,bi1);
+		ai2 = ai1 + fragLen - 1;
+		bi2 = bi1 + fragLen - 1;
+		aj2 = aj1 + fragLen - 1;
+		bj2 = bj1 + fragLen - 1;
+		d2 = disTable1.get(aj2,ai2) - disTable2.get(bj2,bi2);
+		d3 = disTable1.get(aj1,ai2) - disTable2.get(bj1,bi2);
+		d4 = disTable1.get(aj2,ai1) - disTable2.get(bj2,bi1);
+		
+		rms += d1 * d1 + d2 * d2 + d3 * d3 + d4 * d4;
+		return (Math.sqrt(rms / 4));
+	}
+	
+	private static double calAfpDisPo2(int afp1, int afp2, FatCatParameters params, AFPChain afpChain)
+	{
+
+		List<AFP> afpSet = afpChain.getAfpSet();
+
+		Matrix disTable1 = afpChain.getDisTable1();
+		Matrix disTable2 = afpChain.getDisTable2();
+
+		int fragLen = params.getFragLen();
+
+		int     i, j, ai1, bi1, aj1, bj1;
+		int 	ai2, bi2, aj2, bj2, ai3, bi3, aj3, bj3;
+		double  d1, d2, d3, d4, d5, d6, d7, d8;
+		double  rms = 0;
+		ai1 = afpSet.get(afp1).getP1();
+		bi1 = afpSet.get(afp1).getP2();
+		aj1 = afpSet.get(afp2).getP1();
+		bj1 = afpSet.get(afp2).getP2();
+		
+		ai2 = ai1 + fragLen - 1;
+		bi2 = bi1 + fragLen - 1;
+		aj2 = aj1 + fragLen - 1;
+		bj2 = bj1 + fragLen - 1;
+		
+		ai3 = ai1 + fragLen/2;
+		bi3 = bi1 + fragLen/2;
+		aj3 = aj1 + fragLen/2;
+		bj3 = bj1 + fragLen/2;
+		
+		d1 = disTable1.get(aj1,ai1) - disTable2.get(bj1,bi1);
+		d2 = disTable1.get(aj2,ai2) - disTable2.get(bj2,bi2);
+		d3 = disTable1.get(aj1,ai2) - disTable2.get(bj1,bi2);
+		d4 = disTable1.get(aj2,ai1) - disTable2.get(bj2,bi1);
+		d5 = disTable1.get(aj3,ai1) - disTable2.get(bj3,bi1);
+		d6 = disTable1.get(aj3,ai2) - disTable2.get(bj3,bi2);
+		d7 = disTable1.get(aj1,ai3) - disTable2.get(bj1,bi3);
+		d8 = disTable1.get(aj2,ai3) - disTable2.get(bj2,bi3);
+		
+		
+		rms += d1 * d1 + d2 * d2 + d3 * d3 + d4 * d4 + d5 * d5 + d6 * d6 + d7 * d7 + d8 * d8;
+		return (Math.sqrt(rms / 8));
 	}
 
 
