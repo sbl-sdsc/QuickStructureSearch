@@ -2,7 +2,6 @@ package org.rcsb.hadoop.io;
 
 import java.io.FileNotFoundException;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
 
 import javax.vecmath.Point3d;
@@ -10,15 +9,11 @@ import javax.vecmath.Point3d;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaRDD;
 /* Spark Java programming APIs. It contains the 
  * RDD classes used for Java, as well as the
  * StorageLevels and SparkContext for java.
  */
 import org.apache.spark.api.java.JavaSparkContext;
-import org.rcsb.structuralAlignment.SuperPositionQCP;
-import org.rcsb.structuralSimilarity.GapFilter;
-import org.rcsb.structuralSimilarity.SeqToChainMapper;
 
 import scala.Tuple2;
 

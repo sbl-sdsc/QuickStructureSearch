@@ -9,6 +9,7 @@ import org.apache.hadoop.io.Writable;
 
 public class ChainEncoderDecoder {
 	private static final int SCALE = 1000; 
+	private static final double INVERSE_SCALE = 0.001; 
 	private static boolean truncateTermini = true;
 	
 	public static Writable[] chainToWritable(int type, Point3d[] coords, Integer[] sequence, int gaps) {
@@ -94,7 +95,7 @@ public class ChainEncoderDecoder {
 				x += v;
 				y += ((IntWritable)w[j++]).get();
 				z += ((IntWritable)w[j++]).get();
-				points[i] = new Point3d(x*SCALE, y*SCALE, z*SCALE);
+				points[i] = new Point3d(x*INVERSE_SCALE, y*INVERSE_SCALE, z*INVERSE_SCALE);
 			}
 		}
 		
@@ -124,12 +125,18 @@ public class ChainEncoderDecoder {
 		if (truncateTermini) {
 			int start = getStartPosition(coordinates);
 			int end = getEndPosition(coordinates);
-			coordinates = Arrays.copyOfRange(coordinates, start, end);
+			coordinates = Arrays.copyOfRange(coordinates, start, end+1);
 			sequence = sequence.substring(start, end+1);
 		}
 		return new SimplePolymerChain(polymerType, coordinates, sequence);
 	}
 	
+	/**
+	 * Returns the start position of the first point that is not null.
+	 * 
+	 * @param points
+	 * @return start position
+	 */
 	private static int getStartPosition(Point3d[] points) {
 		int start = 0;
 		// N-terminal gap (start of chain)

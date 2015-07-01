@@ -15,6 +15,7 @@ import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
+import org.rcsb.hadoop.io.HadoopToSimpleChainMapper;
 import org.rcsb.structuralSimilarity.GapFilter;
 import org.rcsb.structuralSimilarity.LengthFilter;
 import org.rcsb.structuralSimilarity.SeqToChainMapper;
@@ -62,7 +63,9 @@ public class RandomFragmentCreator {
         List<Tuple2<String, Point3d[]>> chains = sc
 				.sequenceFile(path, Text.class, ArrayWritable.class, NUM_THREADS)  // read protein chains
 				.sample(false, 0.1, 123456) // use only a random fraction, i.e., 10%
-				.mapToPair(new SeqToChainMapper()) // convert input to <pdbId.chainId, CA coordinate> pairs
+				.mapToPair(new HadoopToSimpleChainMapper()) // convert input to <pdbId.chainId, SimplePolymerChain> pairs
+				.filter(t -> t._2.isProtein())
+				.mapToPair(t -> new Tuple2<String, Point3d[]>(t._1, t._2.getCoordinates()))
 				.filter(new GapFilter(0, 0)) // keep protein chains with gap size <= 0 and 0 gaps
 				.filter(new LengthFilter(50,500)) // keep protein chains with 50 - 500 residues
 				.collect(); // return results to master node
@@ -82,7 +85,7 @@ public class RandomFragmentCreator {
 			List<Tuple2<String, Double[]>> list = sc
 					.parallelizePairs(pairs, NUM_THREADS*NUM_TASKS_PER_THREAD) // distribute data
 					.mapToPair(new RandomFragmentMapper(chainsBc, length, r.nextInt()))
-					.filter(t -> t._2[0] < 5.0) // keep only data points with cRMSD < 5 (cRMSD is 0th element in Double[])
+	//				.filter(t -> t._2[0] < 5.0) // keep only data points with cRMSD < 5 (cRMSD is 0th element in Double[])
 					.collect();	// copy result to master node
 
 			// write results to .csv file
