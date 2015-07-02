@@ -329,10 +329,11 @@ public class AFPChainerP4
 		double  d;
 		//TODO
 		double d2 = calAfpDisPo2(afp1, afp2,params, afpChain);
-		if (d2 < 7)
+		if (d2 < 6)
 			d = calAfpDis(afp1, afp2,params, afpChain);
 		else 
 			d = disCut;
+//		d = calAfpDis(afp1, afp2,params, afpChain);
 		
 		//note: the 'dis' value is numerically equivalent to the 'rms' with exceptions
 
@@ -433,6 +434,7 @@ public class AFPChainerP4
 		return (Math.sqrt(rms / fragLenSq));
 	}
 	
+	@SuppressWarnings("unused")
 	private static double calAfpDisPo(int afp1, int afp2, FatCatParameters params, AFPChain afpChain)
 	{
 
@@ -442,11 +444,8 @@ public class AFPChainerP4
 		Matrix disTable2 = afpChain.getDisTable2();
 
 		int fragLen = params.getFragLen();
-		double afpDisCut = params.getAfpDisCut();
-		double disCut = params.getDisCut();
-		double fragLenSq = params.getFragLenSq();
 
-		int     i, j, ai1, bi1, aj1, bj1;
+		int     ai1, bi1, aj1, bj1;
 		int 	ai2, bi2, aj2, bj2;
 		double  d1, d2, d3, d4;
 		double  rms = 0;
@@ -477,7 +476,7 @@ public class AFPChainerP4
 
 		int fragLen = params.getFragLen();
 
-		int     i, j, ai1, bi1, aj1, bj1;
+		int     ai1, bi1, aj1, bj1;
 		int 	ai2, bi2, aj2, bj2, ai3, bi3, aj3, bj3;
 		double  d1, d2, d3, d4, d5, d6, d7, d8;
 		double  rms = 0;

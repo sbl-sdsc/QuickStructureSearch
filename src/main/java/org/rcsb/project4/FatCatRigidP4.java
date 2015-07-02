@@ -37,7 +37,7 @@ public class FatCatRigidP4{
 		params = new FatCatParameters();
 		//params.setRmsdCut(2.5);
 		//params.setDisCut(4.5);
-		//params.setDisFilter(4.5);
+		params.setDisFilter(4);
 		params.setMaxTra(0);		
 	}
 
