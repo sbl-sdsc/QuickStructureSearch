@@ -51,7 +51,7 @@ public class FatCatRigidP4{
 	 */
 	public AFPChain align(Atom[] ca1, Atom[] ca2, List<Accumulator<Long>> timers) throws StructureException {			
 		// Load timers
-		this.timers = timers;
+		//this.timers = timers;
 		AFPChain afpChain = new AFPChain();
 		afpChain.setCa1Length(ca1.length);
 		afpChain.setCa2Length(ca2.length);
@@ -81,10 +81,10 @@ public class FatCatRigidP4{
 			return;
 		//run AFP chaining
 		// Timer for doChainAfp
-		long startTime = System.nanoTime();
+		//long startTime = System.nanoTime();
 		AFPChainerP4.doChainAfp(params,afpChain,ca1,ca2,timers);
 		//AFPChainer.doChainAfp(params,afpChain,ca1,ca2);
-		timers.get(0).add(System.nanoTime() - startTime);
+		//timers.get(0).add(System.nanoTime() - startTime);
 		
 		int afpChainLen = afpChain.getAfpChainLen();
 		if (afpChainLen < 1)     {
@@ -157,14 +157,14 @@ public class FatCatRigidP4{
 				} //be cautious to use this filter !!
 
 				// Timers for getRmsd
-				long startTime = System.nanoTime();
+				//long startTime = System.nanoTime();
 				// here FATCAT does a a jacobi transformation
 				//rmsd = kearsay(fragLen, ca1[p1], ca2[p2], r, t);
 				// Use the BioJava SVD instead:
 				//rmsd = getRmsd(ca1,ca2,fragLen, p1,p2,r,t);
 				// Use QCP instead:
 				rmsd = getRmsdP3d(ca1,ca2,fragLen, p1,p2);
-				timers.get(1).add(System.nanoTime() - startTime);
+				//timers.get(1).add(System.nanoTime() - startTime);
 
 				if(rmsd < rmsdCut)      {
 					AFP afptmp = new AFP();

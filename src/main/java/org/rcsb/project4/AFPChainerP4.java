@@ -74,7 +74,7 @@ public class AFPChainerP4
 	 * @param timers 
 	 */
 	public static void doChainAfp(FatCatParameters params, AFPChain afpChain,Atom[] ca1, Atom[] ca2, List<Accumulator<Long>> timers){
-		classTimers = timers;
+		//classTimers = timers;
 		max = 0;
 		List<AFP> afpSet = afpChain.getAfpSet();
 
