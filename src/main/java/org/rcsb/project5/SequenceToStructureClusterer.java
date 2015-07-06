@@ -68,7 +68,7 @@ public class SequenceToStructureClusterer {
 		System.out.println("Cluster pairs: " + clusterPairs.count());
 		
 		// create a list of chain ids needed for calculation
-	    List<String> chainIds = clusterPairs.map(c -> c._2).collect();
+	    List<String> chainIds = clusterPairs.values().collect();
 		System.out.println("Chains: " + chainIds.size());
 		
 		// read <PdbId.chainId, SimplePolymerChain> pairs;

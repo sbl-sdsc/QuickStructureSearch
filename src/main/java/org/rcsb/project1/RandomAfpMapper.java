@@ -46,10 +46,15 @@ public class RandomAfpMapper implements PairFunction<Tuple2<Integer,Integer>,Str
 
 		Point3d[] points1 = tuple1._2;
 		Point3d[] points2 = tuple2._2;
+		
+		int maxGapLen = 30;
 
 		// Find the last possible start position for a random fragment
-		int last1 = points1.length - length;
-		int last2 = points2.length - length;
+		int last1 = points1.length - length - maxGapLen;
+		int last2 = points2.length - length - maxGapLen;
+		
+		last1 = Math.max(1, last1);
+		last2 = Math.max(1, last2);
 		
 		if (nullPointCoordinateChecker(points1)) {
 			throw new IllegalArgumentException("points1: null coordinates");
@@ -61,9 +66,9 @@ public class RandomAfpMapper implements PairFunction<Tuple2<Integer,Integer>,Str
 		// Get random fragment start positions (0 .. last-1)
 		Random r = new Random(seed);
 		int start1 = r.nextInt(last1);
-		int start2 = r.nextInt(last1);
+		int start2 = start1 + Math.min(8, r.nextInt(maxGapLen)); // 
 		int start3 = r.nextInt(last2);
-		int start4 = r.nextInt(last2);
+		int start4 = start3 + Math.min(8, r.nextInt(maxGapLen));
 
 		// Create a key consisting of the PdbId.ChainId and 
 		// fragment start position of the two polymer chains
