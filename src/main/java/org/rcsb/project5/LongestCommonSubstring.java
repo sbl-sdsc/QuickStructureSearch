@@ -1,5 +1,24 @@
 package org.rcsb.project5;
 
+import java.util.ArrayList;
+import java.util.List;
+/*************************************************************************
+ *  Compilation:  javac LongestCommonSubstring.java
+ *  Execution:    java  LongestCommonSubstring file1.txt file2.txt
+ *  Dependencies: SuffixArray.java StdOut.java In.java
+ *  
+ *  Reads in two text strings, replaces all consecutive blocks of
+ *  whitespace with a single space, and then computes the longest
+ *  common substring.
+ *
+ *  Assumes that the character '\1' does not appear in either text.
+ *  Perhaps, search for a character that does not appear in either text
+ *  (and make sure SuffixArray.java doesn't choose the same one).
+ * 
+ *  % java LongestCommonSubstring tale.txt mobydick.txt
+ *  ' seemed on the point of being '
+ *
+ *************************************************************************/
 public class LongestCommonSubstring {
 
     public static void main(String[] args) {
@@ -40,7 +59,14 @@ public class LongestCommonSubstring {
         StdOut.println(lcs.length());
         StdOut.println("'" + lcs + "'");
     }
-    public String longestCommonSubstring(String a, String b)
+
+    /**
+     * Returns the starting and ending indices of the longest common substring of both strings a and b
+     * @param a
+     * @param b
+     * @return list
+     */
+    public List<Integer> longestCommonSubstring(String a, String b)
     {
     	String text1 = a;
         String text2 = b;
@@ -61,7 +87,7 @@ public class LongestCommonSubstring {
             // adjacent suffixes both from first text string
             if (suffix.index(i) < N1 && suffix.index(i-1) < N1) continue;
 
-            // adjacent suffixes both from secondt text string
+            // adjacent suffixes both from second text string
             if (suffix.index(i) > N1 && suffix.index(i-1) > N1) continue;
 
             // check if adjacent suffixes longer common substring
@@ -71,7 +97,12 @@ public class LongestCommonSubstring {
             }
         }
 
-        // return longest common substring
-        return lcs;
+        List<Integer> list = new ArrayList<>();
+        list.add(text1.indexOf(lcs));
+        list.add(text1.indexOf(lcs) + lcs.length());
+        list.add(text2.indexOf(lcs));
+        list.add(text2.indexOf(lcs) + lcs.length());
+        // return an ArrayList of integer
+        return list;
     }
 }

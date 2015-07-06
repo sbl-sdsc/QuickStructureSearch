@@ -1,6 +1,7 @@
 package org.rcsb.project5;
 
 import java.io.FileNotFoundException;
+import java.io.PrintWriter;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
@@ -27,13 +28,15 @@ import scala.Tuple2;
 /**
  * This class clusters protein chains in 100% sequence identity clusters by structural similarity.
  * 
- * The input to the application consists of three command line arguments:
+ * The input to the application consists of five command line arguments:
  * 
- * <Hadoop sequence file name> <start index of first cluster> <end index for last cluster>
+ * <Hadoop sequence file name> <Output file name> <start index of first cluster> <end index for last cluster> <Maximum RMSD for structural clusters>
  * 
  * To run a small example, use a small range of clusters, i.e. 5000 - 5010.
  * 
- * @author  Peter Rose
+ * @author Peter Rose
+ * @author Justin Li
+ * @author Joe Sun
  */
 public class SequenceToStructureClusterer {    
 	private static int NUM_THREADS = 4;
@@ -42,21 +45,25 @@ public class SequenceToStructureClusterer {
 	public static void main(String[] args ) throws FileNotFoundException
 	{
 		String hadoopSequenceFileName = args[0];
-		int startCluster = Integer.parseInt(args[1]);
-        int endCluster = Integer.parseInt(args[2]);
+		String outputFileName = args[1];
+		int startCluster = Integer.parseInt(args[2]);
+        int endCluster = Integer.parseInt(args[3]);
+        double maxRmsd = Double.parseDouble(args[4]);
 
         SequenceToStructureClusterer clusterer = new SequenceToStructureClusterer();
-        clusterer.run(hadoopSequenceFileName, startCluster, endCluster);
+        clusterer.run(hadoopSequenceFileName, startCluster, endCluster, outputFileName, maxRmsd);
 	}
 
 	/**
 	 * Performs structural clustering for the sequence clusters within a specified cluster index range.
 	 * 
 	 * @param hadoopSequenceFileName
+	 * @param outputFileName
 	 * @param startCluster index of first cluster
 	 * @param endCluster index of last cluster
+	 * @param maxRmsd
 	 */
-	private void run(String hadoopSequenceFileName, int startCluster, int endCluster) {
+	private void run(String hadoopSequenceFileName, int startCluster, int endCluster, String outputFileName, double maxRmsd) throws FileNotFoundException{
 		// initialize Spark		
 		JavaSparkContext sc = getSparkContext();
 
@@ -68,11 +75,12 @@ public class SequenceToStructureClusterer {
 		System.out.println("Cluster pairs: " + clusterPairs.count());
 		
 		// create a list of chain ids needed for calculation
-	    List<String> chainIds = clusterPairs.values().collect();
+        List<String> chainIds = clusterPairs.values().collect();
 		System.out.println("Chains: " + chainIds.size());
 		
 		// read <PdbId.chainId, SimplePolymerChain> pairs;
 		JavaPairRDD<String, SimplePolymerChain> chains = getPolymerChains(hadoopSequenceFileName, sc)
+				.filter(new GapFilterSPC(0, 0)) // keep protein chains with gap size <= 0 and 0 gaps
 				.filter(t -> (chainIds.contains(t._1)));
 		System.out.println("chain count: " + chains.count());
 		
@@ -84,9 +92,16 @@ public class SequenceToStructureClusterer {
 		JavaPairRDD<Integer, Iterable<String>> clusters = clusterPairs.groupByKey();
 		System.out.println("Clusters: " + clusters.count());
 		
+		PrintWriter writer = new PrintWriter(outputFileName);
+		writer.println("PdbId.ChainId, SequenceClusterNumber, StructureClusterNumber");
 		// loop through sequence clusters
-		clusters.foreach(new StructureClusterer(chainMap));
+		List<List<Tuple2<String, Integer[]>>> structuralClusterList = clusters.map(t -> new StructureClusterer(chainMap, maxRmsd).getStructuralClusters(t)).collect();
 		
+		for(List<Tuple2<String, Integer[]>> list: structuralClusterList) {
+			writeToCsv(writer, list);
+		}
+		
+		writer.close();
 		sc.close();
 
 		System.out.println("Time: " + (System.nanoTime() - start)/1E9 + " sec.");
@@ -104,6 +119,7 @@ public class SequenceToStructureClusterer {
 		JavaPairRDD<String, SimplePolymerChain> chains = sc
 						.sequenceFile(hadoopSequenceFileName, Text.class, ArrayWritable.class,NUM_THREADS*NUM_TASKS_PER_THREAD)
 						.mapToPair(new HadoopToSimpleChainMapper())
+						.filter(new GapFilterSPC(0, 0)) // keep protein chains with gap size <= 0 and 0 gaps
 						.filter(t -> t._2.isProtein());
 		return chains;
 	}
@@ -154,5 +170,22 @@ public class SequenceToStructureClusterer {
 		conf.registerKryoClasses(new Class[]{SimplePolymerChain.class, SimplePolymerType.class});
 		
 		return new JavaSparkContext(conf);
+	}
+	
+	/**
+	 * Writes chain id, sequence cluster, and structural cluster to a csv file
+	 * @param writer
+	 * @param list
+	 */
+	private static void writeToCsv(PrintWriter writer, List<Tuple2<String, Integer[]>> list) {
+		for (Tuple2<String, Integer[]> t : list) {
+			writer.print(t._1);
+			for (Integer f: t._2) {
+				writer.print(",");
+			    writer.print(f);
+			}
+			writer.println();
+		}
+		writer.flush();
 	}
 }
