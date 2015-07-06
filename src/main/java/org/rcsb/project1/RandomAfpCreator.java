@@ -62,9 +62,9 @@ public class RandomAfpCreator {
 				.filter(new LengthFilter(50,500)) // keep protein chains with 50 - 500 residues
 				.collect(); // return results to master node
 //
-        for (Tuple2<String, Point3d[]> t: chains) {
-        	System.out.println(t._1 + ": " + Arrays.toString(t._2));
-        }
+//        for (Tuple2<String, Point3d[]> t: chains) {
+//        	System.out.println(t._1 + ": " + Arrays.toString(t._2));
+//        }
         
 		// Step 2.  broadcast feature vectors to all nodes
 		final Broadcast<List<Tuple2<String,Point3d[]>>> chainsBc = sc.broadcast(chains);
@@ -81,7 +81,7 @@ public class RandomAfpCreator {
 			List<Tuple2<String, Double[]>> list = sc
 					.parallelizePairs(pairs, NUM_THREADS*NUM_TASKS_PER_THREAD) // distribute data
 					.mapToPair(new RandomAfpMapper(chainsBc, length, r.nextInt()))
-					.filter(t -> t._2[1] < 12.0) // keep only dRMSD < 6 (dRMSD is 1th element in Double[])
+					.filter(t -> (t._2[0] < 12.0 && t._2[1] < 12)) // keep only dRMSD < 6 (dRMSD is 1th element in Double[])
 					.collect();	// copy result to master node
 
 			// write results to .csv file

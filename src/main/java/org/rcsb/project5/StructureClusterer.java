@@ -24,7 +24,13 @@ public class StructureClusterer implements VoidFunction<Tuple2<Integer, Iterable
 
 		for (String id: tuple._2) {
 			SimplePolymerChain c = map.get(id);
-			System.out.println(id + ": " + c.getSequence());
+			// the chain can be null for new structures deposited after the 
+			// hadoop input file was created
+			if (c == null) {
+				System.out.println("Skipping: " + id);
+			} else {
+				System.out.println(id + ": " + c.getSequence());
+			}
 		}
 	}
 }
