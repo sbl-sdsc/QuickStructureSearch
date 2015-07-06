@@ -1,7 +1,6 @@
 package org.rcsb.project2;
 
-import java.util.ArrayList;
-import java.util.List;
+import java.util.Arrays;
 
 import javax.vecmath.Point3d;
 
@@ -17,7 +16,7 @@ import org.biojava.nbio.structure.align.StructureAlignmentFactory;
 import org.biojava.nbio.structure.align.fatcat.FatCatRigid;
 import org.biojava.nbio.structure.align.fatcat.calc.FatCatParameters;
 import org.biojava.nbio.structure.align.model.AFPChain;
-import org.biojava.nbio.structure.align.util.AFPChainScorer;
+import org.rcsb.hadoop.io.SimplePolymerChain;
 import org.rcsb.project3.SequenceFeatureInterface;
 
 /**
@@ -26,7 +25,44 @@ import org.rcsb.project3.SequenceFeatureInterface;
  * @author Kevin Wu
  */
 public final class FingerprintMapper_KevinWu {
+	private static final SequenceFeatureInterface<String> BLANK_SEQUENCE_FEATURE = new SequenceFeatureInterface<String>() {
 
+		@Override
+		public double similarity(SequenceFeatureInterface<String> sequence2, int i, int j) {
+			return 0;
+		}
+
+		@Override
+		public boolean identity(SequenceFeatureInterface<String> sequence2, int i, int j) {
+			return true;
+		}
+
+		@Override
+		public String[] getSequence() {
+			return null;
+		}
+
+		@Override
+		public String get(int index) {
+			return "";
+		}
+
+		@Override
+		public int length() {
+			return 0;
+		}
+
+		@Override
+		public String toString(int index) {
+			return "";
+		}
+
+		@Override
+		public double todouble(int index) {
+			return 0;
+		}
+
+	};
 	private static final char MATCH_CHAR = '|';
 	private static final char MATCH_FRAG_CHAR = '$';
 	private static final String SPACER = "\t";
@@ -40,24 +76,21 @@ public final class FingerprintMapper_KevinWu {
 	 * Gets the Optimal Alignment of 2 protein chains, including gaps
 	 * 
 	 * @param points1
-	 *            List of Point3d representing the first protein chain.
+	 *            List of Point3d for protein chain 1.
 	 * @param points2
-	 *            List of Point3d representing the second protein chain.
+	 *            List of Point3d for protein chain 2.
 	 * @return 3 dimensional array for the optimal alignment. Includes gaps.
 	 */
 	private static int[][][] getOptimalAlignment(Point3d[] points1, Point3d[] points2) {
-		List<Integer> gaps1 = new ArrayList<>();
-		List<Integer> gaps2 = new ArrayList<>();
-		Atom[] ca1 = getCAAtoms(points1, gaps1);
-		Atom[] ca2 = getCAAtoms(points2, gaps2);
-
+		Atom[] ca1 = getCAAtoms(points1);
+		Atom[] ca2 = getCAAtoms(points2);
 		FatCatParameters params = new FatCatParameters();
 		AFPChain afp = null;
 		try {
 			StructureAlignment algorithm = StructureAlignmentFactory.getAlgorithm(FatCatRigid.algorithmName);
 			afp = algorithm.align(ca1, ca2, params);
-			double tmScore = AFPChainScorer.getTMScore(afp, ca1, ca2);
-			afp.setTMScore(tmScore);
+			// double tmScore = AFPChainScorer.getTMScore(afp, ca1, ca2);
+			// afp.setTMScore(tmScore);
 		}
 		catch (StructureException e) {
 			e.printStackTrace();
@@ -66,71 +99,27 @@ public final class FingerprintMapper_KevinWu {
 			new NullPointerException("AFP is null").printStackTrace();
 			return new int[0][0][0];
 		}
-		int[][][] withGaps = afp.getOptAln();
-		addGaps(withGaps, gaps1, gaps2, 0);
-		return withGaps;
-	}
-
-	/**
-	 * Adds gaps into the Optimal Alignment given by FATCAT.<br>
-	 * FATCAT can give multiple alignments, this inserts the gaps into the one given by <code>ind</code>.
-	 * 
-	 * @param optAln
-	 *            3 dimensional Array of the optimal alignment given by
-	 *            {@link org.biojava.nbio.structure.align.model.AFPChain#getOptAln()}
-	 * @param gaps1
-	 *            List of Integer indexes of gaps in protein chain 1
-	 * @param gaps2
-	 *            List of Integer indexes of gaps in protein chain 2
-	 * @param index
-	 *            index in optAln to insert gaps
-	 */
-	private static void addGaps(int[][][] optAln, List<Integer> gaps1, List<Integer> gaps2, int index) {
-		final int N = Math.max(gaps1.size(), gaps2.size()) + optAln[0][0].length;
-		gaps1.add(N);
-		gaps2.add(N);
-		int[][] wg = new int[2][N];
-		for (int i = 0, j = 0; i < gaps1.size(); i++) {
-			for (; j < gaps1.get(i); j++)
-				wg[0][j] = optAln[index][0][j - i];
-			if (j != N)
-				wg[0][j++] = -1;
-		}
-		for (int i = 0, j = 0; i < gaps2.size(); i++) {
-			for (; j < gaps2.get(i); j++)
-				wg[1][j] = optAln[index][1][j - i];
-			if (j != N)
-				wg[1][j++] = -1;
-		}
-		optAln[index] = wg;
+		int[][][] opt = afp.getOptAln();
+		return opt;
 	}
 
 	/**
 	 * Gets Array of Atom for FATCAT algorithm. <br>
-	 * Also records the indexes of gaps in a gaps List.
 	 * 
 	 * @param points
-	 *            Array of Point3d for the points in the protein chain.
-	 * @param gaps
-	 *            List to add gap indexes to.
+	 *            Array of Point3d for the protein chain.
 	 * @return Array of Atom for FATCAT algorithm.
 	 */
-	private static Atom[] getCAAtoms(Point3d[] points, List<Integer> gaps) {
-		if (gaps.size() != 0) {
-			new IllegalArgumentException(String.format(
-					"Error: gaps (size %d) already contains some elements. It will be cleared.", gaps.size()))
-					.printStackTrace();
-			gaps.clear();
-		}
-
+	private static Atom[] getCAAtoms(Point3d[] points) {
+		int gaps = 0;
 		for (int i = 0; i < points.length; i++)
 			if (points[i] == null)
-				gaps.add(i);
+				gaps++;
 
 		Chain c = new ChainImpl();
 		c.setChainID("A");
 
-		Atom[] atoms = new Atom[points.length - gaps.size()];
+		Atom[] atoms = new Atom[points.length - gaps];
 
 		for (int i = 0, j = 0; i < points.length; i++) {
 			if (points[i] != null) {
@@ -152,7 +141,7 @@ public final class FingerprintMapper_KevinWu {
 	}
 
 	/**
-	 * Gives a String that shows the alignment of two protein chains with given fragments. <br>
+	 * Returns String showing the alignment of 2 protein chains using FATCAT and given {@link SequenceFeatureInterface}s <br>
 	 * <br>
 	 * Row 1 has fragment IDs for chain 1<br>
 	 * Row 2 has positions of points in chain 1<br>
@@ -162,65 +151,33 @@ public final class FingerprintMapper_KevinWu {
 	 * Row 4 has positions of points in chain 2<br>
 	 * Row 5 has fragment IDs for chain 2<br>
 	 *
-	 * @param points1
-	 *            Array of Point3d representing the points of the first protein chain
-	 * @param points2
-	 *            Array of Point3d representing the points of the second protein chain
-	 * @param seqFeat1
-	 *            SequenceFeatureInterface for the first protein chain
-	 * @param seqFeat2
-	 *            SequenceFeatureInterface for the second protein chain
+	 * @param p1
+	 *            Array of Point3d for protein chain 1
+	 * @param p2
+	 *            Array of Point3d for protein chain 2
+	 * @param f1
+	 *            {@link SequenceFeatureInterface} for protein chain 1.
+	 * @param f2
+	 *            {@link SequenceFeatureInterface} for protein chain 2.
 	 * @return String showing the alignment
 	 */
-	public static <T> String align(Point3d[] points1, Point3d[] points2, SequenceFeatureInterface<T> seqFeat1,
-			SequenceFeatureInterface<T> seqFeat2) {
-		int[][][] optAln = getOptimalAlignment(points1, points2);
-		int[] topMatchIndexes = optAln[0][0];
-		int[] botMatchIndexes = optAln[0][1];
-
-		StringBuilder topFrag = new StringBuilder();
-		StringBuilder topIndexes = new StringBuilder();
-		StringBuilder matches = new StringBuilder();
-		StringBuilder botIndexes = new StringBuilder();
-		StringBuilder botFeats = new StringBuilder();
-		for (int matchInd = 0; matchInd < topMatchIndexes.length; matchInd++) {
-			if (topMatchIndexes[matchInd] != 0 || botMatchIndexes[matchInd] != 0 || matchInd == 0) {
-				matches.append(MATCH_CHAR);
-				topIndexes.append(topMatchIndexes[matchInd]);
-				botIndexes.append(botMatchIndexes[matchInd]);
-			}
-			else {
-				if (topMatchIndexes[matchInd] == -1)
-					topIndexes.append("nul");
-				else
-					topIndexes.append(String.format("(%d)", matchInd + topMatchIndexes[0]));
-				if (botMatchIndexes[matchInd] == -1)
-					botIndexes.append("nul");
-				else
-					botIndexes.append(String.format("(%d)", matchInd + botMatchIndexes[0]));
-			}
-			if (seqFeat1 != null && seqFeat2 != null)
-				if (seqFeat1.identity(seqFeat2, matchInd, matchInd))
-					matches.append(MATCH_FRAG_CHAR);
-				else
-					matches.append(String.format("%.2f", seqFeat1.similarity(seqFeat2, matchInd, matchInd)));
-			topFrag.append(seqFeat1 == null ? "" : seqFeat1.get(matchInd));
-			botFeats.append(seqFeat2 == null ? "" : seqFeat2.get(matchInd));
-			matches.append(SPACER);
-			topIndexes.append(SPACER);
-			botIndexes.append(SPACER);
-			topFrag.append(seqFeat1 == null ? "" : SPACER);
-			botFeats.append(seqFeat1 == null ? "" : SPACER);
+	public static <T> String align(Point3d[] p1, Point3d[] p2, SequenceFeatureInterface<T> f1,
+			SequenceFeatureInterface<T> f2) {
+		int[][][] optAln = getOptimalAlignment(p1, p2);
+		int[] a1, a2;
+		if (optAln != null) {
+			a1 = optAln[0][0];
+			a2 = optAln[0][1];
 		}
-		topFrag.append(seqFeat1 == null ? "" : System.lineSeparator());
-		topFrag.append(topIndexes);
-		topFrag.append(System.lineSeparator());
-		topFrag.append(matches);
-		topFrag.append(System.lineSeparator());
-		topFrag.append(botIndexes);
-		topFrag.append(seqFeat2 == null ? "" : System.lineSeparator());
-		topFrag.append(seqFeat2 == null ? "" : botFeats);
-		return topFrag.toString();
+		else {
+			a1 = new int[0];
+			a2 = new int[0];
+		}
+		System.out.println((Arrays.toString(a1) + System.lineSeparator() + Arrays.toString(a2)).replaceAll(" ", "\t"));
+		final String[] n1 = new String[p1.length];
+		for (int i = 0; i < n1.length; i++)
+			n1[i] = Integer.toString(i);
+		return align(a1, a2, n1, n1, f1, f2);
 	}
 
 	/**
@@ -231,13 +188,165 @@ public final class FingerprintMapper_KevinWu {
 	 * {@value #MATCH_CHAR} means the points at the position match (based on fatcat) <br>
 	 * Row 3 has positions of points in chain 2<br>
 	 * 
-	 * @param points1
-	 *            Array of Point3d representing the points of the first protein chain
-	 * @param points2
-	 *            Array of Point3d representing the points of the second protein chain
+	 * @param p1
+	 *            Array of Point3d for protein chain 1.
+	 * @param p2
+	 *            Array of Point3d for protein chain 2.
 	 * @return String showing the alignment
 	 */
-	public static String align(Point3d[] points1, Point3d[] points2) {
-		return align(points1, points2, null, null);
+	public static String align(Point3d[] p1, Point3d[] p2) {
+		return align(p1, p2, BLANK_SEQUENCE_FEATURE, BLANK_SEQUENCE_FEATURE);
+	}
+
+	/**
+	 * Returns String showing the alignment of 2 protein chains using FATCAT and given {@link SequenceFeatureInterface}s
+	 * 
+	 * @param c1
+	 *            {@link SimplePolymerChain} for protein chain 1.
+	 * @param c2
+	 *            {@link SimplePolymerChain} for protein chain 2.
+	 * @param f1
+	 *            {@link SequenceFeatureInterface} for protein chain 1.
+	 * @param f2
+	 *            {@link SequenceFeatureInterface} for protein chain 2.
+	 * @return String showing the alignment.
+	 */
+	public static <T> String align(SimplePolymerChain c1, SimplePolymerChain c2, SequenceFeatureInterface<T> f1,
+			SequenceFeatureInterface<T> f2) {
+		int[][][] optAln = getOptimalAlignment(c1.getCoordinates(), c2.getCoordinates());
+		int[] t, b;
+		t = b = new int[0];
+		if (optAln != null) {
+			t = optAln[0][0];
+			b = optAln[0][1];
+		}
+		System.out.println((Arrays.toString(t) + System.lineSeparator() + Arrays.toString(b)).replaceAll(" ", "\t"));
+		return align(t, b, c1.getSequence().split(""), c2.getSequence().split(""), f1, f2);
+	}
+
+	/**
+	 * Returns String showing the alignment of 2 protein chains using FATCAT and given {@link SequenceFeatureInterface}s
+	 * 
+	 * @param a1
+	 *            Position of matching points in protein chain 1.
+	 * @param a2
+	 *            Position of matching points in protein chain 2.
+	 * @param n1
+	 *            String for points in protein chain 1.
+	 * @param n2
+	 *            String for points in protein chain 2.
+	 * @param f1
+	 *            {@link SequenceFeatureInterface} for protein chain 1.
+	 * @param f2
+	 *            {@link SequenceFeatureInterface} for protein chain 2.
+	 * @return String showing the alignment of 2 protein chains.
+	 */
+	public static <T> String align(int[] a1, int[] a2, String[] n1, String[] n2, SequenceFeatureInterface<T> f1,
+			SequenceFeatureInterface<T> f2) {
+		if (a1.length != a2.length)
+			new IllegalArgumentException("alignment lengths not equal (" + a1.length + " ," + a2.length + ")")
+					.printStackTrace();
+		StringBuilder tf = new StringBuilder(), ti = new StringBuilder(), m = new StringBuilder(), bf = new StringBuilder(), bi = new StringBuilder();
+		if (a1.length == 0) {
+			noMatch(n1, n2, f1, f2, tf, ti, m, bi, bf, 0, n1.length, 0, n2.length);
+		}
+		else {
+
+			int tp, bp;
+			tp = bp = -1;
+			for (int i = 0; i < a1.length; i++) {
+				if (i != 0 && (a1[i] == 0 || a2[i] == 0)) {
+					noMatch(n1, n2, f1, f2, tf, ti, m, bi, bf, tp + 1, n1.length, bp + 1, n2.length);
+					break;
+				}
+				if (a1[i] - tp > 1 || a2[i] - bp > 1)
+					noMatch(n1, n2, f1, f2, tf, ti, m, bi, bf, tp + 1, a1[i], bp + 1, a2[i]);
+				tf.append(f1.toString(a1[i]));
+				ti.append(n1[a1[i]]);
+				m.append(MATCH_CHAR);
+				m.append(f1.identity(f2, a1[i], a2[i]) ? MATCH_FRAG_CHAR : String.format("%.2f",
+						f1.similarity(f2, a1[i], a2[i])));
+				bi.append(n2[a2[i]]);
+				bf.append(f2.toString(a2[i]));
+
+				tf.append(SPACER);
+				ti.append(SPACER);
+				m.append(SPACER);
+				bi.append(SPACER);
+				bf.append(SPACER);
+				tp = a1[i];
+				bp = a2[i];
+			}
+		}
+		tf.append(System.lineSeparator());
+		tf.append(ti);
+		tf.append(System.lineSeparator());
+		tf.append(m);
+		tf.append(System.lineSeparator());
+		tf.append(bi);
+		tf.append(System.lineSeparator());
+		tf.append(bf);
+		return tf.toString();
+	}
+
+	/**
+	 * For gaps
+	 * 
+	 * @param n1
+	 *            String array for points on protein chain 1.
+	 * @param n2
+	 *            String array for points on protein chain 2.
+	 * @param f1
+	 *            {@link SequenceFeatureInterface} for protein chain 1.
+	 * @param f2
+	 *            {@link SequenceFeatureInterface} for protein chain 2.
+	 * @param tf
+	 *            {@link StringBuilder} for protein 1 fragments.
+	 * @param ti
+	 *            {@link StringBuilder} for protein 1 chain.
+	 * @param m
+	 *            {@link StringBuilder} for matches.
+	 * @param bi
+	 *            {@link StringBuilder} for protein 2 chain.
+	 * @param bf
+	 *            {@link StringBuilder} for protein 2 fragments.
+	 * @param tS
+	 *            Protein 1 gap start position (inclusive).
+	 * @param tE
+	 *            Protein 1 gap end position (exclusive).
+	 * @param bS
+	 *            Protein 2 gap start position (inclusive).
+	 * @param bE
+	 *            Protein 2 gap end position (exclusive).
+	 */
+	private static <T> void noMatch(String[] n1, String[] n2, SequenceFeatureInterface<T> f1,
+			SequenceFeatureInterface<T> f2, StringBuilder tf, StringBuilder ti, StringBuilder m, StringBuilder bi,
+			StringBuilder bf, int tS, int tE, int bS, int bE) {
+		int tv = tE - tS;
+		int bv = bE - bS;
+		for (int i = 0; i < tv; i++) {
+			ti.append(n1[i + tS]);
+			tf.append(f1.toString(i));
+			ti.append(SPACER);
+			tf.append(SPACER);
+		}
+		for (int i = 0; i < bv; i++) {
+			bi.append(n2[i + bS]);
+			bf.append(f2.toString(i));
+			bi.append(SPACER);
+			bf.append(SPACER);
+		}
+		int mv = Math.max(tv, bv);
+		for (int i = 0; i < mv; i++)
+			// Match spacing
+			m.append(SPACER);
+		for (int i = 0; i < mv - tv; i++) { // top spacing
+			tf.append(SPACER);
+			ti.append(SPACER);
+		}
+		for (int i = 0; i < mv - bv; i++) { // bot spacing
+			bf.append(SPACER);
+			bi.append(SPACER);
+		}
 	}
 }

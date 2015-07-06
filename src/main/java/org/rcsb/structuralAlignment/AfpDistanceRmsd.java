@@ -60,7 +60,7 @@ public class AfpDistanceRmsd {
 			}
 		}
 
-		return Math.sqrt(sum /(x1.length)*x1.length);
+		return Math.sqrt(sum /(x1.length*x1.length));
 	}
 	
 	

@@ -4,51 +4,46 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
-import javax.vecmath.Point3d;
-
-//
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.rcsb.hadoop.io.HadoopToSimpleChainMapper;
+import org.rcsb.hadoop.io.SimplePolymerChain;
 import org.rcsb.project3.SequenceFeatureInterface;
-import org.rcsb.structuralSimilarity.SeqToChainMapper;
 
 import scala.Tuple2;
 
-public class FingerprintMapperTest {
+public class FingerprintMapperTest2 {
 	private static final int NUM_THREADS = 4;
 	private static final int NUM_TASKS_PER_THREAD = 3;
 
 	public static void main(String[] args) {
 		String path = args[0];
-		SparkConf conf = new SparkConf().setMaster("local[" + NUM_THREADS + "]").setAppName(
-				FingerprintMapperTest.class.getSimpleName());
+		SparkConf conf = new SparkConf().setMaster("local[" + NUM_THREADS + "]")
+				.setAppName(FingerprintMapperTest2.class.getSimpleName())
+				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
 		JavaSparkContext sc = new JavaSparkContext(conf);
-		System.out.println("HAHAHA");
+		System.out.println("123");
 		long start = System.nanoTime();
-		List<Tuple2<String, Point3d[]>> list = sc
+		List<Tuple2<String, SimplePolymerChain>> list = sc
 				.sequenceFile(path, Text.class, ArrayWritable.class, NUM_THREADS * NUM_TASKS_PER_THREAD)
-				.sample(false, 0.02, 123)// sample
-				.mapToPair(new SeqToChainMapper()) // convert input to <pdbId.chainId, CA coordinate array> pairs
+				.sample(false, 0.002, 2345)// sample
+				.mapToPair(new HadoopToSimpleChainMapper())
 				// .filter(new GapFilter(0, 0)) // filter chains with zero gap length and zero gaps
-				// .filter(new org.apache.spark.api.java.function.Function<Tuple2<String, Point3d[]>, Boolean>() {
-				// @Override
-				// public Boolean call(Tuple2<String, Point3d[]> v1) throws Exception {
-				// return v1._1().toUpperCase().equals("1SRR.A") || v1._1().toUpperCase().equals("1T37.A");
-				// }
-				// })// filter test
+				.filter(t -> t._2.isProtein())// filter test
 				.collect();
+		System.out.println("here");
 		List<Integer> valid = new ArrayList<>();
 		for (int i = 0; i < list.size() - 1; i++)
-			if (list.get(i)._2.length == list.get(i + 1)._2.length)
+			if (list.get(i)._2.getCoordinates().length == list.get(i + 1)._2.getCoordinates().length)
 				valid.add(i);
-
+		System.out.println("valid: " + valid.size());
 		valid.stream().forEach(new Consumer<Integer>() {
 			@Override
 			public void accept(Integer i) {
-				Point3d[] chain1 = list.get(i)._2;
-				Point3d[] chain2 = list.get(i + 1)._2;
+				SimplePolymerChain chain1 = list.get(i)._2;
+				SimplePolymerChain chain2 = list.get(i + 1)._2;
 				String chainId1 = list.get(i)._1;
 				String chainId2 = list.get(i + 1)._1;
 				class SeqFeatTest implements SequenceFeatureInterface<Integer> {
@@ -62,7 +57,7 @@ public class FingerprintMapperTest {
 
 					@Override
 					public boolean identity(SequenceFeatureInterface<Integer> sequence2, int i, int j) {
-						return get(i).equals(sequence2.get(j));
+						return get(i) == sequence2.get(j);
 					}
 
 					@Override
@@ -94,12 +89,10 @@ public class FingerprintMapperTest {
 					}
 				}
 				StringBuilder test = new StringBuilder(chainId1 + ", " + chainId2);
-				// System.out.println(chainId1 + ", " + chainId2);
 				test.append(System.lineSeparator());
 				test.append(FingerprintMapper_KevinWu.align(chain1, chain2, new SeqFeatTest(), new SeqFeatTest()));
 				test.append(System.lineSeparator());
-				// test.append(System.lineSeparator());
-				// test.append(FingerprintMapper_KevinWu.align(chain1, chain2));
+				test.append(System.lineSeparator());
 				System.out.println(test);
 			}
 		});
