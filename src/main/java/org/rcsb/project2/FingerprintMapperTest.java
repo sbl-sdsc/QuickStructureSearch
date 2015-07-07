@@ -96,7 +96,7 @@ public class FingerprintMapperTest {
 				StringBuilder test = new StringBuilder(chainId1 + ", " + chainId2);
 				// System.out.println(chainId1 + ", " + chainId2);
 				test.append(System.lineSeparator());
-				test.append(FingerprintMapper_KevinWu.align(chain1, chain2, new SeqFeatTest(), new SeqFeatTest()));
+				test.append(FingerprintMapper_KevinWu.align(chain1, chain2, new SeqFeatTest(), new SeqFeatTest(), true));
 				test.append(System.lineSeparator());
 				// test.append(System.lineSeparator());
 				// test.append(FingerprintMapper_KevinWu.align(chain1, chain2));
