@@ -111,7 +111,7 @@ public class Library
 				if(bool == true){									//\\
 					tup.copy(index, tup._2);
 					lib.add(index, tup);
-					System.out.println(index + ": " + lib.get(index)._2);
+					System.out.println(index + ": " + Arrays.toString(lib.get(index)._2));
 					index++;
 				}
 				bool = true;
