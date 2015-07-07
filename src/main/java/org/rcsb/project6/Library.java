@@ -100,7 +100,7 @@ public class Library
 						if(l._2() == tup._2()){
 							qcp.set(l._3(), tup._3());
 							double q = qcp.getRmsd();
-							if(q<1){					// ALSO Compare lengths
+							if(q<1){
 								bool = false;
 								break;
 							}
