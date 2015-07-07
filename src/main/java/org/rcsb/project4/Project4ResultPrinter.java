@@ -73,13 +73,16 @@ public class Project4ResultPrinter {
 		
 		int proteinLength = 0;
 		int range = 10;
-		while (proteinLength < 2500) {
+		while (proteinLength < 3000) {
 			if (proteinLength < 500) {
 				proteinLength += 50;
 				range = 10;
-			} else {
+			} else if (proteinLength < 1000) {
 				proteinLength += 500;
 				range = 100;
+			} else {
+				proteinLength += 500;
+				range = 200;
 			}
 			List<Tuple2<String, Point3d[]>> chains = listOf(sc, input, proteinLength, range);
 
@@ -174,16 +177,20 @@ public class Project4ResultPrinter {
 		Random r = new Random(seed);
 		Set<Tuple2<Integer,Integer>> set = new HashSet<>(nPairs);
 
-		for (int i = 0; i < nPairs; i++) {
+		int i = 0;
+		int t = 0;
+		while (i < nPairs && t < (3 * nPairs)) {
+			t++;
 			int j = r.nextInt(n);
 			int k = r.nextInt(n);
 			if (j == k) {
 				continue;
 			}
-
 			Tuple2<Integer,Integer> tuple = new Tuple2<>(j,k);
-			if (! set.contains(tuple)) {
+			Tuple2<Integer,Integer> tuple2 = new Tuple2<>(k,j);
+			if (!set.contains(tuple) && ! set.contains(tuple2)) {
 			    set.add(tuple);
+			    i++;
 			}
 		}
 		return new ArrayList<Tuple2<Integer,Integer>>(set);
