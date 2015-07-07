@@ -94,7 +94,7 @@ public class Library
 																  //
 				if(!lib.isEmpty()){								 //
 					for(Tuple2<String, Point3d[]> l: lib){		//
-						if(l._2 != null && tup._2 != null){	   //
+						if(tup._2 != null){					   //
 							qcp.set(l._2, tup._2);			  //
 							if(qcp != null){				 //
 								double q = qcp.getRmsd();	// This line gives a null pointer exception
