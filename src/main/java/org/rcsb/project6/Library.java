@@ -86,7 +86,7 @@ public class Library
 
 				// Create a Tuple2 for each fragment
 				Tuple2<String, Point3d[]> tup = new Tuple2<String, Point3d[]>(t._1 + "." + star, Arrays.copyOfRange(t._2, star, star+length));
-				
+																	   //
 				// center each fragment								  //
 				SuperPositionQCP.center(tup._2);					 //
 																	//
@@ -100,16 +100,16 @@ public class Library
 								double q = qcp.getRmsd();	// This line gives a null pointer exception
 								if(q<1){				  //\\
 									bool = false;		   //\\
-									break;
-								}							//\\
-							}								 //\\
-						}									  //\\
-						else{								   //\\
-							bool = false;						//\\
-						}										 //\\
-					}											  //\\
-				}												   //\\
-				if(bool == true){									//\\
+									break;					//\\
+								}							 //\\
+							}								  //\\
+						}									   //\\
+						else{									//\\
+							bool = false;						 //\\
+						}										  //\\
+					}											   //\\
+				}													//\\
+				if(bool == true){									 //\\
 					tup.copy(index, tup._2);
 					lib.add(index, tup);
 					System.out.println(index + ": " + Arrays.toString(lib.get(index)._2));
