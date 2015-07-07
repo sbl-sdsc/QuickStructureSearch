@@ -20,15 +20,15 @@ import org.rcsb.structuralAlignment.SuperPositionQCP;
 import org.rcsb.structuralSimilarity.GapFilter;
 import org.rcsb.structuralSimilarity.LengthFilter;
 
-import scala.Int;
 import scala.Tuple2;
-import scala.Tuple3;
 
 /**
  * 
  * This class creates a library of unique fragments categorized by length.
  * The only data to be output is a key for each fragment and an arraywritable
- * of length ranges and x0,y0,z0,x1,y1,z1,... coordinates.
+ * of length ranges and x0,y0,z0,x1,y1,z1,... coordinates.\
+ * For now, though, I'm getting it to output an index as an int and the 
+ * points as a point3d[]
  * 
  * @author Grant Summers
  *
@@ -37,7 +37,7 @@ import scala.Tuple3;
 public class Library
 {
 	private static int NUM_THREADS = 4;
-	private static int NUM_TASKS_PER_THREAD = 3; k
+	private static int NUM_TASKS_PER_THREAD = 3;
 	
 	// make the data structure to store unique fragments
 	
@@ -58,7 +58,7 @@ public class Library
 //		long start = System.nanoTime();
 		
 		// map sequence file to pairs (id, points)
-		List<Tuple2<String, Point3d[]>> chains = sc
+		List<Tuple2<String, Point3d[]>> chains = sc  // CHANGE THIS TO SIMPLEPOLYMERCHAIN
 				.sequenceFile(path, Text.class, ArrayWritable.class,NUM_THREADS*NUM_TASKS_PER_THREAD)
 				.sample(false, 0.0003, 123)
 				.mapToPair(new HadoopToSimpleChainMapper()) // convert input to <pdbId.chainId, SimplePolymerChain> pairs
