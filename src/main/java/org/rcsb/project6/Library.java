@@ -1,4 +1,4 @@
-package project6;
+package org.rcsb.project6;
 
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
@@ -58,7 +58,7 @@ public class Library
 //		long start = System.nanoTime();
 		
 		// map sequence file to pairs (id, points)
-		List<Tuple2<String, Point3d[]>> chains = sc  // CHANGE THIS TO SIMPLEPOLYMERCHAIN
+		List<Tuple2<String, Point3d[]>> chains = sc
 				.sequenceFile(path, Text.class, ArrayWritable.class,NUM_THREADS*NUM_TASKS_PER_THREAD)
 				.sample(false, 0.0003, 123)
 				.mapToPair(new HadoopToSimpleChainMapper()) // convert input to <pdbId.chainId, SimplePolymerChain> pairs
@@ -71,7 +71,7 @@ public class Library
 		List<Tuple2<String, Point3d[]>> lib = new ArrayList<>();
 		
 		// index for where to place the fragments in lib
-		int index = 0;
+//		int index = 0;
 		
 		// boolean for whether or not to add a fragment to the library
 		boolean bool = true;
@@ -86,7 +86,7 @@ public class Library
 
 				// Create a Tuple2 for each fragment
 				Tuple2<String, Point3d[]> tup = new Tuple2<String, Point3d[]>(t._1 + "." + star, Arrays.copyOfRange(t._2, star, star+length));
-				
+																	   //
 				// center each fragment								  //
 				SuperPositionQCP.center(tup._2);					 //
 																	//
@@ -94,25 +94,25 @@ public class Library
 																  //
 				if(!lib.isEmpty()){								 //
 					for(Tuple2<String, Point3d[]> l: lib){		//
-						if(l._2 != null && tup._2 != null){	   //
+						if(tup._2 != null){					   //
 							qcp.set(l._2, tup._2);			  //
 							if(qcp != null){				 //
 								double q = qcp.getRmsd();	// This line gives a null pointer exception
 								if(q<1){				  //\\
 									bool = false;		   //\\
-								}							//\\
-							}								 //\\
-						}									  //\\
-						else{								   //\\
-							bool = false;						//\\
-						}										 //\\
-					}											  //\\
-				}												   //\\
-				if(bool == true){									//\\
-					tup.copy(index, tup._2);
-					lib.add(index, tup);
-					System.out.println(index + ": " + Arrays.toString(lib.get(index)._2));
-					index++;
+									break;					//\\
+								}							 //\\
+							}								  //\\
+						}									   //\\
+						else{									//\\
+							bool = false;						 //\\
+						}										  //\\
+					}											   //\\
+				}													//\\
+				if(bool == true){									 //\\
+					lib.add(tup);
+					System.out.println(lib.size()-1 + ": " + Arrays.toString(tup._2));
+//					index++;
 				}
 				bool = true;
 			}
