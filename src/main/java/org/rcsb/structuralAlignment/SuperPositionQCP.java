@@ -229,8 +229,8 @@ public final class SuperPositionQCP implements Serializable {
      */
     private void calcRmsd(Point3d[] x, Point3d[] y) {
     	if (centered) {
-        	xCentroid.set(0,0,0);
-        	yCentroid.set(0,0,0);
+        	xCentroid = new Point3d(0,0,0);
+        	yCentroid = new Point3d(0,0,0);
     	} else {
     		xCentroid = centroid(x);
     		yCentroid = centroid(y);
