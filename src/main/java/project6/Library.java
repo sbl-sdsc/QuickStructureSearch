@@ -27,8 +27,8 @@ import scala.Tuple2;
  * This class creates a library of unique fragments categorized by length.
  * The only data to be output is a key for each fragment and an arraywritable
  * of length ranges and x0,y0,z0,x1,y1,z1,... coordinates.\
- * For now, though, I'm getting it to output an index as an int and the 
- * points as a point3d[]
+ * For now, though, I'm getting it to output length as a string and the points
+ * as a point3d[].
  * 
  * @author Grant Summers
  *
@@ -80,7 +80,6 @@ public class Library
 		SuperPositionQCP qcp = new SuperPositionQCP(true);
 		
 		for (Tuple2<String, Point3d[]> t: chains) {
-//			System.out.println(t._1 + ": " + Arrays.toString(t._2));
 			for(int star=0; star<t._2.length-length; star++)
 			{
 //				System.out.println(t._1 + "." + star + ": " + Arrays.toString(Arrays.copyOfRange(t._2, star, star + length)));
@@ -88,28 +87,31 @@ public class Library
 				// Create a Tuple2 for each fragment
 				Tuple2<String, Point3d[]> tup = new Tuple2<String, Point3d[]>(t._1 + "." + star, Arrays.copyOfRange(t._2, star, star+length));
 				
-				// center each fragment
-				SuperPositionQCP.center(tup._2);
-				
+				// center each fragment								  //
+				SuperPositionQCP.center(tup._2);					 //
+																	//
+																   //
 																  //
-																 //
-				if(!lib.isEmpty()){								//
-					for(Tuple2<String, Point3d[]> l: lib){	   //
-						if(l._2 != null && tup._2 != null && qcp != null){//
-							qcp.set(l._2, tup._2);			 //
-							double q = qcp.getRmsd();		// This line gives a null pointer exception
-							if(q<1){					  //\\
-								bool = false;			   //\\
-							}								//\\
-						}									 //\\
-						else{								  //\\
-							bool = false;					   //\\
-						}										//\\
-					}
-				}
-				if(bool == true){
+				if(!lib.isEmpty()){								 //
+					for(Tuple2<String, Point3d[]> l: lib){		//
+						if(l._2 != null && tup._2 != null){	   //
+							qcp.set(l._2, tup._2);			  //
+							if(qcp != null){				 //
+								double q = qcp.getRmsd();	// This line gives a null pointer exception
+								if(q<1){				  //\\
+									bool = false;		   //\\
+								}							//\\
+							}								 //\\
+						}									  //\\
+						else{								   //\\
+							bool = false;						//\\
+						}										 //\\
+					}											  //\\
+				}												   //\\
+				if(bool == true){									//\\
 					tup.copy(index, tup._2);
 					lib.add(index, tup);
+					System.out.println(index + ": " + lib.get(index)._2);
 					index++;
 				}
 				bool = true;
@@ -118,9 +120,9 @@ public class Library
 		sc.close();
 		
 		// prints all fragments in lib
-		for(Tuple2<String, Point3d[]> l: lib){
-			System.out.println(l._1 + Arrays.toString(l._2));
-		}
+//		for(Tuple2<String, Point3d[]> l: lib){
+//			System.out.println(l._1 + Arrays.toString(l._2));
+//		}
 		
 		// Write the lib list to a text or csv file
 		PrintWriter writer = new PrintWriter("library.txt", "UTF-8");
