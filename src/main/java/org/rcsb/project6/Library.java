@@ -58,7 +58,7 @@ public class Library
 //		long start = System.nanoTime();
 		
 		// map sequence file to pairs (id, points)
-		List<Tuple2<String, Point3d[]>> chains = sc  // CHANGE THIS TO SIMPLEPOLYMERCHAIN
+		List<Tuple2<String, Point3d[]>> chains = sc
 				.sequenceFile(path, Text.class, ArrayWritable.class,NUM_THREADS*NUM_TASKS_PER_THREAD)
 				.sample(false, 0.0003, 123)
 				.mapToPair(new HadoopToSimpleChainMapper()) // convert input to <pdbId.chainId, SimplePolymerChain> pairs
@@ -71,7 +71,7 @@ public class Library
 		List<Tuple2<String, Point3d[]>> lib = new ArrayList<>();
 		
 		// index for where to place the fragments in lib
-		int index = 0;
+//		int index = 0;
 		
 		// boolean for whether or not to add a fragment to the library
 		boolean bool = true;
@@ -110,10 +110,9 @@ public class Library
 					}											   //\\
 				}													//\\
 				if(bool == true){									 //\\
-					tup.copy(index, tup._2);
-					lib.add(index, tup);
-					System.out.println(index + ": " + Arrays.toString(lib.get(index)._2));
-					index++;
+					lib.add(tup);
+					System.out.println(lib.size()-1 + ": " + Arrays.toString(tup._2));
+//					index++;
 				}
 				bool = true;
 			}
