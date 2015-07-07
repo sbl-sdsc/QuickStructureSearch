@@ -25,7 +25,6 @@ public class FingerprintMapperTest {
 		SparkConf conf = new SparkConf().setMaster("local[" + NUM_THREADS + "]").setAppName(
 				FingerprintMapperTest.class.getSimpleName());
 		JavaSparkContext sc = new JavaSparkContext(conf);
-		System.out.println("HAHAHA");
 		long start = System.nanoTime();
 		List<Tuple2<String, Point3d[]>> list = sc
 				.sequenceFile(path, Text.class, ArrayWritable.class, NUM_THREADS * NUM_TASKS_PER_THREAD)
