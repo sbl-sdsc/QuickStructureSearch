@@ -1,4 +1,4 @@
-package project6;
+package org.rcsb.project6;
 
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
@@ -100,6 +100,7 @@ public class Library
 								double q = qcp.getRmsd();	// This line gives a null pointer exception
 								if(q<1){				  //\\
 									bool = false;		   //\\
+									break;
 								}							//\\
 							}								 //\\
 						}									  //\\
