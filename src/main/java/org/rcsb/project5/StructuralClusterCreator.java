@@ -75,11 +75,22 @@ public class StructuralClusterCreator {
 		int s1 = start1;
 		int e1 = end1;
 		int s2 = start2;
-		int e2 = end2;
-		Point3d[] seq1 = new Point3d[e1 - s1];
-		Point3d[] seq2 = new Point3d[e2 - s2];
-		seq1 = Arrays.copyOfRange(chain1._2.getCoordinates(), s1, e1);
-		seq2 = Arrays.copyOfRange(chain2._2.getCoordinates(), s2, e2);
+		List<Point3d> coordinates1 = new ArrayList<Point3d>();
+		List<Point3d> coordinates2 = new ArrayList<Point3d>();
+		for(int n = 0; n < (e1 - s1); n++) {
+			Point3d temp1 = chain1._2.getCoordinates()[s1 + n];
+			Point3d temp2 = chain2._2.getCoordinates()[s2 + n];
+			if((temp1 != null)&&(temp2 != null)) {
+				coordinates1.add(temp1);
+				coordinates2.add(temp2);
+			}
+		}
+		Point3d[] seq1 = new Point3d[coordinates1.size()];
+		Point3d[] seq2 = new Point3d[coordinates2.size()];
+		for(int count = 0; count < seq1.length; count ++) {
+			seq1[count] = coordinates1.get(count);
+			seq2[count] = coordinates2.get(count);
+		}
 		qcp.set(seq1, seq2);
 		return qcp.getRmsd();
 	}

@@ -80,7 +80,7 @@ public class SequenceToStructureClusterer {
 
 		// read <PdbId.chainId, SimplePolymerChain> pairs;
 		JavaPairRDD<String, SimplePolymerChain> chains = getPolymerChains(hadoopSequenceFileName, sc)
-				.filter(new GapFilterSPC(0, 0)) // keep protein chains with gap size <= 0 and 0 gaps
+		//		.filter(new GapFilterSPC(0, 0)) // keep protein chains with gap size <= 0 and 0 gaps
 				.filter(t -> (chainIds.contains(t._1)));
 		System.out.println("chain count: " + chains.count());
 
@@ -147,7 +147,7 @@ public class SequenceToStructureClusterer {
 		JavaPairRDD<String, SimplePolymerChain> chains = sc
 				.sequenceFile(hadoopSequenceFileName, Text.class, ArrayWritable.class,NUM_THREADS*NUM_TASKS_PER_THREAD)
 				.mapToPair(new HadoopToSimpleChainMapper())
-				.filter(new GapFilterSPC(0, 0)) // keep protein chains with gap size <= 0 and 0 gaps
+		//		.filter(new GapFilterSPC(0, 0)) // keep protein chains with gap size <= 0 and 0 gaps
 				.filter(t -> t._2.isProtein());
 		return chains;
 	}
