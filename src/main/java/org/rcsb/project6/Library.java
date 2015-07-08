@@ -76,18 +76,20 @@ public class Library
 		
 		for (Tuple2<String, Point3d[]> t: chains) {
 			for(int star=0; star<t._2.length-length; star++)
-			{
-//				System.out.println(t._1 + "." + star + ": " + Arrays.toString(Arrays.copyOfRange(t._2, star, star + length)));
-
-				// Create a Tuple3 for each fragment
+			{				
+				// center fragment
+				Point3d[] fragment = new Point3d[length];
+				for (int i = 0; i < length; i++) {
+					fragment[i] = new Point3d(t._2[star+i]);
+				}
+				SuperPositionQCP.center(fragment);			
+				
+				// create tuple3 fragment
 				Tuple3<String, String, Point3d[]> tup = 
 						new Tuple3<String, String, Point3d[]>
-								(t._1 + "." + star,
-								lengthy(Arrays.copyOfRange(t._2, star, star+length)),
-								Arrays.copyOfRange(t._2, star, star+length));
-				
-				// center each fragment
-				SuperPositionQCP.center(tup._3());				
+							(t._1 + "." + star,
+							lengthy(fragment),
+							fragment);
 				
 				if(!lib.isEmpty()){
 					check: for(Tuple3<String, String, Point3d[]> l: lib){
