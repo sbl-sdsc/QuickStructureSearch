@@ -34,8 +34,11 @@ import org.biojava.nbio.structure.align.fatcat.calc.FatCatParameters;
 import org.biojava.nbio.structure.align.model.AFP;
 import org.biojava.nbio.structure.align.model.AFPChain;
 import org.biojava.nbio.structure.jama.Matrix;
+import org.rcsb.structuralAlignment.SuperPositionQCP;
 
 import java.util.List;
+
+import javax.vecmath.Point3d;
 
 /** a class to chain AFPs to an alignment
  * 
@@ -74,7 +77,7 @@ public class AFPChainerP4
 	 * @param timers 
 	 */
 	public static void doChainAfp(FatCatParameters params, AFPChain afpChain,Atom[] ca1, Atom[] ca2, List<Accumulator<Long>> timers){
-		//classTimers = timers;
+		classTimers = timers;
 		max = 0;
 		List<AFP> afpSet = afpChain.getAfpSet();
 
@@ -131,7 +134,11 @@ public class AFPChainerP4
 				j = list[j0];
 				if (twi[j] > 0)
 					continue;
-				isConnected = afpPairConn(j, i, params,afpChain); //note: j, i
+				//isConnected = afpPairConn(j, i, params,afpChain); //note: j, i
+				//long startTime = System.nanoTime();
+				//isConnected = afpPairConnCrmsd(j, i, params,afpChain,ca1,ca2);
+				isConnected = afpPairConn(j, i, params,afpChain);
+				//timers.get(0).add(System.nanoTime() - startTime);
 				Double conn = afpChain.getConn();
 				int t = 0;
 				if ( isConnected)
@@ -301,7 +308,6 @@ public class AFPChainerP4
 	 * @return flag if they are connected
 	 */
 	public static boolean afpPairConn(int afp1, int afp2,  FatCatParameters params, AFPChain afpChain)
-
 	{
 		Double conn = afpChain.getConn();
 		Double dvar = afpChain.getDVar();
@@ -334,6 +340,73 @@ public class AFPChainerP4
 		else 
 			d = disCut;
 //		d = calAfpDis(afp1, afp2,params, afpChain);
+		
+		//note: the 'dis' value is numerically equivalent to the 'rms' with exceptions
+
+		boolean     ch = false;
+		double  tp = 0.0;
+		if(d >= disCut) {
+			tp = torsionPenalty;
+			ch = true;
+		} //use the variation of the distances between AFPs
+		else  if(d > disCut - disSmooth)        {
+			double  wt = Math.sqrt((d - disCut + disSmooth) / disSmooth);
+			//using sqrt: penalty increase with dis more quicker than linear function
+			tp = torsionPenalty * wt;
+		}
+
+		dvar = d;
+		conn = tp + gp;
+
+		afpChain.setConn(conn);
+		afpChain.setDVar(dvar);
+		return ch;
+	}
+	
+	public static boolean afpPairConnCrmsd(int afp1, int afp2,  FatCatParameters params, AFPChain afpChain, Atom[] ca1, Atom[] ca2)
+	{
+		Double conn = afpChain.getConn();
+		Double dvar = afpChain.getDVar();
+
+		double misScore = params.getMisScore();
+		double maxPenalty = params.getMaxPenalty();
+		double disCut = params.getDisCut();
+		double gapExtend = params.getGapExtend();
+		double torsionPenalty = params.getTorsionPenalty();
+		double disSmooth = params.getDisSmooth();
+
+		List<AFP> afpSet = afpChain.getAfpSet();
+
+		int     m = calcGap(afpSet.get(afp2),afpSet.get(afp1));
+		int     g = calcMismatch(afpSet.get(afp2),afpSet.get(afp1));
+
+
+		double  gp = misScore * m;      //on average, penalty for a mismatch is misScore, no modification on score
+		if(g > 0)       {
+			gp += gapExtend * g;
+		}
+		if(gp < maxPenalty)     gp = maxPenalty; //penalty cut-off
+		//note: use < (smaller) instead of >, because maxPenalty is a negative number
+
+		double  d;
+		//TODO
+		long st = System.nanoTime();
+		d = calAfpDis(afp1, afp2,params, afpChain);
+		classTimers.get(1).add(System.nanoTime() - st);
+		st = System.nanoTime();
+		double d2 = calAfpDisCrmsd(afp1, afp2,params, afpChain,ca1,ca2);
+		classTimers.get(2).add(System.nanoTime() - st);
+
+//		double d2 = calAfpDisCrmsd(afp1, afp2,params, afpChain,ca1,ca2);
+//		if (d2 < 6) {
+//			d = calAfpDis(afp1, afp2,params, afpChain);
+//			classTimers.get(1).add(1L);
+//		}
+//		else {
+//			d = disCut;
+//			classTimers.get(2).add(1L);
+//		}
+		//d = calAfpDis(afp1, afp2,params, afpChain);
 		
 		//note: the 'dis' value is numerically equivalent to the 'rms' with exceptions
 
@@ -432,6 +505,28 @@ public class AFPChainerP4
 			}
 		}
 		return (Math.sqrt(rms / fragLenSq));
+	}
+	
+	private static double calAfpDisCrmsd(int afp1, int afp2, FatCatParameters params, AFPChain afpChain, Atom[] ca1, Atom[] ca2)
+	{
+
+		List<AFP> afpSet = afpChain.getAfpSet();
+
+		int fragLen = params.getFragLen();
+
+		Point3d[] chain1 = new Point3d[fragLen * 2];
+		Point3d[] chain2 = new Point3d[fragLen * 2];
+		for (int i = 0; i < fragLen; i++) {
+			chain1[i] = new Point3d(ca1[i+afpSet.get(afp1).getP1()].getCoords());
+			chain2[i] = new Point3d(ca2[i+afpSet.get(afp1).getP2()].getCoords());
+			chain1[i + fragLen] = new Point3d(ca1[i+afpSet.get(afp2).getP1()].getCoords());
+			chain2[i + fragLen] = new Point3d(ca2[i+afpSet.get(afp2).getP2()].getCoords());
+		}
+		SuperPositionQCP qcp = new SuperPositionQCP();
+		qcp.set(chain1, chain2);
+		double rmsd = qcp.getRmsd();
+		
+		return rmsd;
 	}
 	
 	@SuppressWarnings("unused")

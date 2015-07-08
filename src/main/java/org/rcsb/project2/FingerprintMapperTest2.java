@@ -24,7 +24,6 @@ public class FingerprintMapperTest2 {
 				.setAppName(FingerprintMapperTest2.class.getSimpleName())
 				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
 		JavaSparkContext sc = new JavaSparkContext(conf);
-		System.out.println("123");
 		long start = System.nanoTime();
 		List<Tuple2<String, SimplePolymerChain>> list = sc
 				.sequenceFile(path, Text.class, ArrayWritable.class, NUM_THREADS * NUM_TASKS_PER_THREAD)
@@ -33,7 +32,6 @@ public class FingerprintMapperTest2 {
 				// .filter(new GapFilter(0, 0)) // filter chains with zero gap length and zero gaps
 				.filter(t -> t._2.isProtein())// filter test
 				.collect();
-		System.out.println("here");
 		List<Integer> valid = new ArrayList<>();
 		for (int i = 0; i < list.size() - 1; i++)
 			if (list.get(i)._2.getCoordinates().length == list.get(i + 1)._2.getCoordinates().length)
@@ -52,7 +50,7 @@ public class FingerprintMapperTest2 {
 
 					@Override
 					public double similarity(SequenceFeatureInterface<Integer> sequence2, int i, int j) {
-						return 1 / (1d + (get(i).intValue() ^ sequence2.get(j).intValue()));
+						return 0.04 + 1 / (1d + (get(i).intValue() ^ sequence2.get(j).intValue()));
 					}
 
 					@Override
@@ -90,8 +88,12 @@ public class FingerprintMapperTest2 {
 				}
 				StringBuilder test = new StringBuilder(chainId1 + ", " + chainId2);
 				test.append(System.lineSeparator());
-				test.append(FingerprintMapper_KevinWu.align(chain1, chain2, new SeqFeatTest(), new SeqFeatTest()));
+				test.append(FingerprintMapper_KevinWu.align(chain1, chain2, new SeqFeatTest(), new SeqFeatTest(), true));
 				test.append(System.lineSeparator());
+				// test.append(System.lineSeparator());
+				// test.append(FingerprintMapper_KevinWu
+				// .align(chain1, chain2, new SeqFeatTest(), new SeqFeatTest(), false));
+				// test.append(System.lineSeparator());
 				test.append(System.lineSeparator());
 				System.out.println(test);
 			}

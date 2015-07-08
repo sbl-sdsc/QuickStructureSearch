@@ -64,10 +64,13 @@ public final class FingerprintMapper_KevinWu {
 
 	};
 	private static final char MATCH_CHAR = '|';
+	private static final char SIMILAR = ':';
+	private static final char NOT_SIMILAR = '.';
 	private static final char MATCH_FRAG_CHAR = '$';
 	private static final String SPACER = "\t";
 	private static final String CA_NAME = "CA";
 	private static final String GROUP_NAME = "GLU";
+	private static final double MATCH_THRESHOLD = 0.5;
 
 	private FingerprintMapper_KevinWu() {
 	}
@@ -159,10 +162,12 @@ public final class FingerprintMapper_KevinWu {
 	 *            {@link SequenceFeatureInterface} for protein chain 1.
 	 * @param f2
 	 *            {@link SequenceFeatureInterface} for protein chain 2.
+	 * @param letter
+	 *            true for 1 letter, false for verbose
 	 * @return String showing the alignment
 	 */
 	public static <T> String align(Point3d[] p1, Point3d[] p2, SequenceFeatureInterface<T> f1,
-			SequenceFeatureInterface<T> f2) {
+			SequenceFeatureInterface<T> f2, boolean letter) {
 		int[][][] optAln = getOptimalAlignment(p1, p2);
 		int[] a1, a2;
 		if (optAln != null) {
@@ -177,7 +182,7 @@ public final class FingerprintMapper_KevinWu {
 		final String[] n1 = new String[p1.length];
 		for (int i = 0; i < n1.length; i++)
 			n1[i] = Integer.toString(i);
-		return align(a1, a2, n1, n1, f1, f2);
+		return align(a1, a2, n1, n1, f1, f2, letter);
 	}
 
 	/**
@@ -192,10 +197,12 @@ public final class FingerprintMapper_KevinWu {
 	 *            Array of Point3d for protein chain 1.
 	 * @param p2
 	 *            Array of Point3d for protein chain 2.
+	 * @param letter
+	 *            true for 1 letter, false for verbose
 	 * @return String showing the alignment
 	 */
-	public static String align(Point3d[] p1, Point3d[] p2) {
-		return align(p1, p2, BLANK_SEQUENCE_FEATURE, BLANK_SEQUENCE_FEATURE);
+	public static String align(Point3d[] p1, Point3d[] p2, boolean letter) {
+		return align(p1, p2, BLANK_SEQUENCE_FEATURE, BLANK_SEQUENCE_FEATURE, letter);
 	}
 
 	/**
@@ -209,10 +216,12 @@ public final class FingerprintMapper_KevinWu {
 	 *            {@link SequenceFeatureInterface} for protein chain 1.
 	 * @param f2
 	 *            {@link SequenceFeatureInterface} for protein chain 2.
+	 * @param letter
+	 *            true for 1 letter, false for verbose
 	 * @return String showing the alignment.
 	 */
 	public static <T> String align(SimplePolymerChain c1, SimplePolymerChain c2, SequenceFeatureInterface<T> f1,
-			SequenceFeatureInterface<T> f2) {
+			SequenceFeatureInterface<T> f2, boolean letter) {
 		int[][][] optAln = getOptimalAlignment(c1.getCoordinates(), c2.getCoordinates());
 		int[] t, b;
 		t = b = new int[0];
@@ -221,7 +230,7 @@ public final class FingerprintMapper_KevinWu {
 			b = optAln[0][1];
 		}
 		System.out.println((Arrays.toString(t) + System.lineSeparator() + Arrays.toString(b)).replaceAll(" ", "\t"));
-		return align(t, b, c1.getSequence().split(""), c2.getSequence().split(""), f1, f2);
+		return align(t, b, c1.getSequence().split(""), c2.getSequence().split(""), f1, f2, letter);
 	}
 
 	/**
@@ -239,16 +248,19 @@ public final class FingerprintMapper_KevinWu {
 	 *            {@link SequenceFeatureInterface} for protein chain 1.
 	 * @param f2
 	 *            {@link SequenceFeatureInterface} for protein chain 2.
+	 * @param letter
+	 *            true for 1 letter, false for verbose
 	 * @return String showing the alignment of 2 protein chains.
 	 */
 	public static <T> String align(int[] a1, int[] a2, String[] n1, String[] n2, SequenceFeatureInterface<T> f1,
-			SequenceFeatureInterface<T> f2) {
+			SequenceFeatureInterface<T> f2, boolean letter) {
+		String SPACER = letter ? "" : FingerprintMapper_KevinWu.SPACER;
 		if (a1.length != a2.length)
 			new IllegalArgumentException("alignment lengths not equal (" + a1.length + " ," + a2.length + ")")
 					.printStackTrace();
 		StringBuilder tf = new StringBuilder(), ti = new StringBuilder(), m = new StringBuilder(), bf = new StringBuilder(), bi = new StringBuilder();
 		if (a1.length == 0) {
-			noMatch(n1, n2, f1, f2, tf, ti, m, bi, bf, 0, n1.length, 0, n2.length);
+			noMatch(n1, n2, f1, f2, tf, ti, m, bi, bf, 0, n1.length, 0, n2.length, letter);
 		}
 		else {
 
@@ -256,18 +268,24 @@ public final class FingerprintMapper_KevinWu {
 			tp = bp = -1;
 			for (int i = 0; i < a1.length; i++) {
 				if (i != 0 && (a1[i] == 0 || a2[i] == 0)) {
-					noMatch(n1, n2, f1, f2, tf, ti, m, bi, bf, tp + 1, n1.length, bp + 1, n2.length);
+					noMatch(n1, n2, f1, f2, tf, ti, m, bi, bf, tp + 1, n1.length, bp + 1, n2.length, letter);
 					break;
 				}
 				if (a1[i] - tp > 1 || a2[i] - bp > 1)
-					noMatch(n1, n2, f1, f2, tf, ti, m, bi, bf, tp + 1, a1[i], bp + 1, a2[i]);
-				tf.append(f1.toString(a1[i]));
-				ti.append(n1[a1[i]]);
-				m.append(MATCH_CHAR);
-				m.append(f1.identity(f2, a1[i], a2[i]) ? MATCH_FRAG_CHAR : String.format("%.2f",
-						f1.similarity(f2, a1[i], a2[i])));
-				bi.append(n2[a2[i]]);
-				bf.append(f2.toString(a2[i]));
+					noMatch(n1, n2, f1, f2, tf, ti, m, bi, bf, tp + 1, a1[i], bp + 1, a2[i], letter);
+				tf.append(letter ? f1.toString(a1[i]).charAt(0) : f1.toString(a1[i]));
+				ti.append(letter ? n1[a1[i]].charAt(0) : n1[a1[i]]);
+				if (!letter) {
+					m.append(MATCH_CHAR);
+					m.append(f1.identity(f2, a1[i], a2[i]) ? MATCH_FRAG_CHAR : String.format("%.2f",
+							f1.similarity(f2, a1[i], a2[i])));
+				}
+				else {
+					m.append(f1.identity(f2, a1[i], a2[i]) ? MATCH_FRAG_CHAR
+							: f1.similarity(f2, a1[i], a2[i]) > MATCH_THRESHOLD ? SIMILAR : NOT_SIMILAR);
+				}
+				bi.append(letter ? n2[a2[i]].charAt(0) : n2[a2[i]]);
+				bf.append(letter ? f2.toString(a2[i]).charAt(0) : f2.toString(a2[i]));
 
 				tf.append(SPACER);
 				ti.append(SPACER);
@@ -318,23 +336,30 @@ public final class FingerprintMapper_KevinWu {
 	 *            Protein 2 gap start position (inclusive).
 	 * @param bE
 	 *            Protein 2 gap end position (exclusive).
+	 * @param letter
+	 *            true for 1 letter, false for verbose
 	 */
 	private static <T> void noMatch(String[] n1, String[] n2, SequenceFeatureInterface<T> f1,
 			SequenceFeatureInterface<T> f2, StringBuilder tf, StringBuilder ti, StringBuilder m, StringBuilder bi,
-			StringBuilder bf, int tS, int tE, int bS, int bE) {
+			StringBuilder bf, int tS, int tE, int bS, int bE, boolean letter) {
+		String SPACER = letter ? " " : FingerprintMapper_KevinWu.SPACER;
 		int tv = tE - tS;
 		int bv = bE - bS;
 		for (int i = 0; i < tv; i++) {
-			ti.append(n1[i + tS]);
-			tf.append(f1.toString(i));
-			ti.append(SPACER);
-			tf.append(SPACER);
+			ti.append(letter ? n1[i + tS].charAt(0) : n1[i + tS]);
+			tf.append(letter ? f1.toString(i).charAt(0) : f1.toString(i));
+			if (!letter) {
+				ti.append(SPACER);
+				tf.append(SPACER);
+			}
 		}
 		for (int i = 0; i < bv; i++) {
-			bi.append(n2[i + bS]);
-			bf.append(f2.toString(i));
-			bi.append(SPACER);
-			bf.append(SPACER);
+			bi.append(letter ? n2[i + bS].charAt(0) : n2[i + bS]);
+			bf.append(letter ? f2.toString(i).charAt(0) : f2.toString(i));
+			if (!letter) {
+				bi.append(SPACER);
+				bf.append(SPACER);
+			}
 		}
 		int mv = Math.max(tv, bv);
 		for (int i = 0; i < mv; i++)

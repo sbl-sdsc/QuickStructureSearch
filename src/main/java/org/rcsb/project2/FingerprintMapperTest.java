@@ -25,7 +25,6 @@ public class FingerprintMapperTest {
 		SparkConf conf = new SparkConf().setMaster("local[" + NUM_THREADS + "]").setAppName(
 				FingerprintMapperTest.class.getSimpleName());
 		JavaSparkContext sc = new JavaSparkContext(conf);
-		System.out.println("HAHAHA");
 		long start = System.nanoTime();
 		List<Tuple2<String, Point3d[]>> list = sc
 				.sequenceFile(path, Text.class, ArrayWritable.class, NUM_THREADS * NUM_TASKS_PER_THREAD)
@@ -96,7 +95,7 @@ public class FingerprintMapperTest {
 				StringBuilder test = new StringBuilder(chainId1 + ", " + chainId2);
 				// System.out.println(chainId1 + ", " + chainId2);
 				test.append(System.lineSeparator());
-				test.append(FingerprintMapper_KevinWu.align(chain1, chain2, new SeqFeatTest(), new SeqFeatTest()));
+				test.append(FingerprintMapper_KevinWu.align(chain1, chain2, new SeqFeatTest(), new SeqFeatTest(), true));
 				test.append(System.lineSeparator());
 				// test.append(System.lineSeparator());
 				// test.append(FingerprintMapper_KevinWu.align(chain1, chain2));
