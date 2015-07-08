@@ -26,10 +26,7 @@ import scala.Tuple3;
 /**
  * 
  * This class creates a library of unique fragments categorized by length.
- * The only data to be output is a key for each fragment and an arraywritable
- * of length ranges and x0,y0,z0,x1,y1,z1,... coordinates.\
- * For now, though, I'm getting it to output length as a string and the points
- * as a point3d[].
+ * Output PDBID as a string, length as a string, and the points as a point3d[].
  * 
  * @author Grant Summers
  *
@@ -71,9 +68,6 @@ public class Library
 		
 		List<Tuple3<String, String, Point3d[]>> lib = new ArrayList<>();
 		
-		// index for where to place the fragments in lib
-//		int index = 0;
-		
 		// boolean for whether or not to add a fragment to the library
 		boolean bool = true;
 		
@@ -96,36 +90,30 @@ public class Library
 				SuperPositionQCP.center(tup._3());				
 				
 				if(!lib.isEmpty()){
-					for(Tuple3<String, String, Point3d[]> l: lib){
+					check: for(Tuple3<String, String, Point3d[]> l: lib){
 						if(l._2() == tup._2()){
 							qcp.set(l._3(), tup._3());
 							double q = qcp.getRmsd();
 							if(q<1){
 								bool = false;
-								break;
+								break check;
 							}
 						}
 					}
 				}
 				if(bool == true){
 					lib.add(tup);
-					System.out.println("[" + tup._2() + "] - " + (lib.size()-1) + ": " + Arrays.toString(tup._3()));
-//					index++;
+//					System.out.println("[" + tup._2() + "] - " + (lib.size()-1) + ": " + Arrays.toString(tup._3()));
 				}
 				bool = true;
 			}
 		}
 		sc.close();
 		
-		// prints all fragments in lib
-//		for(Tuple2<String, Point3d[]> l: lib){
-//			System.out.println(l._1 + Arrays.toString(l._2));
-//		}
-		
 		// Write the lib list to a text or csv file
-		PrintWriter writer = new PrintWriter("library.txt", "UTF-8");
+		PrintWriter writer = new PrintWriter("library.tsv", "UTF-8");
 		for(Tuple3<String, String, Point3d[]> l: lib){
-			writer.println(l._1() + " | [" + l._2() + "] | " + Arrays.toString(l._3()));
+			writer.println(l._1() + "\t [" + l._2() + "]\t " + Arrays.toString(l._3()));
 		}
 		writer.close();
 		
