@@ -32,7 +32,6 @@ public class FingerprintMapperTest2 {
 				// .filter(new GapFilter(0, 0)) // filter chains with zero gap length and zero gaps
 				.filter(t -> t._2.isProtein())// filter test
 				.collect();
-		System.out.println("here");
 		List<Integer> valid = new ArrayList<>();
 		for (int i = 0; i < list.size() - 1; i++)
 			if (list.get(i)._2.getCoordinates().length == list.get(i + 1)._2.getCoordinates().length)
@@ -91,10 +90,10 @@ public class FingerprintMapperTest2 {
 				test.append(System.lineSeparator());
 				test.append(FingerprintMapper_KevinWu.align(chain1, chain2, new SeqFeatTest(), new SeqFeatTest(), true));
 				test.append(System.lineSeparator());
-				test.append(System.lineSeparator());
-				test.append(FingerprintMapper_KevinWu
-						.align(chain1, chain2, new SeqFeatTest(), new SeqFeatTest(), false));
-				test.append(System.lineSeparator());
+				// test.append(System.lineSeparator());
+				// test.append(FingerprintMapper_KevinWu
+				// .align(chain1, chain2, new SeqFeatTest(), new SeqFeatTest(), false));
+				// test.append(System.lineSeparator());
 				test.append(System.lineSeparator());
 				System.out.println(test);
 			}

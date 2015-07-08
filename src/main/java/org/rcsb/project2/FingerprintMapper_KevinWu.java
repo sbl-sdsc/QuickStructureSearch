@@ -70,6 +70,7 @@ public final class FingerprintMapper_KevinWu {
 	private static final String SPACER = "\t";
 	private static final String CA_NAME = "CA";
 	private static final String GROUP_NAME = "GLU";
+	private static final double MATCH_THRESHOLD = 0.5;
 
 	private FingerprintMapper_KevinWu() {
 	}
@@ -273,7 +274,7 @@ public final class FingerprintMapper_KevinWu {
 				if (a1[i] - tp > 1 || a2[i] - bp > 1)
 					noMatch(n1, n2, f1, f2, tf, ti, m, bi, bf, tp + 1, a1[i], bp + 1, a2[i], letter);
 				tf.append(letter ? f1.toString(a1[i]).charAt(0) : f1.toString(a1[i]));
-				ti.append(n1[a1[i]]);
+				ti.append(letter ? n1[a1[i]].charAt(0) : n1[a1[i]]);
 				if (!letter) {
 					m.append(MATCH_CHAR);
 					m.append(f1.identity(f2, a1[i], a2[i]) ? MATCH_FRAG_CHAR : String.format("%.2f",
@@ -281,9 +282,9 @@ public final class FingerprintMapper_KevinWu {
 				}
 				else {
 					m.append(f1.identity(f2, a1[i], a2[i]) ? MATCH_FRAG_CHAR
-							: f1.similarity(f2, a1[i], a2[i]) > 0.5 ? SIMILAR : NOT_SIMILAR);
+							: f1.similarity(f2, a1[i], a2[i]) > MATCH_THRESHOLD ? SIMILAR : NOT_SIMILAR);
 				}
-				bi.append(n2[a2[i]]);
+				bi.append(letter ? n2[a2[i]].charAt(0) : n2[a2[i]]);
 				bf.append(letter ? f2.toString(a2[i]).charAt(0) : f2.toString(a2[i]));
 
 				tf.append(SPACER);
@@ -345,7 +346,7 @@ public final class FingerprintMapper_KevinWu {
 		int tv = tE - tS;
 		int bv = bE - bS;
 		for (int i = 0; i < tv; i++) {
-			ti.append(n1[i + tS]);
+			ti.append(letter ? n1[i + tS].charAt(0) : n1[i + tS]);
 			tf.append(letter ? f1.toString(i).charAt(0) : f1.toString(i));
 			if (!letter) {
 				ti.append(SPACER);
@@ -353,7 +354,7 @@ public final class FingerprintMapper_KevinWu {
 			}
 		}
 		for (int i = 0; i < bv; i++) {
-			bi.append(n2[i + bS]);
+			bi.append(letter ? n2[i + bS].charAt(0) : n2[i + bS]);
 			bf.append(letter ? f2.toString(i).charAt(0) : f2.toString(i));
 			if (!letter) {
 				bi.append(SPACER);
