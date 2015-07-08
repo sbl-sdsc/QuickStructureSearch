@@ -111,10 +111,21 @@ public class Library
 		sc.close();
 		
 		// Write the lib list to a text or csv file
-		PrintWriter writer = new PrintWriter("library.tsv", "UTF-8");
+//		PrintWriter writer = new PrintWriter("library.tsv", "UTF-8");
+//		for(Tuple3<String, String, Point3d[]> l: lib){
+//			writer.println(l._1() + "\t [" + l._2() + "]\t " + Arrays.toString(l._3()));
+//		}
+		
+		// alternate write-out
+		PrintWriter writer = new PrintWriter("library.csv", "UTF-8");
 		for(Tuple3<String, String, Point3d[]> l: lib){
-			writer.println(l._1() + "\t [" + l._2() + "]\t " + Arrays.toString(l._3()));
+			writer.print(l._1() + ", [" + l._2() + "]");
+			for(Point3d p: l._3()){
+				writer.print(", \"" + p + "\"");
+			}
+			writer.println();
 		}
+		
 		writer.close();
 		
 		// prints time
