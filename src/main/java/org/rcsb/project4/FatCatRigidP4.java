@@ -51,7 +51,7 @@ public class FatCatRigidP4{
 	 */
 	public AFPChain align(Atom[] ca1, Atom[] ca2, List<Accumulator<Long>> timers) throws StructureException {			
 		// Load timers
-		//this.timers = timers;
+		this.timers = timers;
 		AFPChain afpChain = new AFPChain();
 		afpChain.setCa1Length(ca1.length);
 		afpChain.setCa2Length(ca2.length);
