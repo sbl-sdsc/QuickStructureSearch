@@ -66,17 +66,61 @@ public class Library
 				.filter(new LengthFilter(50,500)) // keep protein chains with 50 - 500 residues
 				.collect();		
 		
-		List<Tuple3<String, String, Point3d[]>> lib = new ArrayList<>();
+		ArrayList<Tuple3<String, String, Point3d[]>> lib = new ArrayList<>();
 		
 		// boolean for whether or not to add a fragment to the library
 		boolean bool = true;
 		
+		// instantiate list of lists of RMSDs
+		ArrayList<ArrayList<Double>> comparisons = new ArrayList<ArrayList<Double>>();
+		
+		// instantiate temp list
+		ArrayList<Double> templist = new ArrayList<Double>();
+		
 		// instantiate the SPQCP object
 		SuperPositionQCP qcp = new SuperPositionQCP(true);
 		
-		for (Tuple2<String, Point3d[]> t: chains) {
-			for(int star=0; star<t._2.length-length; star++)
-			{				
+		// instantiate a skiplist
+		ArrayList<Integer> skiplist = new ArrayList<Integer>();
+		
+		
+		// pseudocode
+		/*
+		 * instantiations
+		 * 
+		 * for each chain (label each one t)
+		 *     for each fragment in t
+		 *         center all points in t about centroid (set centroid = (0, 0, 0))
+		 *         create a 3-tuple of the centered fragment
+		 *         if library is not empty:
+		 *             (libcheck) for each fragment in the library (each has index i):
+		 *                 if length of lib[i] is approximately the length of the 3-tuple /////////AND i is NOT in skiplist:
+		 *                     let q = the rmsd of the 3-tuple and lib[i]
+		 *                     
+		 *                     ///////////
+		 *                     for all rmsds in the column of lib[i] in comparisons:
+		 *                         if absolute value(q - rmsd(in compositions)>1):
+		 *                             add index of other fragment in compositions to skiplist
+		 *                     ///////////
+		 *                     add q to templist
+		 *                     if q was less than 1:
+		 *                         bool = false
+		 *                         clear templist (b/c we don't want to add lists of values that correspond to a point that was discarded to comparisons
+		 *                         end the libcheck for loop
+		 *                 else (lengths not the same):
+		 *                     add a null value to templist
+		 *             add templist (now populated with a bunch of rmsd values) to comparisons
+		 *             clear templist to prep for next loop
+		 *         if bool = true:
+		 *             add the 3-tuple to lib
+		 *         set bool = true for the next fragment check (run another 3-tuple against the library)
+		*/
+		
+		
+		
+		
+		for (Tuple2<String, Point3d[]> t: chains){
+			for(int star=0; star<t._2.length-length; star++){				
 				// center fragment
 				Point3d[] fragment = new Point3d[length];
 				for (int i = 0; i < length; i++) {
@@ -92,17 +136,25 @@ public class Library
 							fragment);
 				
 				if(!lib.isEmpty()){
-					check: for(Tuple3<String, String, Point3d[]> l: lib){
-						if(l._2() == tup._2()){
-							qcp.set(l._3(), tup._3());
+					check: for(int i = 0; i<lib.size(); i++){
+						if(lib.get(i)._2() == tup._2() && !skiplist.contains(i)){
+							qcp.set(lib.get(i)._3(), tup._3());
 							double q = qcp.getRmsd();
+							
+							
+							
+							templist.add(q);
 							if(q<1){
 								bool = false;
-								break check;
-							}
+								templist.clear();
+								break check;}
 						}
+						else{templist.add(null);}
 					}
+					comparisons.add(templist);
+					templist.clear();
 				}
+				
 				if(bool == true){
 					lib.add(tup);
 //					System.out.println("[" + tup._2() + "] - " + (lib.size()-1) + ": " + Arrays.toString(tup._3()));
