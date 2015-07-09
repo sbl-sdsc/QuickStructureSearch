@@ -17,12 +17,16 @@ public class Cluster {
 	private Tuple2<String, SimplePolymerChain> repChain;
 	private SuperPositionQCP qcp;
 	private LongestCommonSubstring lcs;
+	private double gapPen;
+	private double holePen;
 
-	public Cluster(int seqClusterId, int strClusterId, List<Tuple2<String, SimplePolymerChain>> strCluster, Tuple2<String, SimplePolymerChain> repChain) {
+	public Cluster(int seqClusterId, int strClusterId, List<Tuple2<String, SimplePolymerChain>> strCluster, Tuple2<String, SimplePolymerChain> repChain, double gapPen, double holePen) {
 		this.seqClusterId = seqClusterId;
 		this.strClusterId = strClusterId;
 		this.strCluster = strCluster;
 		this.repChain = repChain;
+		this.gapPen = gapPen;
+		this.holePen = holePen;
 		qcp = new SuperPositionQCP();
 		lcs = new LongestCommonSubstring();
 	}
@@ -57,11 +61,11 @@ public class Cluster {
 		int gaps;
 		int holes;
 		for(int n = 0; n < size(); n ++) {
-			List<Tuple2<String, SimplePolymerChain>> a = getStrCluster();
+		/**	List<Tuple2<String, SimplePolymerChain>> a = getStrCluster();
 			Tuple2<String, SimplePolymerChain> b = a.get(n);
 			SimplePolymerChain c = b._2;
 			Point3d[] d = c.getCoordinates();
-			double e = d.length;
+			double e = d.length; **/
 			tempScore = getStrCluster().get(n)._2.getCoordinates().length;
 			Point3d[] coordinates = strCluster.get(n)._2.getCoordinates();
 			gaps = 0;
@@ -79,7 +83,7 @@ public class Cluster {
 				if(coordinates[pos] == null)
 					holes ++;
 			}
-			tempScore = tempScore - gaps - 0.1*holes;
+			tempScore = tempScore - gaps*gapPen - holes*holePen;
 			scores[n] = tempScore;
 		}
 		double highScore = scores[0];
