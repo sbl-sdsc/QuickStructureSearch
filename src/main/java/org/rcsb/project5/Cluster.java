@@ -56,16 +56,26 @@ public class Cluster {
 	}
 
 	public void findRepChain() {
+		if(isNull()) {
+			return;
+		}
 		double[] scores = new double[size()];
 		double tempScore;
 		int gaps;
 		int holes;
 		for(int n = 0; n < size(); n ++) {
-		/**	List<Tuple2<String, SimplePolymerChain>> a = getStrCluster();
+/*			List<Tuple2<String, SimplePolymerChain>> a = getStrCluster();
 			Tuple2<String, SimplePolymerChain> b = a.get(n);
 			SimplePolymerChain c = b._2;
+			if(c == null) {
+				System.out.println("SimplePolymerChain null");
+				System.out.println(this.getStrCluster().get(n)._1);
+				System.exit(-1);
+			}
 			Point3d[] d = c.getCoordinates();
-			double e = d.length; **/
+			double e = d.length;*/
+/*			System.out.println(this);
+			System.out.println(this.getStrCluster().get(n)._1);*/
 			tempScore = getStrCluster().get(n)._2.getCoordinates().length;
 			Point3d[] coordinates = strCluster.get(n)._2.getCoordinates();
 			gaps = 0;
@@ -144,6 +154,13 @@ public class Cluster {
 			}
 		}
 		setRepChain(tiebreakerList.get(minIndex));
+	}
+	
+	public boolean isNull() {
+		if(strClusterId == 0) {
+			return true;
+		}
+		return false;
 	}
 
 	public String toString() {

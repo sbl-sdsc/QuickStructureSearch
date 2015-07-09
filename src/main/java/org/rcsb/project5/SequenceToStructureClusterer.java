@@ -74,17 +74,18 @@ public class SequenceToStructureClusterer {
 		//read <sequence cluster id, PdbId.chainId> pairs
 		JavaPairRDD<Integer,String> clusterPairs = getSequenceClusters(sc)
 				.filter(c -> (c._1 >= startCluster && c._1 <= endCluster)).cache();
-		System.out.println("Cluster pairs: " + clusterPairs.count());
+//		System.out.println("Cluster pairs: " + clusterPairs.count());
 
 		// create a list of chain ids needed for calculation
 		List<String> chainIds = clusterPairs.values().collect();
-		System.out.println("Chains: " + chainIds.size());
+//		System.out.println("Chains: " + chainIds.size());
 
 		// read <PdbId.chainId, SimplePolymerChain> pairs;
 		JavaPairRDD<String, SimplePolymerChain> chains = getPolymerChains(hadoopSequenceFileName, sc)
 		//		.filter(new GapFilterSPC(0, 0)) // keep protein chains with gap size <= 0 and 0 gaps
 				.filter(t -> (chainIds.contains(t._1)));
-		System.out.println("chain count: " + chains.count());
+//		System.out.println("chain count: " + chains.count());
+//		System.exit(-1);
 
 		// broadcast <PdbId.chainId, SimplePolymerChain> pairs
 		final Broadcast<Map<String, SimplePolymerChain>> chainMap = sc.broadcast(collectAsMap(chains));
@@ -92,7 +93,7 @@ public class SequenceToStructureClusterer {
 
 		// group by cluster id
 		JavaPairRDD<Integer, Iterable<String>> clusters = clusterPairs.groupByKey();
-		System.out.println("Clusters: " + clusters.count());
+//		System.out.println("Clusters: " + clusters.count());
 
 		PrintWriter writer = new PrintWriter(outputFileName);
 		//writer.println("PdbId.ChainId, SequenceClusterNumber, StructureClusterNumber");
@@ -150,7 +151,9 @@ public class SequenceToStructureClusterer {
 				.sequenceFile(hadoopSequenceFileName, Text.class, ArrayWritable.class,NUM_THREADS*NUM_TASKS_PER_THREAD)
 				.mapToPair(new HadoopToSimpleChainMapper())
 		//		.filter(new GapFilterSPC(0, 0)) // keep protein chains with gap size <= 0 and 0 gaps
+				.filter(t -> t._2 != null)
 				.filter(t -> t._2.isProtein());
+//				.filter(t -> t._1.equals("4Z2G.A"));
 		return chains;
 	}
 
