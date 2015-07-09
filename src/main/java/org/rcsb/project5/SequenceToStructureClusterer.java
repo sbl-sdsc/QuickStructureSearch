@@ -49,9 +49,11 @@ public class SequenceToStructureClusterer {
 		int startCluster = Integer.parseInt(args[2]);
 		int endCluster = Integer.parseInt(args[3]);
 		double maxRmsd = Double.parseDouble(args[4]);
+		double gapPenalty = Double.parseDouble(args[5]);
+		double holePenalty = Double.parseDouble(args[6]);
 
 		SequenceToStructureClusterer clusterer = new SequenceToStructureClusterer();
-		clusterer.run(hadoopSequenceFileName, startCluster, endCluster, outputFileName, maxRmsd);
+		clusterer.run(hadoopSequenceFileName, startCluster, endCluster, outputFileName, maxRmsd, gapPenalty, holePenalty);
 	}
 
 	/**
@@ -63,7 +65,7 @@ public class SequenceToStructureClusterer {
 	 * @param endCluster index of last cluster
 	 * @param maxRmsd
 	 */
-	private void run(String hadoopSequenceFileName, int startCluster, int endCluster, String outputFileName, double maxRmsd) throws FileNotFoundException{
+	private void run(String hadoopSequenceFileName, int startCluster, int endCluster, String outputFileName, double maxRmsd, double gapPenalty, double holePenalty) throws FileNotFoundException{
 		// initialize Spark		
 		JavaSparkContext sc = getSparkContext();
 
@@ -107,9 +109,9 @@ public class SequenceToStructureClusterer {
 			}
 
 			if (list.get(0)._2[1] != null) {
-				strClusterList.add(new Cluster(list.get(0)._2[0].intValue(), list.get(0)._2[1].intValue(), SPCList, null));
+				strClusterList.add(new Cluster(list.get(0)._2[0].intValue(), list.get(0)._2[1].intValue(), SPCList, null, gapPenalty, holePenalty));
 			} else {
-				strClusterList.add(new Cluster(list.get(0)._2[0].intValue(), 0, SPCList, null));
+				strClusterList.add(new Cluster(list.get(0)._2[0].intValue(), 0, SPCList, null, gapPenalty, holePenalty));
 			}
 		}
 		
