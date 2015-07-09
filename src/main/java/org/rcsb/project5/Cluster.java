@@ -10,15 +10,26 @@ import org.rcsb.structuralAlignment.SuperPositionQCP;
 
 import scala.Tuple2;
 
+/**
+ * This class represents a cluster of protein chains with sequence similarity and structural similarity. 
+ * It contains information on the sequence cluster Id and structural cluster Id of all of the chains in
+ * the cluster and a list of all the protein chains in the structural cluster listed as Tuple2s. It also
+ * provides a method for finding the representative chain of the structural cluster.
+ * 
+ * @author Justin Li
+ * @author Joe Sun
+ *
+ */
+
 public class Cluster {
-	private int seqClusterId;
-	private int strClusterId;
+	private int seqClusterId; // Sequence Cluster Id
+	private int strClusterId; // Structural Cluster Id
 	private List<Tuple2<String, SimplePolymerChain>> strCluster;
-	private Tuple2<String, SimplePolymerChain> repChain;
+	private Tuple2<String, SimplePolymerChain> repChain; // representative chain
 	private SuperPositionQCP qcp;
 	private LongestCommonSubstring lcs;
-	private double gapPen;
-	private double holePen;
+	private double gapPen; // penalty for each gap in the Point3d array
+	private double holePen; // penalty for each hole in the Point3d array
 
 	public Cluster(int seqClusterId, int strClusterId, List<Tuple2<String, SimplePolymerChain>> strCluster, Tuple2<String, SimplePolymerChain> repChain, double gapPen, double holePen) {
 		this.seqClusterId = seqClusterId;
@@ -31,30 +42,60 @@ public class Cluster {
 		lcs = new LongestCommonSubstring();
 	}
 
+	/**
+	 * returns the Sequence Cluster Id of the cluster
+	 * @return seqClusterId
+	 */
 	public int getSeqClusterId() {
 		return seqClusterId;
 	}
 
+	/**
+	 * returns the Structural Cluster Id of the cluster
+	 * @return strClusterId
+	 */
 	public int getStrClusterId() {
 		return strClusterId;
 	}
 
+	/**
+	 * returns the entire structural cluster as a List of Tuple2s
+	 * @return strCluster
+	 */
 	public List<Tuple2<String, SimplePolymerChain>> getStrCluster() {
 		return strCluster;
 	}
 
+	/**
+	 * returns the representative chain of the structural cluster
+	 * @return repChain
+	 */
 	public Tuple2<String, SimplePolymerChain> getRepChain() {
 		return repChain;
 	}
 
+	/**
+	 * returns the number of chains in the structural cluster
+	 * @return strCluster.size()
+	 */
 	public int size() {
 		return strCluster.size();
 	}
 
+	/**
+	 * sets the representative chain of the cluster as the chain given in the argument
+	 * @param tuple
+	 */
 	public void setRepChain(Tuple2<String, SimplePolymerChain> tuple) {
 		repChain = tuple;
 	}
 
+	/**
+	 * Finds the representative chain of the structural cluster by using a scoring method which 
+	 * adds scores for chain length and subtracts scores for gaps and holes in the chain. The 
+	 * chain with the highest score is set as the representative chain. If there are multiple 
+	 * chains tied with the highest score, tiebreaker() is called.
+	 */
 	public void findRepChain() {
 		if(isNull()) {
 			return;
@@ -121,6 +162,12 @@ public class Cluster {
 		}
 	}
 
+	/**
+	 * Takes a list of chains in the form of Tuple2s and calculates the sums of all the cRMSD values of each
+	 * chain with all other respective chains in the structural cluster. The chain with the smallest such sum
+	 * is set as the representative chain of the structural cluster.
+	 * @param tiebreakerList
+	 */
 	public void tiebreaker(List<Tuple2<String, SimplePolymerChain>> tiebreakerList) {
 		double[][] array = new double[tiebreakerList.size()][tiebreakerList.size()];
 		List<Integer> startEnd = null;
@@ -156,6 +203,10 @@ public class Cluster {
 		setRepChain(tiebreakerList.get(minIndex));
 	}
 	
+	/**
+	 * returns a boolean which identifies whether or not the cluster is null
+	 * @return true or false
+	 */
 	public boolean isNull() {
 		if(strClusterId == 0) {
 			return true;
@@ -179,6 +230,16 @@ public class Cluster {
 		return list;
 	}
 
+	/**
+	 * Returns the cRMSD value of a specific portion of the Point3D arrays of the two chains given the starting and ending positions of the specific portions
+	 * @param chain1
+	 * @param chain2
+	 * @param start1
+	 * @param end1
+	 * @param start2
+	 * @param end2
+	 * @return qcp.getRmsd()
+	 */
 	public double getcRmsd(Tuple2<String, SimplePolymerChain> chain1, Tuple2<String, SimplePolymerChain> chain2, int start1, int end1, int start2, int end2) {
 		int s1 = start1;
 		int e1 = end1;
