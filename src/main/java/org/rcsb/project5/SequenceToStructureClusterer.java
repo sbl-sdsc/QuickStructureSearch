@@ -68,6 +68,8 @@ public class SequenceToStructureClusterer {
 	private void run(String hadoopSequenceFileName, int startCluster, int endCluster, String outputFileName, double maxRmsd, double gapPenalty, double holePenalty) throws FileNotFoundException{
 		// initialize Spark		
 		JavaSparkContext sc = getSparkContext();
+		
+		int numClusters = 0;
 
 		long start = System.nanoTime();
 
@@ -126,12 +128,15 @@ public class SequenceToStructureClusterer {
 
 		for(Cluster c: strClusterList) {
 			writeToCsv(writer, c);
+			numClusters ++;
 		}
 
 		/*for(List<Tuple2<String, Integer[]>> list: structuralClusterList) {
 			writeToCsv(writer, list);
 		}*/
 
+		writer.println("Total num of structural clusters: " + numClusters);
+		writer.flush();
 		writer.close();
 		sc.close();
 
