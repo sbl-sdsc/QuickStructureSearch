@@ -98,7 +98,7 @@ public class Library
 		 *                     let q = the rmsd of the 3-tuple and lib[i]
 		 *                     
 		 *                     ///////////
-		 *                     for all rmsds in the column of lib[i] in comparisons:
+		 *                     for all rmsds in the column of lib[i], from i on, in comparisons:
 		 *                         if absolute value(q - rmsd(in compositions)>1):
 		 *                             add index of other fragment in compositions to skiplist
 		 *                     ///////////
@@ -111,6 +111,7 @@ public class Library
 		 *                     add a null value to templist
 		 *             add templist (now populated with a bunch of rmsd values) to comparisons
 		 *             clear templist to prep for next loop
+		 *             clear the skiplist
 		 *         if bool = true:
 		 *             add the 3-tuple to lib
 		 *         set bool = true for the next fragment check (run another 3-tuple against the library)
@@ -138,21 +139,31 @@ public class Library
 				if(!lib.isEmpty()){
 					check: for(int i = 0; i<lib.size(); i++){
 						if(lib.get(i)._2() == tup._2() && !skiplist.contains(i)){
+							
+							// get (c)RMSD
 							qcp.set(lib.get(i)._3(), tup._3());
 							double q = qcp.getRmsd();
 							
-							
-							
+							// check which fragments in lib to skip
+							for(int k = i; k<lib.size();k++){
+								if(comparisons.get(k).get(i)!=null){ // match to next if
+									if(Math.abs(q-comparisons.get(k).get(i))>1){ //check this
+										skiplist.add(k);
+									}
+								}
+							}
 							templist.add(q);
 							if(q<1){
 								bool = false;
 								templist.clear();
-								break check;}
+								break check;
+							}
 						}
 						else{templist.add(null);}
 					}
 					comparisons.add(templist);
 					templist.clear();
+					skiplist.clear();
 				}
 				
 				if(bool == true){
@@ -171,16 +182,17 @@ public class Library
 //		}
 		
 		// alternate write-out
-		PrintWriter writer = new PrintWriter("library.csv", "UTF-8");
+		PrintWriter writer = new PrintWriter("library.tsv", "UTF-8");
 		for(Tuple3<String, String, Point3d[]> l: lib){
-			writer.print(l._1() + ", [" + l._2() + "]");
+			writer.print(l._1() + "\t [" + l._2() + "]");
 			for(Point3d p: l._3()){
-				writer.print(", \"" + p + "\"");
+				writer.print("\t" + p);
 			}
 			writer.println();
 		}
 		
 		writer.close();
+		System.out.println(lib.size());
 		
 		// prints time
 //		System.out.println("Time: " + (System.nanoTime() - start)/1E9 + " sec.");
