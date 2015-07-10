@@ -398,14 +398,12 @@ public class AFPChainerP4
 		classTimers.get(2).add(System.nanoTime() - st);
 
 //		double d2 = calAfpDisCrmsd(afp1, afp2,params, afpChain,ca1,ca2);
-//		if (d2 < 6) {
-//			d = calAfpDis(afp1, afp2,params, afpChain);
-//			classTimers.get(1).add(1L);
-//		}
-//		else {
-//			d = disCut;
-//			classTimers.get(2).add(1L);
-//		}
+		if (d2 < 6) {
+			d = calAfpDis(afp1, afp2,params, afpChain);
+		}
+		else {
+			d = disCut;
+		}
 		//d = calAfpDis(afp1, afp2,params, afpChain);
 		
 		//note: the 'dis' value is numerically equivalent to the 'rms' with exceptions
@@ -573,7 +571,7 @@ public class AFPChainerP4
 
 		int     ai1, bi1, aj1, bj1;
 		int 	ai2, bi2, aj2, bj2, ai3, bi3, aj3, bj3;
-		double  d1, d2, d3, d4, d5, d6, d7, d8;
+		double  d1, d2, d3, d4, d5, d6, d7, d8, d9;
 		double  rms = 0;
 		ai1 = afpSet.get(afp1).getP1();
 		bi1 = afpSet.get(afp1).getP2();
@@ -598,10 +596,10 @@ public class AFPChainerP4
 		d6 = disTable1.get(aj3,ai2) - disTable2.get(bj3,bi2);
 		d7 = disTable1.get(aj1,ai3) - disTable2.get(bj1,bi3);
 		d8 = disTable1.get(aj2,ai3) - disTable2.get(bj2,bi3);
+		d9 = disTable1.get(aj3,ai3) - disTable2.get(bj3,bi3);		
 		
-		
-		rms += d1 * d1 + d2 * d2 + d3 * d3 + d4 * d4 + d5 * d5 + d6 * d6 + d7 * d7 + d8 * d8;
-		return (Math.sqrt(rms / 8));
+		rms += d1 * d1 + d2 * d2 + d3 * d3 + d4 * d4 + d5 * d5 + d6 * d6 + d7 * d7 + d8 * d8 + d9 * d9;
+		return (Math.sqrt(rms / 9));
 	}
 
 
