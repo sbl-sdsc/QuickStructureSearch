@@ -182,7 +182,7 @@ public class SequenceToStructureClusterer {
 			writeToCsv(writer, list);
 		}*/
 		PrintWriter writerTest = new PrintWriter(outputFileName);
-		writerTest.println("Threshold,Sequence Clusters,Structural Clusters");
+		writerTest.println("Threshold,Structural Clusters,Sequence Clusters");
 
 		for (int i = 0; i <= numInterval; i++) {
 			// loop through sequence clusters
@@ -219,9 +219,9 @@ public class SequenceToStructureClusterer {
 					}
 				}
 			}
-			writerTest.print(sequenceClusters);
-			writerTest.print(",");
 			writerTest.print(structuralClusters);
+			writerTest.print(",");
+			writerTest.print(sequenceClusters);
 			writerTest.println();
 		}
 		writerTest.flush();
