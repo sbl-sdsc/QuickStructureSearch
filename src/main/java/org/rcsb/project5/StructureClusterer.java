@@ -37,7 +37,7 @@ public class StructureClusterer implements VoidFunction<Tuple2<Integer, Iterable
 //		List<Tuple2<String, Integer[]>> writerList = new ArrayList<Tuple2<String, Integer[]>>();
 		int count = 1;
 
-		System.out.println("*** Cluster: " + tuple._1 + ": ");
+//		System.out.println("*** Cluster: " + tuple._1 + ": ");
 		StructuralClusterCreator clusterCreator = new StructuralClusterCreator();
 		List<Tuple2<String, SimplePolymerChain>> list = new ArrayList<Tuple2<String, SimplePolymerChain>>();
 		for (String id: tuple._2) {
@@ -74,7 +74,7 @@ public class StructureClusterer implements VoidFunction<Tuple2<Integer, Iterable
 		List<Tuple2<String, Integer[]>> writerList = new ArrayList<Tuple2<String, Integer[]>>();
 		int count = 1;
 
-		System.out.println("*** Cluster: " + tuple._1 + ": ");
+//		System.out.println("*** Cluster: " + tuple._1 + ": ");
 		StructuralClusterCreator clusterCreator = new StructuralClusterCreator();
 		List<Tuple2<String, SimplePolymerChain>> list = new ArrayList<Tuple2<String, SimplePolymerChain>>();
 		for (String id: tuple._2) {
