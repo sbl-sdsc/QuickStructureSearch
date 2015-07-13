@@ -72,22 +72,22 @@ public class Library
 		boolean bool = true;
 		
 		// instantiate list of lists of RMSDs
-		ArrayList<ArrayList<Tuple2<Double, Integer>>> comparisons = new ArrayList<ArrayList<Tuple2<Double, Integer>>>();
+		ArrayList<ArrayList<Tuple2<Double, Integer>>> comparisons = new ArrayList<>();
 		
 		// instantiate temp list
-		ArrayList<Tuple2<Double, Integer>> templist = new ArrayList<Tuple2<Double, Integer>>();
+		ArrayList<Tuple2<Double, Integer>> templist = new ArrayList<>();
 		
 		// instantiate the SPQCP object
 		SuperPositionQCP qcp = new SuperPositionQCP(true);
 		
 		// instantiate a skiplist
-		ArrayList<Integer> skiplist = new ArrayList<Integer>();
+		ArrayList<Integer> skiplist = new ArrayList<>();
 		
 		// integer for comparison's index
 		int ind = 0;
 		
 		// tuple2 to add to templis
-		Tuple2<Double, Integer> temptup = new Tuple2<Double, Integer>();
+		Tuple2<Double, Integer> temptup = new Tuple2<Double, Integer>(null, null); // if nulls don't work, use 0's
 				
 		for (Tuple2<String, Point3d[]> t: chains){
 			for(int star=0; star<t._2.length-length; star++){				
@@ -113,11 +113,11 @@ public class Library
 							qcp.set(lib.get(i)._3(), tup._3());
 							double q = qcp.getRmsd();
 							
-							newtup._1 = q;
-							newtup._2 = ind;
+							temptup._1 = q;
+							temptup._2 = ind;
 							
 							// Add RMSD to templist
-							templist.add(newtup);
+							templist.add(temptup);
 							
 							// check if (c)RMSD is less than the threshold (1)
 							if(q<1){
@@ -134,7 +134,7 @@ public class Library
 								System.out.println("k loop");
 								if(comparisons.get(k).get(i)!=null){
 									System.out.println("comparisons is not null");
-									if(Math.abs(q-comparisons.get(k).get(i)._1())>1){  // check syntax
+									if(Math.abs(q-comparisons.get(k).get(i)._1())>1){  // check syntax w/ the ()
 										System.out.println("made it!");
 										
 										// adds indices of fragments to skip to skiplist
@@ -148,8 +148,22 @@ public class Library
 					skiplist.clear();
 				}
 				
-				if(bool == true){
-					comparisons.add(templist); // TODO: instead of just adding, insert into ordered position
+				if (bool == true) {
+					for (int vert = 0; vert < lib.size(); vert++) {
+						for (int hor = vert; hor < lib.size(); hor++) {
+							if (comparisons != null) {
+								if (templist.get(vert) <= comparisons.get(vert).get(hor)) {
+									// set comparisons(vert, hor) to templist(vert)
+								}
+								else if (hor == lib.size()-1) {
+									comparisons.add(templist);
+								}
+							}
+							else {
+								comparisons.add(templist);
+							}
+						}
+					}
 					templist.clear();
 					lib.add(tup);
 //					System.out.println("[" + tup._2() + "] - " + (lib.size()-1) + ": " + Arrays.toString(tup._3()));
