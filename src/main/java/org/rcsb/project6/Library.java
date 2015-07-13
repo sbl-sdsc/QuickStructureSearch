@@ -72,10 +72,10 @@ public class Library
 		boolean bool = true;
 		
 		// instantiate list of lists of RMSDs
-		ArrayList<ArrayList<Double>> comparisons = new ArrayList<ArrayList<Double>>();
+		ArrayList<ArrayList<Tuple2<Double, Integer>>> comparisons = new ArrayList<ArrayList<Tuple2<Double, Integer>>>();
 		
 		// instantiate temp list
-		ArrayList<Double> templist = new ArrayList<Double>();
+		ArrayList<Tuple2<Double, Integer>> templist = new ArrayList<Tuple2<Double, Integer>>();
 		
 		// instantiate the SPQCP object
 		SuperPositionQCP qcp = new SuperPositionQCP(true);
@@ -83,39 +83,12 @@ public class Library
 		// instantiate a skiplist
 		ArrayList<Integer> skiplist = new ArrayList<Integer>();
 		
-		// instantiate a sort list
-		ArrayList<Double> sortlist = new ArrayList<Double>();
+		// integer for comparison's index
+		int ind = 0;
 		
-		// pseudocode
-		/*
-		 * instantiations
-		 * 
-		 * for each chain (label each one t)
-		 *     for each fragment in t
-		 *         center all points in t about centroid (set centroid = (0, 0, 0))
-		 *         create a 3-tuple of the centered fragment
-		 *         if library is not empty:
-		 *             (libcheck) for each fragment in the library (each has index i):
-		 *                 if length of lib[i] is approximately the length of the 3-tuple /////////AND i is NOT in skiplist:
-		 *                     let q = the rmsd of the 3-tuple and lib[i]
-		 *                     for all rmsds in the row of lib[i], from i on, in comparisons:
-		 *                         if absolute value(q - rmsd(in compositions)>1):
-		 *                             add index of other fragment in compositions to skiplist
-		 *                     add q to templist
-		 *                     if q was less than 1:
-		 *                         bool = false
-		 *                         clear templist (b/c we don't want to add lists of values that correspond to a point that was discarded to comparisons
-		 *                         end the libcheck for loop
-		 *                 else (lengths not the same):
-		 *                     add a null value to templist
-		 *             add templist (now populated with a bunch of rmsd values) to comparisons
-		 *             clear templist to prep for next loop
-		 *             clear the skiplist
-		 *         if bool = true:
-		 *             add the 3-tuple to lib
-		 *         set bool = true for the next fragment check (run another 3-tuple against the library)
-		*/
-		
+		// tuple2 to add to templis
+		Tuple2<Double, Integer> temptup = new Tuple2<Double, Integer>();
+				
 		for (Tuple2<String, Point3d[]> t: chains){
 			for(int star=0; star<t._2.length-length; star++){				
 				// center fragment
@@ -133,22 +106,25 @@ public class Library
 							fragment);
 				
 				if(!lib.isEmpty()){
-					check: for(int i = 0; i<lib.size(); i++){
+					for(int i = 0; i<lib.size(); i++){
 						if(lib.get(i)._2() == tup._2() && !skiplist.contains(i)){
 							
 							// get (c)RMSD
 							qcp.set(lib.get(i)._3(), tup._3());
 							double q = qcp.getRmsd();
 							
+							newtup._1 = q;
+							newtup._2 = ind;
+							
 							// Add RMSD to templist
-							templist.add(q);
+							templist.add(newtup);
 							
 							// check if (c)RMSD is less than the threshold (1)
 							if(q<1){
 								bool = false;
 								// if this tup isn't in lib, then we don't want to put useless info in comparisons
 								templist.clear();
-								break check;
+								break;
 							}
 							
 							System.out.println("before loop");
@@ -158,23 +134,23 @@ public class Library
 								System.out.println("k loop");
 								if(comparisons.get(k).get(i)!=null){
 									System.out.println("comparisons is not null");
-									if(Math.abs(q-comparisons.get(k).get(i))>1){
+									if(Math.abs(q-comparisons.get(k).get(i)._1())>1){  // check syntax
 										System.out.println("made it!");
 										
 										// adds indices of fragments to skip to skiplist
-										skiplist.add(k);
+										skiplist.add(comparisons.get(k).get(i)._2);
 									}
 								}
 							}
 						}
 						else{templist.add(null);}
 					}
-					comparisons.add(templist);
-					templist.clear();
 					skiplist.clear();
 				}
 				
 				if(bool == true){
+					comparisons.add(templist); // TODO: instead of just adding, insert into ordered position
+					templist.clear();
 					lib.add(tup);
 //					System.out.println("[" + tup._2() + "] - " + (lib.size()-1) + ": " + Arrays.toString(tup._3()));
 				}
