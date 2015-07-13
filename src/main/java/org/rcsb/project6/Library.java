@@ -83,6 +83,8 @@ public class Library
 		// instantiate a skiplist
 		ArrayList<Integer> skiplist = new ArrayList<Integer>();
 		
+		// instantiate a sort list
+		ArrayList<Double> sortlist = new ArrayList<Double>();
 		
 		// pseudocode
 		/*
@@ -96,12 +98,9 @@ public class Library
 		 *             (libcheck) for each fragment in the library (each has index i):
 		 *                 if length of lib[i] is approximately the length of the 3-tuple /////////AND i is NOT in skiplist:
 		 *                     let q = the rmsd of the 3-tuple and lib[i]
-		 *                     
-		 *                     ///////////
-		 *                     for all rmsds in the column of lib[i], from i on, in comparisons:
+		 *                     for all rmsds in the row of lib[i], from i on, in comparisons:
 		 *                         if absolute value(q - rmsd(in compositions)>1):
 		 *                             add index of other fragment in compositions to skiplist
-		 *                     ///////////
 		 *                     add q to templist
 		 *                     if q was less than 1:
 		 *                         bool = false
@@ -116,9 +115,6 @@ public class Library
 		 *             add the 3-tuple to lib
 		 *         set bool = true for the next fragment check (run another 3-tuple against the library)
 		*/
-		
-		
-		
 		
 		for (Tuple2<String, Point3d[]> t: chains){
 			for(int star=0; star<t._2.length-length; star++){				
@@ -144,19 +140,31 @@ public class Library
 							qcp.set(lib.get(i)._3(), tup._3());
 							double q = qcp.getRmsd();
 							
+							// Add RMSD to templist
+							templist.add(q);
+							
+							// check if (c)RMSD is less than the threshold (1)
+							if(q<1){
+								bool = false;
+								// if this tup isn't in lib, then we don't want to put useless info in comparisons
+								templist.clear();
+								break check;
+							}
+							
+							System.out.println("before loop");
+							
 							// check which fragments in lib to skip
 							for(int k = i; k<lib.size();k++){
-								if(comparisons.get(k).get(i)!=null){ // match to next if
-									if(Math.abs(q-comparisons.get(k).get(i))>1){ //check this
+								System.out.println("k loop");
+								if(comparisons.get(k).get(i)!=null){
+									System.out.println("comparisons is not null");
+									if(Math.abs(q-comparisons.get(k).get(i))>1){
+										System.out.println("made it!");
+										
+										// adds indices of fragments to skip to skiplist
 										skiplist.add(k);
 									}
 								}
-							}
-							templist.add(q);
-							if(q<1){
-								bool = false;
-								templist.clear();
-								break check;
 							}
 						}
 						else{templist.add(null);}
@@ -184,6 +192,11 @@ public class Library
 		// alternate write-out
 		PrintWriter writer = new PrintWriter("library.tsv", "UTF-8");
 		for(Tuple3<String, String, Point3d[]> l: lib){
+			writer.print("PDBID.ChainID\tlength");
+			for(int i=0; i<length; i++){
+				writer.print("\tPoint " + i);
+			}
+			writer.println();
 			writer.print(l._1() + "\t [" + l._2() + "]");
 			for(Point3d p: l._3()){
 				writer.print("\t" + p);
