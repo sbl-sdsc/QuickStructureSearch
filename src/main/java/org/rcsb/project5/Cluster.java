@@ -30,6 +30,12 @@ public class Cluster {
 	private LongestCommonSubstring lcs;
 	private double gapPen; // penalty for each gap in the Point3d array
 	private double holePen; // penalty for each hole in the Point3d array
+	
+	public Cluster(int seqClusterId, int strClusterId, List<Tuple2<String, SimplePolymerChain>> strCluster) {
+		this.seqClusterId = seqClusterId;
+		this.strClusterId = strClusterId;
+		this.strCluster = strCluster;
+	}
 
 	public Cluster(int seqClusterId, int strClusterId, List<Tuple2<String, SimplePolymerChain>> strCluster, Tuple2<String, SimplePolymerChain> repChain, double gapPen, double holePen) {
 		this.seqClusterId = seqClusterId;
