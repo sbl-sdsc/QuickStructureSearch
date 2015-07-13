@@ -6,6 +6,7 @@ import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.text.SimpleDateFormat;
+import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashSet;
 import java.util.List;
@@ -48,10 +49,10 @@ public class WriteSeqFile {
 				+ ".seq";
 
 		Set<String> pdbIds = getAll();
-		//List <String> subset= new ArrayList <>(pdbIds);
-		//subset = subset.subList(1, 50);
-		//subset.clear();
-		//subset.add("1STP");
+		/*List <String> subset= new ArrayList <>(pdbIds);
+		subset = subset.subList(1, 50);
+		subset.clear();
+		subset.add("1T3R");*/
 		StructureIO.setAtomCache(cache);
 		cache.setPath("/Users/hina/DistanceData/");
 
@@ -93,43 +94,51 @@ public class WriteSeqFile {
 					continue;
 				}
 
+				List<Group> hetgroups= new ArrayList<Group>();
+				List<Group> proteingroups= new ArrayList<Group>();
 				List<Chain> chains1 = s.getChains();
-				System.out.println(" # chains: " + chains1.size());
 				for (Chain c: chains1) {
-					//System.out.println("   Chain: " + c.getChainID() + " # groups with atoms: " + c.getAtomGroups().size());
 					List<Group> groups = c.getAtomGroups();
 					for (Group group : groups) {
 						if (group.getType().equals(GroupType.HETATM) && !group.isWater()) {
 							//System.out.println("type: "+ group.getType()); 
-							for (Atom aa: group.getAtoms()) {
-								if (!(aa.getElement().equals(Element.C) ||  aa.getElement().equals(Element.H))){
-									//System.out.println("    " + aa);
-									Point3d p1= new Point3d (aa.getCoords());
-									for (Group group2 : groups) {
-										if (group2.getType().equals(GroupType.AMINOACID)) {
-											//System.out.println("Type: "+ group2.getType()); 
-											for (Atom b: group2.getAtoms()) {
-												if (!(b.getElement().equals(Element.C) ||  b.getElement().equals(Element.H))){
-													//System.out.println("    " + b);
-													Point3d p2= new Point3d (b.getCoords());
-													double d=p1.distance(p2);
-													int idist= (int) Math.round(d*10);
-													if (idist<=50){
-														String label=group2.getChemComp().getId()+"-"+ group.getChemComp().getId()+"-"+ b.getName()+ "-"+ aa.getName()+"-"+ idist;
-														//System.out.println(label);   		
-														mySet.add(label);
-													}
+							hetgroups.add(group);
+						}
 
-												}
-											}
-										}
-									}     
-								}
-							}   
+						if (group.getType().equals(GroupType.AMINOACID)) {
+							//System.out.println("type: "+ group.getType()); 
+							proteingroups.add(group);
 						}
 					}
 					chains++;
 				}
+
+				for (Group g1: proteingroups){
+					for (Atom atom1: g1.getAtoms()) {
+						if (!(atom1.getElement().equals(Element.C) ||  atom1.getElement().equals(Element.H)) ){
+							//System.out.println("    " + aa);
+							Point3d p1= new Point3d (atom1.getCoords());
+							for (Group g2 : hetgroups) { 
+								for (Atom atom2: g2.getAtoms()) {
+									if (!(atom2.getElement().equals(Element.C) ||  atom2.getElement().equals(Element.H))){
+										//System.out.println("    " + b);
+										Point3d p2= new Point3d (atom2.getCoords());
+										double d=p1.distance(p2);
+										int idist= (int) Math.round(d*10);
+										if (idist<=50){
+											String label=g1.getChemComp().getId()+"-"+ g2.getChemComp().getId()+"-"+ atom1.getName()+ "-"+ atom2.getName()+"-"
+													+atom1.getElement()+ "-" +atom2.getElement()+ "-"+ idist;
+											//System.out.println(label);   		
+											mySet.add(label);
+										}
+
+									}
+								}
+							}
+						}     
+					}
+				}
+
 				for (String temp: mySet){
 					//System.out.println("Key value: "+temp+ "  " +pdbId);	
                     Text key = new Text(temp);

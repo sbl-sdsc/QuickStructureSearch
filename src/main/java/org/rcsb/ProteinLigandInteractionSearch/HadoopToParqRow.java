@@ -46,7 +46,7 @@ public class HadoopToParqRow implements Function<Tuple2<String, Iterable<String>
 		else{
 			index= "Other";
 		}
-		return RowFactory.create(index,keys[0],keys[1],keys[2],keys[3],Integer.parseInt(keys[4]),pdbIds);
+		return RowFactory.create(index,keys[0],keys[1],keys[2],keys[3],keys[4],keys[5],Integer.parseInt(keys[6]),pdbIds);
 
 	}
 	

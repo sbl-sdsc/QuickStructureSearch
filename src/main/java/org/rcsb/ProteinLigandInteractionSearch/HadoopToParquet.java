@@ -43,7 +43,6 @@ public class HadoopToParquet {
 		sqlContext.setConf("spark.sql.parquet.filterPushdown", "true");
 		long start = System.nanoTime();
 		
-		
 		// read sequence file and map
 		JavaRDD<Row> rowRDD = sc
 				.sequenceFile(path, Text.class, Text.class)
@@ -59,54 +58,33 @@ public class HadoopToParquet {
 		fields.add(DataTypes.createStructField("res2", DataTypes.StringType, false));
 		fields.add(DataTypes.createStructField("atom1", DataTypes.StringType, false));
 		fields.add(DataTypes.createStructField("atom2", DataTypes.StringType, false));
+		fields.add(DataTypes.createStructField("element1", DataTypes.StringType, false));
+		fields.add(DataTypes.createStructField("element2", DataTypes.StringType, false));
 		fields.add(DataTypes.createStructField("distance", DataTypes.IntegerType, false));
 		fields.add(DataTypes.createStructField("pdbId", DataTypes.createArrayType(DataTypes.StringType), false));
 		StructType schema = DataTypes.createStructType(fields);
 		
 		// Apply the schema to the RDD.
 		DataFrame dataFrame = sqlContext.createDataFrame(rowRDD, schema);
-		
-		//dataFrame.write().mode(SaveMode.Overwrite).partitionBy("index").parquet("/Users/hina/Data/ExampleFiles/seq.parquet");
 
-		// Register the DataFrame as a table.
-		dataFrame.registerTempTable("Distances");
-
-		// SQL can be run over RDDs that have been registered as tables.
-		DataFrame results = sqlContext.sql("SELECT * FROM Distances WHERE res1='ASP'AND res2='017'AND atom1='O'AND atom2='N1'");
+		dataFrame.write().mode(SaveMode.Overwrite)
+		.partitionBy("index")
+		.parquet("/Users/hina/Data/ExampleFiles/seq_whithoutpartion.parquet");
 		
-		results.write().mode(SaveMode.Overwrite).save("/Users/hina/Data/ExampleFiles/Distanes_queryResults.parquet");
-
-		DataFrame data = sqlContext.read().format("parquet").load("/Users/hina/Data/ExampleFiles/seq.parquet");
-		System.out.println("data read;" + data.toString());
-		
-		// The results of SQL queries are DataFrames and support all the normal RDD operations.
-		// The columns of a row in the result can be accessed by ordinal.
-		List<String> Rows = results.javaRDD().map(new Function<Row, String>() {
-			public String call(Row row) {
-				return row.getString(0)+" "+ row.getString(1)+" "+row.getString(2)+" "+row.getString(3)+" "+ row.getString(4)+" "+" Distance: "+row.getInt(5) + " PdbIds: "+ row.get(6);
-			}
-		}).collect();
-		
-		for (String s: Rows){
-			System.out.println(s);
-		}
 		sc.close();
 		System.out.println("Time: " + (System.nanoTime() - start)/1E9 + " sec.");
 	}
 
 	private static JavaSparkContext getSparkContext() {
 		SparkConf conf = new SparkConf()
-				.setMaster("local[" + NUM_THREADS + "]")
-				.setAppName(HadoopToParquetFile.class.getSimpleName())
-				.set("spark.driver.maxResultSize", "2g")
-				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
+		.setMaster("local[" + NUM_THREADS + "]")
+		.setAppName(HadoopToParquetFile.class.getSimpleName())
+		.set("spark.driver.maxResultSize", "2g");
+		//.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
 
-		conf.registerKryoClasses(new Class[]{SimplePolymerChain.class, SimplePolymerType.class, SimplePolymerChainCodec.class});
+		//conf.registerKryoClasses(new Class[]{SimplePolymerChain.class, SimplePolymerType.class, SimplePolymerChainCodec.class});
 
-		JavaSparkContext sc = new JavaSparkContext(conf);
-//		sc.hadoopConfiguration().setInt("parquet.block.size", 1012*1024*256);
-//		sc.hadoopConfiguration().setInt("dfs.block.size", 1012*1024*256);	
+		JavaSparkContext sc = new JavaSparkContext(conf);	
 		return sc;
 	}
-	
 }
