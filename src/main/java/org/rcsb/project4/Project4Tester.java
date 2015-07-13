@@ -116,7 +116,7 @@ public class Project4Tester {
 		System.out.println("Second step time	: " + (endTime2 - startTime2)/1E9 + " s");
 		System.out.println("Third step time		: " + (endTime3 - startTime3)/1E9 + " s");
 		System.out.println("doChainAfp time		: " + timers.get(0).value()/1E9 + " s");
-		System.out.println("rmsd calculate time	: " + timers.get(1).value()/1E9 + " s");
+		System.out.println("calAfpDis time		: " + timers.get(1).value()/1E9 + " s");
 		//System.out.println("calAfpDis time		: " + timers.get(2).value()/1E9 + " s");
 		//System.out.println("max d2 value		: " + timers.get(3).value() + " s");
 

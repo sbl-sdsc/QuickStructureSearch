@@ -334,12 +334,27 @@ public class AFPChainerP4
 
 		double  d;
 		//TODO
-		double d2 = calAfpDisPo2(afp1, afp2,params, afpChain);
-		if (d2 < 6)
+//		double d2 = calAfpDisPo2(afp1, afp2,params, afpChain);
+//		if (d2 < 6)
+//			d = calAfpDis(afp1, afp2,params, afpChain);
+//		else 
+//			d = disCut;
+		long st = System.nanoTime();
+		
+		int aj, ai, bj, bi;
+		aj = afpSet.get(afp2).getP1();
+		ai = afpSet.get(afp1).getP1();
+		bj = afpSet.get(afp2).getP2();
+		bi = afpSet.get(afp1).getP2();
+		Matrix disTable1 = afpChain.getDisTable1();
+		Matrix disTable2 = afpChain.getDisTable2();
+		double res = disTable1.get(afpSet.get(afp2).getP1(),afpSet.get(afp1).getP1()) 
+				- disTable2.get(afpSet.get(afp2).getP2(),afpSet.get(afp1).getP2());
+		if (res > 20 || res < -20)
 			d = calAfpDis(afp1, afp2,params, afpChain);
 		else 
 			d = disCut;
-//		d = calAfpDis(afp1, afp2,params, afpChain);
+		classTimers.get(1).add(System.nanoTime() - st);
 		
 		//note: the 'dis' value is numerically equivalent to the 'rms' with exceptions
 
@@ -489,6 +504,7 @@ public class AFPChainerP4
 		double fragLenSq = params.getFragLenSq();
 
 		int     i, j, ai, bi, aj, bj;
+		aj = ai = bj = bi = 0;
 		double  d;
 		double  rms = 0;
 		for(i = 0; i < fragLen; i ++)   {
@@ -499,9 +515,19 @@ public class AFPChainerP4
 				bj = afpSet.get(afp2).getP2() + j;
 				d = disTable1.get(aj,ai) - disTable2.get(bj,bi);
 				rms += d * d;
-				if(rms > afpDisCut)     { return (disCut); }
+				if(rms > afpDisCut)     { 
+					
+					//System.out.println("a diff "+ (aj - ai) + " b diff " + (bj - bi) + " a&b diff " + ((aj - ai) - (bj - bi)) + " rmsd " + disCut);
+					return (disCut); 
+				}
 			}
 		}
+//		if (((aj - ai) - (bj - bi)) > 15) {
+//			System.out.println("a&b diff " + ((aj - ai) - (bj - bi)) + " first dist " 
+//					+ (disTable1.get(afpSet.get(afp2).getP1(),afpSet.get(afp1).getP1()) 
+//					- disTable2.get(afpSet.get(afp2).getP2(),afpSet.get(afp1).getP2())));
+//		}
+		//System.out.println("a diff "+ (aj - ai) + " b diff " + (bj - bi) + " a&b diff " + ((aj - ai) - (bj - bi)) + " rmsd " + (Math.sqrt(rms / fragLenSq)));
 		return (Math.sqrt(rms / fragLenSq));
 	}
 	
