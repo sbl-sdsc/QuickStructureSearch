@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Scanner;
 
 import javax.vecmath.Point3d;
+import javax.vecmath.Vector2d;
+import javax.vecmath.Vector3d;
 
 import org.biojava.nbio.structure.Atom;
 import org.biojava.nbio.structure.Structure;
@@ -88,10 +90,20 @@ public class SecondaryStructFinger {
 
 	private Point3d[] pts;
 	private double[][] dists;
+	private Tuple2<int[], int[]> alphaHelices = null;
+	private Tuple2<int[], int[]> betaStrands = null;
+	@SuppressWarnings("rawtypes")
+	Tuple2[] alphaProjections = null;
+	@SuppressWarnings("rawtypes")
+	Tuple2[] betaProjections = null;
 
 	public SecondaryStructFinger(Point3d[] pts) {
 		this.pts = pts;
 		dists = dists(pts);
+		alphaHelices = alphaHelices(dists, 4);
+		betaStrands = betaStrands(dists, 3);
+		alphaProjections = new Tuple2[getAlphaLength()];
+		betaProjections = new Tuple2[getBetaLength()];
 	}
 
 	/**
@@ -101,6 +113,14 @@ public class SecondaryStructFinger {
 	 */
 	public int length() {
 		return dists.length;
+	}
+
+	public int getAlphaLength() {
+		return alphaHelices._1.length;
+	}
+
+	public int getBetaLength() {
+		return betaStrands._1.length;
 	}
 
 	/**
@@ -130,11 +150,45 @@ public class SecondaryStructFinger {
 		return Arrays.copyOfRange(dists, i, j);
 	}
 
+	public Tuple2<int[], int[]> getHelices() {
+		return alphaHelices;
+	}
+
+	public Tuple2<int[], int[]> getStrands() {
+		return betaStrands;
+	}
+
+	@SuppressWarnings("unchecked")
+	public Tuple2<Vector2d[], Vector2d[]> getAlphaProjection(int i) {
+		return alphaProjections[i] == null ? alphaProjections[i] = project(pts, getHelices(), i) : alphaProjections[i];
+	}
+
+	@SuppressWarnings("unchecked")
+	public Tuple2<Vector2d[], Vector2d[]> getBetaProjection(int i) {
+		return betaProjections[i] == null ? betaProjections[i] = project(pts, getStrands(), i) : betaProjections[i];
+	}
+
+	public void printAlphaProjection(int ind) {
+		Tuple2<Vector2d[], Vector2d[]> alpha = getAlphaProjection(ind);
+		for (int i = 0; i < alpha._1.length; i++) {
+			System.out.printf("%.3f\t%.3f\t%.3f\t%.3f" + System.lineSeparator(), alpha._1[i].x, alpha._1[i].y,
+					alpha._2[i].x, alpha._2[i].y);
+		}
+	}
+
+	public void printBetaProjection(int ind) {
+		Tuple2<Vector2d[], Vector2d[]> beta = getBetaProjection(ind);
+		for (int i = 0; i < beta._1.length; i++) {
+			System.out.printf("%.3f\t%.3f\t%.3f\t%.3f" + System.lineSeparator(), beta._1[i].x, beta._1[i].y,
+					beta._2[i].x, beta._2[i].y, i + 1);
+		}
+	}
+
 	/**
 	 * shows the alpha helices
 	 */
 	public void printHelices() {
-		Tuple2<int[], int[]> helices = alphaHelices(dists, 4);// alphaHelices(dists, 0);
+		Tuple2<int[], int[]> helices = getHelices();
 		for (int i = 0; i < helices._1.length; i++) {
 			System.out.printf("%d-%d" + System.lineSeparator(), helices._1[i] + 1, helices._2[i] + 1);
 		}
@@ -144,7 +198,7 @@ public class SecondaryStructFinger {
 	 * shows the beta strands
 	 */
 	public void printStrands() {
-		Tuple2<int[], int[]> strand = betaStrands(dists, 3);// betaStrands(dists, 3);
+		Tuple2<int[], int[]> strand = getStrands();
 		for (int i = 0; i < strand._1.length; i++) {
 			System.out.printf("%d-%d" + System.lineSeparator(), strand._1[i] + 1, strand._2[i] + 1);
 		}
@@ -169,7 +223,7 @@ public class SecondaryStructFinger {
 	 * 
 	 * @return A {@link SecondaryStructureSequenceFeature} showing the alpha helices and beta strands.
 	 */
-	public SecondaryStructureSequenceFeature sequenceFeature() {
+	public SecondaryStructureSequenceFeature getSequenceFeature() {
 		Tuple2<int[], int[]> a, b;
 		a = alphaHelices(dists, 4);
 		b = betaStrands(dists, 3);
@@ -184,7 +238,7 @@ public class SecondaryStructFinger {
 		else {
 			Point3d[] pts = null;
 			try {
-				pts = get(NAME);
+				pts = pull(NAME);
 			}
 			catch (IOException | StructureException e) {
 				e.printStackTrace();
@@ -192,7 +246,7 @@ public class SecondaryStructFinger {
 			write(pts, NAME);
 			s = new SecondaryStructFinger(pts);
 		}
-		SecondaryStructureSequenceFeature sf = s.sequenceFeature();
+		SecondaryStructureSequenceFeature sf = s.getSequenceFeature();
 		System.out.println("Start");
 		try (Scanner scan = new Scanner(System.in)) {
 			String in;
@@ -297,7 +351,7 @@ public class SecondaryStructFinger {
 				// System.out.println("Start : " + i);
 				// System.out.println("Real Start : " + (i - NUM));
 				s.add(i - NUM);
-				while (feat.match(dists[i]))
+				while (i < dists.length && feat.match(dists[i]))
 					i++;
 				// System.out.println(i + " breaks");
 				e.add(i - 1);
@@ -360,8 +414,54 @@ public class SecondaryStructFinger {
 	 *            Any sequence of points that matches to the feature with less than this many points is filtered out.
 	 * @return @{link Tuple2} of 2 arrays, 1 is starting indeces, 2 is ending indeces. Some may overlap.
 	 */
-	private static Tuple2<int[], int[]> betaStrands(double[][] dists, int filter) {
+	public static Tuple2<int[], int[]> betaStrands(double[][] dists, int filter) {
 		return match(BETA_STRAND, dists, filter);
+	}
+
+	public static Tuple2<Vector2d[], Vector2d[]> project(Point3d[] pts, Tuple2<int[], int[]> d, int ind) {
+		int[] s = d._1;
+		int[] e = d._2;
+		if (s.length != e.length)
+			throw new IllegalArgumentException("Lengths do not match");
+		int N = s.length;
+		Point3d start = pts[s[ind]];
+		Point3d end = pts[e[ind]];
+		Vector3d v = new Vector3d(end);
+		v.sub(start);
+		Vector3d x, y;
+		x = new Vector3d(pts[s[(ind + 1) % N]]);
+		x.sub(end);
+		y = new Vector3d();
+		y.cross(x, v);
+		x.normalize();
+		y.normalize();
+		Vector2d[] vecs = new Vector2d[N];
+		Vector2d[] vece = new Vector2d[N];
+		for (int i = 0; i < N; i++) {
+			Vector3d vs = new Vector3d(pts[s[i]]);
+			vs.sub(end);
+			vecs[i] = projectPlane(vs, v, x, y);
+
+			Vector3d ve = new Vector3d(pts[e[i]]);
+			ve.sub(end);
+			vece[i] = projectPlane(ve, v, x, y);
+		}
+		return new Tuple2<>(vecs, vece);
+	}
+
+	public static Vector2d projectPlane(Vector3d vec, Vector3d plane, Vector3d x, Vector3d y) {
+		Vector3d vect = new Vector3d(vec);
+		vect.sub(project(vect, plane));
+		Vector2d o = new Vector2d();
+		o.setX(vect.dot(x));
+		o.setY(vect.dot(y));
+		return o;
+	}
+
+	public static Vector3d project(Vector3d vec, Vector3d onto) {
+		Vector3d o = new Vector3d(onto);
+		o.scale(vec.dot(onto) / onto.lengthSquared());
+		return o;
 	}
 
 	/**
@@ -423,7 +523,7 @@ public class SecondaryStructFinger {
 	 * @throws IOException
 	 * @throws StructureException
 	 */
-	public static Point3d[] get(String pdbID) throws IOException, StructureException {
+	public static Point3d[] pull(String pdbID) throws IOException, StructureException {
 		Structure str;
 		Atom[] atoms;
 		str = StructureIO.getStructure(pdbID);
@@ -439,15 +539,6 @@ public class SecondaryStructFinger {
 
 		byte[] feat;
 
-		// public SecondaryStructureSequenceFeature(int[] as, int[] ae, int[] bs, int[] be, int len) {
-		// feat = new byte[len];
-		// for (int i = 0; i < as.length; i++)
-		// for (int j = as[i]; j < ae[i]; j++)
-		// feat[j] |= 1;
-		// for (int i = 0; i < bs.length; i++)
-		// for (int j = bs[i]; j < be[i]; j++)
-		// feat[j] |= 2;
-		// }
 		@SafeVarargs
 		public SecondaryStructureSequenceFeature(int len, Tuple2<int[], int[]>... features) {
 			feat = new byte[len];
@@ -475,7 +566,7 @@ public class SecondaryStructFinger {
 
 		@Override
 		public boolean identity(SequenceFeature<SecondaryStructureSequenceFeature, Byte> sequence2, int i, int j) {
-			return (get(i) ^ sequence2.get(j)) == 0;
+			return get(i) == sequence2.get(j);
 		}
 
 		@Override
@@ -515,45 +606,46 @@ public class SecondaryStructFinger {
 
 	public static class SecondaryStructureSequenceFeature2 implements SequenceFeatureInterface<Byte> {
 
+		byte[] feat;
+
 		@Override
 		public double similarity(SequenceFeatureInterface<Byte> sequence2, int i, int j) {
-			// TODO Auto-generated method stub
-			return 0;
+			int dif = (get(i) ^ sequence2.get(j));
+			int val = 0;
+			if (dif == 1 || dif == 2)
+				val = 1;
+			if (dif == 3)
+				val = 2;
+			return 1 / (1.0 + val);
 		}
 
 		@Override
 		public boolean identity(SequenceFeatureInterface<Byte> sequence2, int i, int j) {
-			// TODO Auto-generated method stub
-			return false;
+			return get(i) == sequence2.get(j);
 		}
 
 		@Override
 		public Byte[] getSequence() {
-			// TODO Auto-generated method stub
 			return null;
 		}
 
 		@Override
 		public Byte get(int index) {
-			// TODO Auto-generated method stub
-			return null;
+			return feat[index];
 		}
 
 		@Override
 		public int length() {
-			// TODO Auto-generated method stub
-			return 0;
+			return feat.length;
 		}
 
 		@Override
 		public String toString(int index) {
-			// TODO Auto-generated method stub
 			return null;
 		}
 
 		@Override
 		public double todouble(int index) {
-			// TODO Auto-generated method stub
 			return 0;
 		}
 	}

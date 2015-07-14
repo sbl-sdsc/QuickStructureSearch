@@ -24,7 +24,7 @@ import org.rcsb.project3.SequenceFeatureInterface;
  * 
  * @author Kevin Wu
  */
-public final class FingerprintMapper_KevinWu {
+public final class FingerprintMapper {
 	private static final SequenceFeatureInterface<String> BLANK_SEQUENCE_FEATURE = new SequenceFeatureInterface<String>() {
 
 		@Override
@@ -72,7 +72,7 @@ public final class FingerprintMapper_KevinWu {
 	private static final String GROUP_NAME = "GLU";
 	private static final double MATCH_THRESHOLD = 0.5;
 
-	private FingerprintMapper_KevinWu() {
+	private FingerprintMapper() {
 	}
 
 	/**
@@ -84,7 +84,7 @@ public final class FingerprintMapper_KevinWu {
 	 *            List of Point3d for protein chain 2.
 	 * @return 3 dimensional array for the optimal alignment. Includes gaps.
 	 */
-	private static int[][][] getOptimalAlignment(Point3d[] points1, Point3d[] points2) {
+	public static int[][][] getOptimalAlignment(Point3d[] points1, Point3d[] points2) {
 		Atom[] ca1 = getCAAtoms(points1);
 		Atom[] ca2 = getCAAtoms(points2);
 		FatCatParameters params = new FatCatParameters();
@@ -254,7 +254,7 @@ public final class FingerprintMapper_KevinWu {
 	 */
 	public static <T> String align(int[] a1, int[] a2, String[] n1, String[] n2, SequenceFeatureInterface<T> f1,
 			SequenceFeatureInterface<T> f2, boolean letter) {
-		String SPACER = letter ? "" : FingerprintMapper_KevinWu.SPACER;
+		String SPACER = letter ? "" : FingerprintMapper.SPACER;
 		if (a1.length != a2.length)
 			new IllegalArgumentException("alignment lengths not equal (" + a1.length + " ," + a2.length + ")")
 					.printStackTrace();
@@ -342,7 +342,7 @@ public final class FingerprintMapper_KevinWu {
 	private static <T> void noMatch(String[] n1, String[] n2, SequenceFeatureInterface<T> f1,
 			SequenceFeatureInterface<T> f2, StringBuilder tf, StringBuilder ti, StringBuilder m, StringBuilder bi,
 			StringBuilder bf, int tS, int tE, int bS, int bE, boolean letter) {
-		String SPACER = letter ? " " : FingerprintMapper_KevinWu.SPACER;
+		String SPACER = letter ? " " : FingerprintMapper.SPACER;
 		int tv = tE - tS;
 		int bv = bE - bS;
 		for (int i = 0; i < tv; i++) {
