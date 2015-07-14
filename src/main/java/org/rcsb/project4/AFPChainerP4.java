@@ -334,28 +334,11 @@ public class AFPChainerP4
 
 		double  d;
 		//TODO
-//		double d2 = calAfpDisPo2(afp1, afp2,params, afpChain);
-//		if (d2 < 6)
-//			d = calAfpDis(afp1, afp2,params, afpChain);
-//		else 
-//			d = disCut;
-		long st = System.nanoTime();
-		
-		int aj, ai, bj, bi;
-		aj = afpSet.get(afp2).getP1();
-		ai = afpSet.get(afp1).getP1();
-		bj = afpSet.get(afp2).getP2();
-		bi = afpSet.get(afp1).getP2();
-		Matrix disTable1 = afpChain.getDisTable1();
-		Matrix disTable2 = afpChain.getDisTable2();
-		double res = disTable1.get(afpSet.get(afp2).getP1(),afpSet.get(afp1).getP1()) 
-				- disTable2.get(afpSet.get(afp2).getP2(),afpSet.get(afp1).getP2());
-		if (res > 20 || res < -20)
+		double d2 = calAfpDisPo2(afp1, afp2,params, afpChain);
+		if (d2 < 6)
 			d = calAfpDis(afp1, afp2,params, afpChain);
 		else 
-			d = disCut;
-		classTimers.get(1).add(System.nanoTime() - st);
-		
+			d = disCut;		
 		//note: the 'dis' value is numerically equivalent to the 'rms' with exceptions
 
 		boolean     ch = false;

@@ -22,7 +22,6 @@ import org.rcsb.structuralSimilarity.ChainSmootherMapper;
 import org.rcsb.structuralSimilarity.GapFilter;
 import org.rcsb.structuralSimilarity.LengthFilter;
 import org.rcsb.structuralSimilarity.SavitzkyGolay7PointSmoother;
-import org.rcsb.structuralSimilarity.SeqToChainMapper;
 import org.rcsb.structuralSimilarity.SplitAtComma;
 
 import scala.Tuple2;
