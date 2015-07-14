@@ -452,10 +452,7 @@ public class SecondaryStructFinger {
 	public static Vector2d projectPlane(Vector3d vec, Vector3d plane, Vector3d x, Vector3d y) {
 		Vector3d vect = new Vector3d(vec);
 		vect.sub(project(vect, plane));
-		Vector2d o = new Vector2d();
-		o.setX(vect.dot(x));
-		o.setY(vect.dot(y));
-		return o;
+		return new Vector2d(vect.dot(x), vect.dot(y));
 	}
 
 	public static Vector3d project(Vector3d vec, Vector3d onto) {
