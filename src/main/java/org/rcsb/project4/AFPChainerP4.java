@@ -27,7 +27,6 @@ package org.rcsb.project4;
 import org.apache.spark.Accumulator;
 import org.biojava.nbio.structure.Atom;
 import org.biojava.nbio.structure.Calc;
-import org.biojava.nbio.structure.SVDSuperimposer;
 import org.biojava.nbio.structure.StructureException;
 import org.biojava.nbio.structure.align.AFPTwister;
 import org.biojava.nbio.structure.align.fatcat.calc.FatCatParameters;
@@ -828,16 +827,17 @@ public class AFPChainerP4
 	 * @return
 	 */
 	private static double getRmsd(Atom[] catmp1, Atom[] catmp2) throws StructureException{
-		SVDSuperimposer svd = new SVDSuperimposer(catmp1, catmp2);
-		Matrix m = svd.getRotation();
-		Atom t = svd.getTranslation();
-
-		for (Atom a : catmp2){
-			Calc.rotate(a,m);
-			Calc.shift(a,t);
-
+		Point3d[] ca1 = new Point3d[catmp1.length];
+		for (int i = 0; i < ca1.length; i++) {
+			ca1[i] = new Point3d(catmp1[i].getCoords());
 		}
-		double rmsd = SVDSuperimposer.getRMS(catmp1,catmp2);
+		Point3d[] ca2 = new Point3d[catmp2.length];
+		for (int i = 0; i < ca1.length; i++) {
+			ca2[i] = new Point3d(catmp2[i].getCoords());
+		}
+		SuperPositionQCP qcp = new SuperPositionQCP();
+		qcp.set(ca1, ca2);
+		double rmsd = qcp.getRmsd();
 		return rmsd;
 	}
 }
