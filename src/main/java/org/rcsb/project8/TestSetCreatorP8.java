@@ -22,10 +22,10 @@ import org.rcsb.structuralSimilarity.GapFilter;
 import scala.Tuple2;
 
 /**
- * This class creates structural alignments between random protein chain pairs 
- * using jFatCAT and scores the alignments with the TM score
+ * This class creates Test Set for future comparing of FatCat TM score
+ * The test set will contain different alignment percentage (alignment/shorterChain)
  * 
- * @author  Peter Rose
+ * @author  Chris Li, Peter Rose
  */
 public class TestSetCreatorP8 { 
 	private static int NUM_THREADS = 8;
@@ -136,20 +136,45 @@ public class TestSetCreatorP8 {
 	 * @param n number of feature vectors
 	 * @return
 	 */
+//	private List<Tuple2<Integer, Integer>> randomPairs(int n, int nPairs, long seed) {
+//		Random r = new Random(seed);
+//		Set<Tuple2<Integer,Integer>> set = new HashSet<>(nPairs);
+//
+//		for (int i = 0; i < nPairs; i++) {
+//			int j = r.nextInt(n);
+//			int k = r.nextInt(n);
+//			if (j == k) {
+//				continue;
+//			}
+//
+//			Tuple2<Integer,Integer> tuple = new Tuple2<>(j,k);
+//			if (! set.contains(tuple)) {
+//			    set.add(tuple);
+//			}
+//		}
+//		return new ArrayList<Tuple2<Integer,Integer>>(set);
+//	}
+	
 	private List<Tuple2<Integer, Integer>> randomPairs(int n, int nPairs, long seed) {
+		if (nPairs > BATCH_SIZE)
+			nPairs = BATCH_SIZE;
 		Random r = new Random(seed);
 		Set<Tuple2<Integer,Integer>> set = new HashSet<>(nPairs);
 
-		for (int i = 0; i < nPairs; i++) {
+		int i = 0;
+		int t = 0;
+		while (i < nPairs && t < (3 * nPairs)) {
+			t++;
 			int j = r.nextInt(n);
 			int k = r.nextInt(n);
 			if (j == k) {
 				continue;
 			}
-
 			Tuple2<Integer,Integer> tuple = new Tuple2<>(j,k);
-			if (! set.contains(tuple)) {
+			Tuple2<Integer,Integer> tuple2 = new Tuple2<>(k,j);
+			if (!set.contains(tuple) && ! set.contains(tuple2)) {
 			    set.add(tuple);
+			    i++;
 			}
 		}
 		return new ArrayList<Tuple2<Integer,Integer>>(set);

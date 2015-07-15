@@ -119,8 +119,8 @@ public class FingerPrintTesterWithHadoop {
 				.mapToPair(new ChainIdToIndexMapper(availableChainIdsBc)) // map chain ids to indices into feature vector
 //				.mapToPair(new LCSFeatureIndexP3(featureVectorsBc,0))
 //				.mapToPair(new SmithWatermanP3(featureVectorsBc,0))
-				.mapToPair(new SmithWatermanGotohP3(featureVectorsBc,0))
-//				.mapToPair(new JaccardScoreMapperP3(featureVectorsBc))
+//				.mapToPair(new SmithWatermanGotohP3(featureVectorsBc,0))
+				.mapToPair(new JaccardScoreMapperP3(featureVectorsBc))
 //				.mapToPair(new LevenshteinMapperP3(featureVectorsBc))
 				.join(trainingData) // join with TM metrics from the input file
 				.sortByKey()

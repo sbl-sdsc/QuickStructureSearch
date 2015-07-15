@@ -19,6 +19,7 @@ import org.apache.spark.broadcast.Broadcast;
 import org.rcsb.hadoop.io.HadoopToSimpleChainMapper;
 import org.rcsb.project3.ChainToSequenceFeatureVectorMapper;
 import org.rcsb.project3.EndToEndDistanceSequenceFingerprint;
+import org.rcsb.project3.JaccardScoreMapperP3;
 import org.rcsb.project3.SequenceFeatureInterface;
 import org.rcsb.project3.SmithWatermanGotohP3;
 import org.rcsb.structuralSimilarity.ChainIdFilter;
@@ -33,14 +34,16 @@ import org.rcsb.structuralSimilarity.SplitAtComma;
 import scala.Tuple2;
 
 /**
- * This class reads .csv files of protein chain pairs and TM similarity metrics and compares
- * the results with similarities calculated by fingerprinting methods
+ * This class reads Test Set and a hadoop sequence file, and write the testing result of a pair of fingerPrint and alignment
+ * algorithm to a .csv file
  * 
- * @author  Peter Rose
+ * @author  Chris Li, Peter Rose
  */
 public class FingerPrintTesterP8 { 
 	private static int NUM_THREADS = 8;
 	private static int NUM_TASKS_PER_THREAD = 3; // Spark recommends 2-3 tasks per thread
+	private static String fingerPrintName = "EndToEndDistance";
+	private static String alignmentAlgorithm = "SmithWatermanGotoh";
 
 	public static void main(String[] args ) throws FileNotFoundException
 	{
@@ -50,18 +53,20 @@ public class FingerPrintTesterP8 {
 			System.out.println("  sequenceFile: Hadoop sequence file with protein chain information");
 			System.out.println("  outputFile: results from calculation in .csv format. This file should have a .csv extension");
 		}
-		String sequenceFileName = "src/test/resources/protein_chains_All_20150629_002251.seq";
-		String outputFileName = args[1];
+		String sequenceFile = "src/test/resources/protein_chains_All_20150629_002251.seq";
+		String outputPath = args[1];
 
 		if (args.length == 3) {
-			sequenceFileName = args[1]; 
-			outputFileName = args[2];
+			sequenceFile = args[1]; 
+			outputPath = args[2];
 		}
-		FingerPrintTesterP8 aaa = new FingerPrintTesterP8();
-		aaa.run(args[0], sequenceFileName, outputFileName);
+		FingerPrintTesterP8 tester = new FingerPrintTesterP8();
+		tester.run(args[0], sequenceFile, outputPath);
 	}
 
-	private void run(String inputDirectory, String path, String outputFileName) throws FileNotFoundException {
+	private void run(String inputDirectory, String sequenceFile, String outputPath) throws FileNotFoundException {
+		long t1 = System.nanoTime();
+
 		File directory = new File(inputDirectory);
 		File[] inputFiles = directory.listFiles();
 		List<String> inputFileNames = new ArrayList<String>();
@@ -83,15 +88,15 @@ public class FingerPrintTesterP8 {
 				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
 
 		JavaSparkContext sc = new JavaSparkContext(conf);
-		
-		long t1 = System.nanoTime();
-				
-		PrintWriter writer = new PrintWriter(outputFileName);
+						
+		PrintWriter writer = new PrintWriter(outputPath + "result_" + fingerPrintName + "_" + alignmentAlgorithm + ".csv");
 		writer.print("FingerPrint");
 		writer.print(",");
 		writer.print("Alignment Algorithm");
 		writer.print(",");
 		writer.print("Test Set");
+		writer.print(",");
+		writer.print("Number of Pairs");
 		writer.print(",");
 		writer.print("F");
 		writer.print(",");
@@ -112,7 +117,7 @@ public class FingerPrintTesterP8 {
 		writer.flush();
 		
 		JavaPairRDD<String, Point3d[]> proteinChains = sc
-				.sequenceFile(path, Text.class, ArrayWritable.class, NUM_THREADS*NUM_TASKS_PER_THREAD)  // read protein chains
+				.sequenceFile(sequenceFile, Text.class, ArrayWritable.class, NUM_THREADS*NUM_TASKS_PER_THREAD)  // read protein chains
 				.mapToPair(new HadoopToSimpleChainMapper()) // convert input to <pdbId.chainId, protein sequence> pairs
 				.filter(t -> t._2.isProtein())
 				.mapToPair(t -> new Tuple2<String, Point3d[]>(t._1, t._2.getCoordinates()))				
@@ -120,9 +125,11 @@ public class FingerPrintTesterP8 {
 				.filter(new LengthFilter(50,500)) // keep protein chains with at least 50 residues
 				.cache();
 		
+		int totalPairs = 0;
+		List<Tuple2<String, Tuple2<Float, String>>> resultSet = new ArrayList<Tuple2<String, Tuple2<Float, String>>>();
 		for (int i = 0; i < inputFileNames.size(); i++) {
 			String inputFileName = inputFileNames.get(i);
-			System.out.println("Test set: " + inputFileName);
+			System.out.println("Test set: " + inputFileName);			
 			
 			// split input lines of .csv files into chainId1,chainId2, data pairs
 	        JavaPairRDD<String, String> trainingData = sc
@@ -143,6 +150,8 @@ public class FingerPrintTesterP8 {
 	        		.collect();
 	        
 	        final Broadcast<Set<String>> chainIdsBc = sc.broadcast(new HashSet<String>(chainIds));
+	        
+	        long st = System.nanoTime();
 	        
 	     // calculate <chainId, feature vector> pairs
 	        JavaPairRDD<String, SequenceFeatureInterface<?>> features = proteinChains
@@ -177,9 +186,14 @@ public class FingerPrintTesterP8 {
 					.collect();
 		    			
 			// write results to .csv file
-			writeToCsv(writer, "EndToEndDistance", "SmithWatermanGoto", inputFileName, results);
+		    totalPairs += results.size();
+		    resultSet.addAll(results);
+			writeToCsv(writer, fingerPrintName, alignmentAlgorithm, inputFileName, results);
 		}
-		
+		writeToCsv(writer, fingerPrintName, alignmentAlgorithm, "All", resultSet);
+		writer.println("Total Pairs: " + totalPairs);
+		writer.println("Total Running Time: " + (System.nanoTime()-t1)/1E9 + " s");
+		writer.flush();
 		writer.close();
 
 		sc.stop();
@@ -198,6 +212,8 @@ public class FingerPrintTesterP8 {
 			writer.print(alignment);
 			writer.print(",");
 			writer.print(inputFileName);
+			writer.print(",");
+			writer.print(results.size());
 			writer.print(",");
 			
 			float[] scores = getStatistics(results, f, tmThreshold);
