@@ -90,7 +90,8 @@ public class FingerPrintTesterWithHadoop {
 				.sequenceFile(path, Text.class, ArrayWritable.class, NUM_THREADS*NUM_TASKS_PER_THREAD)  // read protein chains
 				.mapToPair(new HadoopToSimpleChainMapper()) // convert input to <pdbId.chainId, protein sequence> pairs
 				.filter(t -> t._2.isProtein())
-				.mapToPair(t -> new Tuple2<String, Point3d[]>(t._1, t._2.getCoordinates()))				.filter(new GapFilter(0, 0)) // keep protein chains with gap size <= 3 and <= 5 gaps
+				.mapToPair(t -> new Tuple2<String, Point3d[]>(t._1, t._2.getCoordinates()))				
+				.filter(new GapFilter(0, 0)) // keep protein chains with gap size <= 3 and <= 5 gaps
 				.filter(new LengthFilter(50,500)) // keep protein chains with at least 50 residues
 				.filter(new ChainIdFilter<Point3d[]>(chainIdsBc)) // calculate feature vectors for chains in the training set only
 		        .mapToPair(new ChainSmootherMapper(new SavitzkyGolay7PointSmoother(1))) // add new chain smoother here ...
