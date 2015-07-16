@@ -2,7 +2,6 @@ package org.rcsb.project3;
 
 import java.util.List;
 
-import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
@@ -13,7 +12,7 @@ import scala.Tuple2;
  * 
  * @author Chris Li
  */
-public class SmithWatermanGotohP3 implements PairFunction<Tuple2<Integer,Integer>,String,Float> {
+public class SmithWatermanGotohP3 implements AlignmentAlgorithmInterface {
 
 	private static final long serialVersionUID = 1L;
 	private Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> data = null;
@@ -28,6 +27,9 @@ public class SmithWatermanGotohP3 implements PairFunction<Tuple2<Integer,Integer
     // extend gap penalty
     private double extend = 0.1;
 
+    public SmithWatermanGotohP3() {
+	}
+    
     public SmithWatermanGotohP3(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> data) {
 		this.data = data;
 	}
@@ -52,6 +54,11 @@ public class SmithWatermanGotohP3 implements PairFunction<Tuple2<Integer,Integer
 	public SmithWatermanGotohP3(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> data, int traceback) {
 		this.data = data;
 		this.traceback = traceback;
+	}
+	
+	@Override
+	public void setSequence(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> data) {
+		this.data = data;
 	}
 	
 	@Override

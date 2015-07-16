@@ -23,6 +23,11 @@ import org.rcsb.structuralSimilarity.SeqToChainMapper;
 
 import scala.Tuple2;
 
+/**
+ * This class print the result of large amount of comparison of origin FatCat and new FatCat
+ * 
+ * @author Chris Li
+ */
 public class Project4ResultPrinter {
 	private static int NUM_THREADS = 8;
 	private static int NUM_TASKS_PER_THREAD = 3; // Spark recommends 2-3 tasks per thread

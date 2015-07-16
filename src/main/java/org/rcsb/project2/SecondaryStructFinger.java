@@ -11,6 +11,8 @@ import java.util.List;
 import java.util.Scanner;
 
 import javax.vecmath.Point3d;
+import javax.vecmath.Vector2d;
+import javax.vecmath.Vector3d;
 
 import org.biojava.nbio.structure.Atom;
 import org.biojava.nbio.structure.Structure;
@@ -22,15 +24,19 @@ import org.rcsb.project3.SequenceFeatureInterface;
 import scala.Tuple2;
 
 public class SecondaryStructFinger {
+	private static final int NO_MATCH_PENALTY = 100;
+	public static final double C = 3;
+	public static final double C_SQ = C * C;
+
 	private static final int NUM = 4;
-	private static final String NAME = "3WST.G";
+	private static final String NAME = "4FMW.B";
 
 	// Feature that identifies beta strands
 	private static final Feature BETA_STRAND = new Feature() {
 		private static final double b2 = 6.2; // distance of points 2 apart
 		private static final double b3 = 9.5; // distance of points 3 apart
 		private static final double b4 = 12.0; // distance of points 4 apart
-		private static final double bDiffThreshold = 0.11;
+		private static final double bDiffThreshold = 0.21;
 
 		@Override
 		public boolean match(int i, double d) {
@@ -88,10 +94,18 @@ public class SecondaryStructFinger {
 
 	private Point3d[] pts;
 	private double[][] dists;
+	private Tuple2<int[], int[]> alphaHelices = null;
+	private Tuple2<int[], int[]> betaStrands = null;
+	SecondaryStructProjection[] alphaProjections = null;
+	SecondaryStructProjection[] betaProjections = null;
 
 	public SecondaryStructFinger(Point3d[] pts) {
 		this.pts = pts;
 		dists = dists(pts);
+		alphaHelices = alphaHelices(dists, 4);
+		betaStrands = betaStrands(dists, 3);
+		alphaProjections = new SecondaryStructProjection[getAlphaLength()];
+		betaProjections = new SecondaryStructProjection[getBetaLength()];
 	}
 
 	/**
@@ -101,6 +115,14 @@ public class SecondaryStructFinger {
 	 */
 	public int length() {
 		return dists.length;
+	}
+
+	public int getAlphaLength() {
+		return alphaHelices._1.length;
+	}
+
+	public int getBetaLength() {
+		return betaStrands._1.length;
 	}
 
 	/**
@@ -130,11 +152,43 @@ public class SecondaryStructFinger {
 		return Arrays.copyOfRange(dists, i, j);
 	}
 
+	public Tuple2<int[], int[]> getHelices() {
+		return alphaHelices;
+	}
+
+	public Tuple2<int[], int[]> getStrands() {
+		return betaStrands;
+	}
+
+	public SecondaryStructProjection getAlphaProjection(int i) {
+		return alphaProjections[i] == null ? alphaProjections[i] = project(pts, getHelices(), i) : alphaProjections[i];
+	}
+
+	public SecondaryStructProjection getBetaProjection(int i) {
+		return betaProjections[i] == null ? betaProjections[i] = project(pts, getStrands(), i) : betaProjections[i];
+	}
+
+	public void printAlphaProjection(int ind) {
+		SecondaryStructProjection alpha = getAlphaProjection(ind);
+		for (int i = 0; i < alpha.length(); i++) {
+			System.out.printf("%.3f\t%.3f\t%.3f\t%.3f" + System.lineSeparator(), alpha.getStart(i).x,
+					alpha.getStart(i).y, alpha.getEnd(i).x, alpha.getEnd(i).y);
+		}
+	}
+
+	public void printBetaProjection(int ind) {
+		SecondaryStructProjection beta = getBetaProjection(ind);
+		for (int i = 0; i < beta.length(); i++) {
+			System.out.printf("%.3f\t%.3f\t%.3f\t%.3f" + System.lineSeparator(), beta.getStart(i).x,
+					beta.getStart(i).y, beta.getEnd(i).x, beta.getEnd(i).y, i + 1);
+		}
+	}
+
 	/**
 	 * shows the alpha helices
 	 */
 	public void printHelices() {
-		Tuple2<int[], int[]> helices = alphaHelices(dists, 4);// alphaHelices(dists, 0);
+		Tuple2<int[], int[]> helices = getHelices();
 		for (int i = 0; i < helices._1.length; i++) {
 			System.out.printf("%d-%d" + System.lineSeparator(), helices._1[i] + 1, helices._2[i] + 1);
 		}
@@ -144,7 +198,7 @@ public class SecondaryStructFinger {
 	 * shows the beta strands
 	 */
 	public void printStrands() {
-		Tuple2<int[], int[]> strand = betaStrands(dists, 3);// betaStrands(dists, 3);
+		Tuple2<int[], int[]> strand = getStrands();
 		for (int i = 0; i < strand._1.length; i++) {
 			System.out.printf("%d-%d" + System.lineSeparator(), strand._1[i] + 1, strand._2[i] + 1);
 		}
@@ -169,7 +223,7 @@ public class SecondaryStructFinger {
 	 * 
 	 * @return A {@link SecondaryStructureSequenceFeature} showing the alpha helices and beta strands.
 	 */
-	public SecondaryStructureSequenceFeature sequenceFeature() {
+	public SecondaryStructureSequenceFeature getSequenceFeature() {
 		Tuple2<int[], int[]> a, b;
 		a = alphaHelices(dists, 4);
 		b = betaStrands(dists, 3);
@@ -184,7 +238,7 @@ public class SecondaryStructFinger {
 		else {
 			Point3d[] pts = null;
 			try {
-				pts = get(NAME);
+				pts = pull(NAME);
 			}
 			catch (IOException | StructureException e) {
 				e.printStackTrace();
@@ -192,7 +246,7 @@ public class SecondaryStructFinger {
 			write(pts, NAME);
 			s = new SecondaryStructFinger(pts);
 		}
-		SecondaryStructureSequenceFeature sf = s.sequenceFeature();
+		SecondaryStructureSequenceFeature sf = s.getSequenceFeature();
 		System.out.println("Start");
 		try (Scanner scan = new Scanner(System.in)) {
 			String in;
@@ -212,6 +266,8 @@ public class SecondaryStructFinger {
 				else if (in.equals("sf"))
 					for (int i = 0; i < s.length(); i++)
 						System.out.println((i + 1) + ":\t" + sf.toString(i));
+				else if (in.equals("test"))
+					s.printBetaProjection(0);
 			}
 		}
 		// sc.close();
@@ -297,7 +353,7 @@ public class SecondaryStructFinger {
 				// System.out.println("Start : " + i);
 				// System.out.println("Real Start : " + (i - NUM));
 				s.add(i - NUM);
-				while (feat.match(dists[i]))
+				while (i < dists.length && feat.match(dists[i]))
 					i++;
 				// System.out.println(i + " breaks");
 				e.add(i - 1);
@@ -360,8 +416,120 @@ public class SecondaryStructFinger {
 	 *            Any sequence of points that matches to the feature with less than this many points is filtered out.
 	 * @return @{link Tuple2} of 2 arrays, 1 is starting indeces, 2 is ending indeces. Some may overlap.
 	 */
-	private static Tuple2<int[], int[]> betaStrands(double[][] dists, int filter) {
+	public static Tuple2<int[], int[]> betaStrands(double[][] dists, int filter) {
 		return match(BETA_STRAND, dists, filter);
+	}
+
+	public static SecondaryStructProjection project(Point3d[] pts, Tuple2<int[], int[]> d, int ind) {
+		int[] s = d._1;
+		int[] e = d._2;
+		if (s.length != e.length)
+			throw new IllegalArgumentException("Lengths do not match");
+		int N = s.length;
+		if (N == 1)
+			return new SecondaryStructProjection(new Vector2d[] { new Vector2d(0, 0) }, new Vector2d[] { new Vector2d(
+					0, 0) });
+		Point3d start = pts[s[ind]];
+		Point3d end = pts[e[ind]];
+		Vector3d v = new Vector3d(end);
+		v.sub(start);
+		Vector3d x, y;
+		x = new Vector3d(pts[s[(ind + 1) % N]]);
+		if (x.equals(end))
+			x = new Vector3d(pts[s[(ind + 2) % N]]);
+		x.sub(end);
+		y = new Vector3d();
+		y.cross(x, v);
+		x.normalize();
+		y.normalize();
+		Vector2d[] vecs = new Vector2d[N];
+		Vector2d[] vece = new Vector2d[N];
+		for (int i = 0; i < N; i++) {
+			Vector3d vs = new Vector3d(pts[s[i]]);
+			vs.sub(end);
+			vecs[i] = projectPlane(vs, v, x, y);
+
+			Vector3d ve = new Vector3d(pts[e[i]]);
+			ve.sub(end);
+			vece[i] = projectPlane(ve, v, x, y);
+		}
+		return new SecondaryStructProjection(vecs, vece);
+	}
+
+	public static Vector2d projectPlane(Vector3d vec, Vector3d plane, Vector3d x, Vector3d y) {
+		Vector3d vect = new Vector3d(vec);
+		vect.sub(project(vect, plane));
+		return new Vector2d(vect.dot(x), vect.dot(y));
+	}
+
+	public static Vector3d project(Vector3d vec, Vector3d onto) {
+		Vector3d o = new Vector3d(onto);
+		o.scale(vec.dot(onto) / onto.lengthSquared());
+		return o;
+	}
+
+	public static double simil(Tuple2<Vector2d, Vector2d> v1, Tuple2<Vector2d, Vector2d> v2) {
+		return simil(v1._1, v1._2, v2._1, v2._2);
+	}
+
+	public static double simil(Vector2d s1, Vector2d e1, Vector2d s2, Vector2d e2) {
+		Vector2d ds = new Vector2d(s1);
+		ds.sub(s2);
+		Vector2d de = new Vector2d(e1);
+		de.sub(e2);
+		return ds.dot(ds) + de.dot(de) + 2 * de.dot(ds);
+	}
+
+	public static double rmsd(SecondaryStructProjection p1, SecondaryStructProjection p2) {
+		double o1, o2;
+		o1 = o2 = 0;
+		int no1, no2;
+		no1 = no2 = 0;
+
+		int n1 = p1.length();
+		int[] m1 = new int[n1];
+		for (int i = 0; i < n1; i++)
+			m1[i] = -1;
+		for (int i = 0; i < n1; i++)
+			m1[i] = p2.getCloseTo(p1.get(i));
+		int n2 = p2.length();
+		int[] m2 = new int[n2];
+		for (int i = 0; i < n2; i++)
+			m2[i] = -1;
+		for (int i = 0; i < n2; i++)
+			m2[i] = p1.getCloseTo(p2.get(i));
+		System.out.println(Arrays.toString(m1));
+		System.out.println(Arrays.toString(m2));
+		for (int i = 0; i < m1.length; i++)
+			if (m1[i] != -1) {
+				double sim = simil(p1.get(i), p2.get(m1[i]));
+				// System.out.println(i + ": " + sim);
+				o1 += sim;
+			}
+			else
+				no1++;
+		for (int i = 0; i < m2.length; i++)
+			if (m2[i] != -1) {
+				double sim = simil(p2.get(i), p1.get(m2[i]));
+				System.out.println(i + ": " + sim);
+				o2 += sim;
+			}
+			else
+				no2++;
+		System.out.println("o1: " + o1);
+		System.out.println("o2: " + o2);
+		o1 += no1 * NO_MATCH_PENALTY;
+		o2 += no2 * NO_MATCH_PENALTY;
+		System.out.println("o1: " + o1);
+		System.out.println("o2: " + o2);
+		o1 /= n1;
+		o2 /= n2;
+		o1 = Math.sqrt(o1);
+		o2 = Math.sqrt(o2);
+		System.out.println("o1: " + o1);
+		System.out.println("o2: " + o2);
+
+		return Math.min(o1, o2);
 	}
 
 	/**
@@ -423,7 +591,7 @@ public class SecondaryStructFinger {
 	 * @throws IOException
 	 * @throws StructureException
 	 */
-	public static Point3d[] get(String pdbID) throws IOException, StructureException {
+	public static Point3d[] pull(String pdbID) throws IOException, StructureException {
 		Structure str;
 		Atom[] atoms;
 		str = StructureIO.getStructure(pdbID);
@@ -439,15 +607,6 @@ public class SecondaryStructFinger {
 
 		byte[] feat;
 
-		// public SecondaryStructureSequenceFeature(int[] as, int[] ae, int[] bs, int[] be, int len) {
-		// feat = new byte[len];
-		// for (int i = 0; i < as.length; i++)
-		// for (int j = as[i]; j < ae[i]; j++)
-		// feat[j] |= 1;
-		// for (int i = 0; i < bs.length; i++)
-		// for (int j = bs[i]; j < be[i]; j++)
-		// feat[j] |= 2;
-		// }
 		@SafeVarargs
 		public SecondaryStructureSequenceFeature(int len, Tuple2<int[], int[]>... features) {
 			feat = new byte[len];
@@ -475,7 +634,7 @@ public class SecondaryStructFinger {
 
 		@Override
 		public boolean identity(SequenceFeature<SecondaryStructureSequenceFeature, Byte> sequence2, int i, int j) {
-			return (get(i) ^ sequence2.get(j)) == 0;
+			return get(i) == sequence2.get(j);
 		}
 
 		@Override
@@ -515,45 +674,46 @@ public class SecondaryStructFinger {
 
 	public static class SecondaryStructureSequenceFeature2 implements SequenceFeatureInterface<Byte> {
 
+		byte[] feat;
+
 		@Override
 		public double similarity(SequenceFeatureInterface<Byte> sequence2, int i, int j) {
-			// TODO Auto-generated method stub
-			return 0;
+			int dif = (get(i) ^ sequence2.get(j));
+			int val = 0;
+			if (dif == 1 || dif == 2)
+				val = 1;
+			if (dif == 3)
+				val = 2;
+			return 1 / (1.0 + val);
 		}
 
 		@Override
 		public boolean identity(SequenceFeatureInterface<Byte> sequence2, int i, int j) {
-			// TODO Auto-generated method stub
-			return false;
+			return get(i) == sequence2.get(j);
 		}
 
 		@Override
 		public Byte[] getSequence() {
-			// TODO Auto-generated method stub
 			return null;
 		}
 
 		@Override
 		public Byte get(int index) {
-			// TODO Auto-generated method stub
-			return null;
+			return feat[index];
 		}
 
 		@Override
 		public int length() {
-			// TODO Auto-generated method stub
-			return 0;
+			return feat.length;
 		}
 
 		@Override
 		public String toString(int index) {
-			// TODO Auto-generated method stub
 			return null;
 		}
 
 		@Override
 		public double todouble(int index) {
-			// TODO Auto-generated method stub
 			return 0;
 		}
 	}

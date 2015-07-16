@@ -11,7 +11,6 @@ import org.biojava.nbio.structure.SVDSuperimposer;
 import org.biojava.nbio.structure.StructureException;
 import org.biojava.nbio.structure.StructureTools;
 import org.biojava.nbio.structure.align.AFPTwister;
-import org.biojava.nbio.structure.align.fatcat.calc.AFPOptimizer;
 import org.biojava.nbio.structure.align.fatcat.calc.AFPPostProcessor;
 import org.biojava.nbio.structure.align.fatcat.calc.FatCatParameters;
 import org.biojava.nbio.structure.align.fatcat.calc.SigEva;
@@ -95,9 +94,9 @@ public class FatCatRigidP4{
 		// do post processing
 		AFPPostProcessor.postProcess(params, afpChain,ca1,ca2);		
 		// Optimize the final alignment 
-		AFPOptimizer.optimizeAln(params, afpChain,ca1,ca2);
-		AFPOptimizer.blockInfo( afpChain);
-		AFPOptimizer.updateScore(params,afpChain);
+		AFPOptimizerP4.optimizeAln(params, afpChain,ca1,ca2);
+		AFPOptimizerP4.blockInfo( afpChain);
+		AFPOptimizerP4.updateScore(params,afpChain);
 		AFPAlignmentDisplay.getAlign(afpChain,ca1,ca2);
 		AFPTwister.twistPDB(afpChain, ca1, ca2clone);
 

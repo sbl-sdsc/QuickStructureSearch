@@ -2,7 +2,6 @@ package org.rcsb.project3;
 
 import java.util.List;
 
-import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
@@ -12,11 +11,14 @@ import scala.Tuple2;
  * 
  * @author Chris Li
  */
-public class LCSFeatureIndexP3 implements PairFunction<Tuple2<Integer,Integer>,String,Float> {
+public class LCSFeatureIndexP3 implements AlignmentAlgorithmInterface {
 	private static final long serialVersionUID = 1L;
 	private Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> data = null;
 	// print traceback if it is greater than 0
 	private int traceback = 0;
+	
+	public LCSFeatureIndexP3() {
+	}
 	/**
      * Constructor with traceback option
      */
@@ -175,5 +177,10 @@ public class LCSFeatureIndexP3 implements PairFunction<Tuple2<Integer,Integer>,S
 		if (v1l < v2l)
 			return v1l;
 		else return v2l;
+	}
+
+	@Override
+	public void setSequence(Broadcast<List<Tuple2<String, SequenceFeatureInterface<?>>>> data) {
+		this.data = data;		
 	}
 }
