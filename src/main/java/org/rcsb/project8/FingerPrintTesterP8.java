@@ -17,9 +17,12 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
 import org.rcsb.hadoop.io.HadoopToSimpleChainMapper;
+import org.rcsb.project3.AngleSequenceFingerprint;
 import org.rcsb.project3.ChainToSequenceFeatureVectorMapper;
+import org.rcsb.project3.DCT1DSequenceFingerprint;
 import org.rcsb.project3.EndToEndDistanceSequenceFingerprint;
 import org.rcsb.project3.JaccardScoreMapperP3;
+import org.rcsb.project3.LevenshteinMapperP3;
 import org.rcsb.project3.SequenceFeatureInterface;
 import org.rcsb.project3.SmithWatermanGotohP3;
 import org.rcsb.structuralSimilarity.ChainIdFilter;
@@ -42,18 +45,18 @@ import scala.Tuple2;
 public class FingerPrintTesterP8 { 
 	private static int NUM_THREADS = 8;
 	private static int NUM_TASKS_PER_THREAD = 3; // Spark recommends 2-3 tasks per thread
-	private static String fingerPrintName = "EndToEndDistance";
+	private static String fingerPrintName = "AngleSequence";
 	private static String alignmentAlgorithm = "SmithWatermanGotoh";
 
 	public static void main(String[] args ) throws FileNotFoundException
 	{
 		if (args.length < 2) {
-			System.out.println("Usage: FingerPrintTester.jar inputDirectory [sequenceFile] outputFile");
+			System.out.println("Usage: FingerPrintTester.jar inputDirectory [sequenceFile] outputPath");
 			System.out.println("  inputDirectory: directory with .csv files that contain TM scores");
 			System.out.println("  sequenceFile: Hadoop sequence file with protein chain information");
-			System.out.println("  outputFile: results from calculation in .csv format. This file should have a .csv extension");
+			System.out.println("  outputPath: Path for results from calculation in .csv format.");
 		}
-		String sequenceFile = "src/test/resources/protein_chains_All_20150629_002251.seq";
+		String sequenceFile = "/Users/Chris/Documents/RCSB/Data/Protein_chains/protein_chains_All_20150629_002251.seq";
 		String outputPath = args[1];
 
 		if (args.length == 3) {
@@ -122,7 +125,7 @@ public class FingerPrintTesterP8 {
 				.filter(t -> t._2.isProtein())
 				.mapToPair(t -> new Tuple2<String, Point3d[]>(t._1, t._2.getCoordinates()))				
 				.filter(new GapFilter(0, 0)) // keep protein chains with gap size <= 3 and <= 5 gaps
-				.filter(new LengthFilter(50,500)) // keep protein chains with at least 50 residues
+				.filter(new LengthFilter(20,3000)) // keep protein chains with at least 50 residues
 				.cache();
 		
 		int totalPairs = 0;
@@ -157,9 +160,9 @@ public class FingerPrintTesterP8 {
 	        JavaPairRDD<String, SequenceFeatureInterface<?>> features = proteinChains
 					.filter(new ChainIdFilter<Point3d[]>(chainIdsBc)) // calculate feature vectors for chains in the training set only
 			        .mapToPair(new ChainSmootherMapper(new SavitzkyGolay7PointSmoother(1))) // add new chain smoother here ...
-//		       	    .mapToPair(new ChainToSequenceFeatureVectorMapper(new AngleSequenceFingerprint()))
+		       	    .mapToPair(new ChainToSequenceFeatureVectorMapper(new AngleSequenceFingerprint()))
 //		       	    .mapToPair(new ChainToSequenceFeatureVectorMapper(new DCT1DSequenceFingerprint()))
-		       	    .mapToPair(new ChainToSequenceFeatureVectorMapper(new EndToEndDistanceSequenceFingerprint()))
+//		       	    .mapToPair(new ChainToSequenceFeatureVectorMapper(new EndToEndDistanceSequenceFingerprint()))
 		       	    .cache();
 	        
 	     // broadcast feature vectors

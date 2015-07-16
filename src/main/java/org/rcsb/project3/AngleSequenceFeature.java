@@ -1,5 +1,7 @@
 package org.rcsb.project3;
 
+import java.io.Serializable;
+
 import org.apache.commons.lang.ArrayUtils;
 
 /**
@@ -8,8 +10,9 @@ import org.apache.commons.lang.ArrayUtils;
  * 
  * @author Chris Li
  */
-public class AngleSequenceFeature implements SequenceFeatureInterface<Double> {
+public class AngleSequenceFeature implements SequenceFeatureInterface<Double>, Serializable {
 
+	private static final long serialVersionUID = 1L;
 	private double[] AngleSequence;
 	// Some setting for calculate similarity score 
 	private double diff = 3.14/72;

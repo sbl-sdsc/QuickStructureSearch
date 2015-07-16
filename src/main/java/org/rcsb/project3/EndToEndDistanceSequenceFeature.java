@@ -1,5 +1,7 @@
 package org.rcsb.project3;
 
+import java.io.Serializable;
+
 import org.apache.commons.lang.ArrayUtils;
 
 /**
@@ -8,8 +10,9 @@ import org.apache.commons.lang.ArrayUtils;
  * 
  * @author Chris Li
  */
-public class EndToEndDistanceSequenceFeature implements SequenceFeatureInterface<Integer> {
+public class EndToEndDistanceSequenceFeature implements SequenceFeatureInterface<Integer>, Serializable {
 
+	private static final long serialVersionUID = 1L;
 	private int[] EndToEndSequence;
 	// Some setting for calculate similarity score 
 	private double match = 1;

@@ -1,5 +1,7 @@
 package org.rcsb.project3;
 
+import java.io.Serializable;
+
 import org.apache.commons.lang.ArrayUtils;
 
 /**
@@ -8,8 +10,9 @@ import org.apache.commons.lang.ArrayUtils;
  * 
  * @author Chris Li
  */
-public class DCT1DSequenceFeature implements SequenceFeatureInterface<Integer> {
+public class DCT1DSequenceFeature implements SequenceFeatureInterface<Integer>, Serializable {
 
+	private static final long serialVersionUID = 1L;
 	private int[] DCT1DSequence;
 	// Some setting for calculate similarity score 
 	private double match = 1;
