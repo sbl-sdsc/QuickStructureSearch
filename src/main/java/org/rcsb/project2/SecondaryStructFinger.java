@@ -24,15 +24,19 @@ import org.rcsb.project3.SequenceFeatureInterface;
 import scala.Tuple2;
 
 public class SecondaryStructFinger {
+	private static final int NO_MATCH_PENALTY = 100;
+	public static final double C = 3;
+	public static final double C_SQ = C * C;
+
 	private static final int NUM = 4;
-	private static final String NAME = "3WST.G";
+	private static final String NAME = "4FMW.B";
 
 	// Feature that identifies beta strands
 	private static final Feature BETA_STRAND = new Feature() {
 		private static final double b2 = 6.2; // distance of points 2 apart
 		private static final double b3 = 9.5; // distance of points 3 apart
 		private static final double b4 = 12.0; // distance of points 4 apart
-		private static final double bDiffThreshold = 0.11;
+		private static final double bDiffThreshold = 0.21;
 
 		@Override
 		public boolean match(int i, double d) {
@@ -92,18 +96,16 @@ public class SecondaryStructFinger {
 	private double[][] dists;
 	private Tuple2<int[], int[]> alphaHelices = null;
 	private Tuple2<int[], int[]> betaStrands = null;
-	@SuppressWarnings("rawtypes")
-	Tuple2[] alphaProjections = null;
-	@SuppressWarnings("rawtypes")
-	Tuple2[] betaProjections = null;
+	SecondaryStructProjection[] alphaProjections = null;
+	SecondaryStructProjection[] betaProjections = null;
 
 	public SecondaryStructFinger(Point3d[] pts) {
 		this.pts = pts;
 		dists = dists(pts);
 		alphaHelices = alphaHelices(dists, 4);
 		betaStrands = betaStrands(dists, 3);
-		alphaProjections = new Tuple2[getAlphaLength()];
-		betaProjections = new Tuple2[getBetaLength()];
+		alphaProjections = new SecondaryStructProjection[getAlphaLength()];
+		betaProjections = new SecondaryStructProjection[getBetaLength()];
 	}
 
 	/**
@@ -158,29 +160,27 @@ public class SecondaryStructFinger {
 		return betaStrands;
 	}
 
-	@SuppressWarnings("unchecked")
-	public Tuple2<Vector2d[], Vector2d[]> getAlphaProjection(int i) {
+	public SecondaryStructProjection getAlphaProjection(int i) {
 		return alphaProjections[i] == null ? alphaProjections[i] = project(pts, getHelices(), i) : alphaProjections[i];
 	}
 
-	@SuppressWarnings("unchecked")
-	public Tuple2<Vector2d[], Vector2d[]> getBetaProjection(int i) {
+	public SecondaryStructProjection getBetaProjection(int i) {
 		return betaProjections[i] == null ? betaProjections[i] = project(pts, getStrands(), i) : betaProjections[i];
 	}
 
 	public void printAlphaProjection(int ind) {
-		Tuple2<Vector2d[], Vector2d[]> alpha = getAlphaProjection(ind);
-		for (int i = 0; i < alpha._1.length; i++) {
-			System.out.printf("%.3f\t%.3f\t%.3f\t%.3f" + System.lineSeparator(), alpha._1[i].x, alpha._1[i].y,
-					alpha._2[i].x, alpha._2[i].y);
+		SecondaryStructProjection alpha = getAlphaProjection(ind);
+		for (int i = 0; i < alpha.length(); i++) {
+			System.out.printf("%.3f\t%.3f\t%.3f\t%.3f" + System.lineSeparator(), alpha.getStart(i).x,
+					alpha.getStart(i).y, alpha.getEnd(i).x, alpha.getEnd(i).y);
 		}
 	}
 
 	public void printBetaProjection(int ind) {
-		Tuple2<Vector2d[], Vector2d[]> beta = getBetaProjection(ind);
-		for (int i = 0; i < beta._1.length; i++) {
-			System.out.printf("%.3f\t%.3f\t%.3f\t%.3f" + System.lineSeparator(), beta._1[i].x, beta._1[i].y,
-					beta._2[i].x, beta._2[i].y, i + 1);
+		SecondaryStructProjection beta = getBetaProjection(ind);
+		for (int i = 0; i < beta.length(); i++) {
+			System.out.printf("%.3f\t%.3f\t%.3f\t%.3f" + System.lineSeparator(), beta.getStart(i).x,
+					beta.getStart(i).y, beta.getEnd(i).x, beta.getEnd(i).y, i + 1);
 		}
 	}
 
@@ -266,6 +266,8 @@ public class SecondaryStructFinger {
 				else if (in.equals("sf"))
 					for (int i = 0; i < s.length(); i++)
 						System.out.println((i + 1) + ":\t" + sf.toString(i));
+				else if (in.equals("test"))
+					s.printBetaProjection(0);
 			}
 		}
 		// sc.close();
@@ -418,18 +420,23 @@ public class SecondaryStructFinger {
 		return match(BETA_STRAND, dists, filter);
 	}
 
-	public static Tuple2<Vector2d[], Vector2d[]> project(Point3d[] pts, Tuple2<int[], int[]> d, int ind) {
+	public static SecondaryStructProjection project(Point3d[] pts, Tuple2<int[], int[]> d, int ind) {
 		int[] s = d._1;
 		int[] e = d._2;
 		if (s.length != e.length)
 			throw new IllegalArgumentException("Lengths do not match");
 		int N = s.length;
+		if (N == 1)
+			return new SecondaryStructProjection(new Vector2d[] { new Vector2d(0, 0) }, new Vector2d[] { new Vector2d(
+					0, 0) });
 		Point3d start = pts[s[ind]];
 		Point3d end = pts[e[ind]];
 		Vector3d v = new Vector3d(end);
 		v.sub(start);
 		Vector3d x, y;
 		x = new Vector3d(pts[s[(ind + 1) % N]]);
+		if (x.equals(end))
+			x = new Vector3d(pts[s[(ind + 2) % N]]);
 		x.sub(end);
 		y = new Vector3d();
 		y.cross(x, v);
@@ -446,7 +453,7 @@ public class SecondaryStructFinger {
 			ve.sub(end);
 			vece[i] = projectPlane(ve, v, x, y);
 		}
-		return new Tuple2<>(vecs, vece);
+		return new SecondaryStructProjection(vecs, vece);
 	}
 
 	public static Vector2d projectPlane(Vector3d vec, Vector3d plane, Vector3d x, Vector3d y) {
@@ -459,6 +466,70 @@ public class SecondaryStructFinger {
 		Vector3d o = new Vector3d(onto);
 		o.scale(vec.dot(onto) / onto.lengthSquared());
 		return o;
+	}
+
+	public static double simil(Tuple2<Vector2d, Vector2d> v1, Tuple2<Vector2d, Vector2d> v2) {
+		return simil(v1._1, v1._2, v2._1, v2._2);
+	}
+
+	public static double simil(Vector2d s1, Vector2d e1, Vector2d s2, Vector2d e2) {
+		Vector2d ds = new Vector2d(s1);
+		ds.sub(s2);
+		Vector2d de = new Vector2d(e1);
+		de.sub(e2);
+		return ds.dot(ds) + de.dot(de) + 2 * de.dot(ds);
+	}
+
+	public static double rmsd(SecondaryStructProjection p1, SecondaryStructProjection p2) {
+		double o1, o2;
+		o1 = o2 = 0;
+		int no1, no2;
+		no1 = no2 = 0;
+
+		int n1 = p1.length();
+		int[] m1 = new int[n1];
+		for (int i = 0; i < n1; i++)
+			m1[i] = -1;
+		for (int i = 0; i < n1; i++)
+			m1[i] = p2.getCloseTo(p1.get(i));
+		int n2 = p2.length();
+		int[] m2 = new int[n2];
+		for (int i = 0; i < n2; i++)
+			m2[i] = -1;
+		for (int i = 0; i < n2; i++)
+			m2[i] = p1.getCloseTo(p2.get(i));
+		System.out.println(Arrays.toString(m1));
+		System.out.println(Arrays.toString(m2));
+		for (int i = 0; i < m1.length; i++)
+			if (m1[i] != -1) {
+				double sim = simil(p1.get(i), p2.get(m1[i]));
+				// System.out.println(i + ": " + sim);
+				o1 += sim;
+			}
+			else
+				no1++;
+		for (int i = 0; i < m2.length; i++)
+			if (m2[i] != -1) {
+				double sim = simil(p2.get(i), p1.get(m2[i]));
+				System.out.println(i + ": " + sim);
+				o2 += sim;
+			}
+			else
+				no2++;
+		System.out.println("o1: " + o1);
+		System.out.println("o2: " + o2);
+		o1 += no1 * NO_MATCH_PENALTY;
+		o2 += no2 * NO_MATCH_PENALTY;
+		System.out.println("o1: " + o1);
+		System.out.println("o2: " + o2);
+		o1 /= n1;
+		o2 /= n2;
+		o1 = Math.sqrt(o1);
+		o2 = Math.sqrt(o2);
+		System.out.println("o1: " + o1);
+		System.out.println("o2: " + o2);
+
+		return Math.min(o1, o2);
 	}
 
 	/**
