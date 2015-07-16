@@ -44,19 +44,22 @@ public class SequenceToStructureClusterer {
 
 	public static void main(String[] args ) throws FileNotFoundException
 	{
-		String hadoopSequenceFileName = args[0];
-		String outputFileName = args[1];
-		int startCluster = Integer.parseInt(args[2]);
-		int endCluster = Integer.parseInt(args[3]);
-		double maxRmsd = Double.parseDouble(args[4]);
-		double interval = Double.parseDouble(args[5]);
-		int numInterval = Integer.parseInt(args[6]);
-		double gapPenalty = Double.parseDouble(args[7]);
-		double holePenalty = Double.parseDouble(args[8]);
-		String thresholdOutputFileName = args[9];
+		int option = Integer.parseInt(args[0]); // option 0 = print clusters; option 1 = threshold analysis
+		String hadoopSequenceFileName = args[1];
+		String outputFileName = args[2];
+		int startCluster = Integer.parseInt(args[3]);
+		int endCluster = Integer.parseInt(args[4]);
+		double maxRmsd = Double.parseDouble(args[5]);
+		double interval = Double.parseDouble(args[6]);
+		int numInterval = Integer.parseInt(args[7]);
+		double gapPenalty = Double.parseDouble(args[8]);
+		double holePenalty = Double.parseDouble(args[9]);
 
 		SequenceToStructureClusterer clusterer = new SequenceToStructureClusterer();
-		clusterer.run(hadoopSequenceFileName, startCluster, endCluster, outputFileName, maxRmsd, interval, numInterval, gapPenalty, holePenalty, thresholdOutputFileName);
+		if(option == 0) 
+		  clusterer.run(hadoopSequenceFileName, startCluster, endCluster, outputFileName, maxRmsd, gapPenalty, holePenalty);
+		else
+		  clusterer.run(hadoopSequenceFileName, startCluster, endCluster, outputFileName, maxRmsd, interval, numInterval);
 	}
 
 	/**
@@ -131,17 +134,13 @@ public class SequenceToStructureClusterer {
 			writeToCsv(writer, c);
 		}
 
-		/*for(List<Tuple2<String, Integer[]>> list: structuralClusterList) {
-			writeToCsv(writer, list);
-		}*/
-
 		writer.close();
 		sc.close();
 
 		System.out.println("Time: " + (System.nanoTime() - start)/1E9 + " sec.");
 	}
 	
-	private void run(String hadoopSequenceFileName, int startCluster, int endCluster, String outputFileName, double maxRmsd, double interval, int numInterval, double gapPenalty, double holePenalty, String thresholdOutputFileName) throws FileNotFoundException{
+	private void run(String hadoopSequenceFileName, int startCluster, int endCluster, String outputFileName, double maxRmsd, double interval, int numInterval) throws FileNotFoundException{
 		// initialize Spark		
 		JavaSparkContext sc = getSparkContext();
 
@@ -182,13 +181,10 @@ public class SequenceToStructureClusterer {
 		/*for(List<Tuple2<String, Integer[]>> list: structuralClusterList) {
 			writeToCsv(writer, list);
 		}*/
-		PrintWriter writerTest = new PrintWriter(thresholdOutputFileName);
-		writerTest.println("Threshold,Sequence Clusters,Structural Clusters");
+		PrintWriter writerTest = new PrintWriter(outputFileName);
+		writerTest.println("Threshold,Structural Clusters,Sequence Clusters");
 
 		for (int i = 0; i <= numInterval; i++) {
-			PrintWriter writer = new PrintWriter(outputFileName);
-			//writer.println("PdbId.ChainId, SequenceClusterNumber, StructureClusterNumber");
-			writer.println("SequenceClusterNumber, StructureClusterNumber, StructuralClusterSize, RepresentativeChain, OtherChains");
 			// loop through sequence clusters
 			double threshold = maxRmsd + i*interval;
 			
@@ -205,28 +201,14 @@ public class SequenceToStructureClusterer {
 			for (List<Tuple2<String, Integer[]>> list : structuralClusterList) {
 				List<Tuple2<String, SimplePolymerChain>> SPCList = new ArrayList<Tuple2<String, SimplePolymerChain>>();
 				for (Tuple2<String, Integer[]> tuple : list) {
-					SPCList.add(new Tuple2<String, SimplePolymerChain>(
-							tuple._1, map.get(tuple._1)));
+					SPCList.add(new Tuple2<String, SimplePolymerChain>(tuple._1, map.get(tuple._1)));
 				}
-
 				if (list.get(0)._2[1] != null) {
-					strClusterList.add(new Cluster(
-							list.get(0)._2[0].intValue(), list.get(0)._2[1]
-									.intValue(), SPCList, null, gapPenalty,
-							holePenalty));
+					strClusterList.add(new Cluster(list.get(0)._2[0].intValue(), list.get(0)._2[1].intValue(), SPCList));
 				} else {
-					strClusterList.add(new Cluster(
-							list.get(0)._2[0].intValue(), 0, SPCList, null,
-							gapPenalty, holePenalty));
+					strClusterList.add(new Cluster(list.get(0)._2[0].intValue(), 0, SPCList));
 				}
 			}
-			//not needed for the purposes of determining threshold values
-			/*for (Cluster c : strClusterList) {
-				c.findRepChain();
-			}
-			for (Cluster c : strClusterList) {
-				writeToCsv(writer, c);
-			}*/
 			int sequenceClusters = 0;
 			int structuralClusters = 0;
 			for (Cluster c : strClusterList) {
@@ -237,11 +219,9 @@ public class SequenceToStructureClusterer {
 					}
 				}
 			}
-			writer.close();
-			
-			writerTest.print(sequenceClusters);
-			writerTest.print(",");
 			writerTest.print(structuralClusters);
+			writerTest.print(",");
+			writerTest.print(sequenceClusters);
 			writerTest.println();
 		}
 		writerTest.flush();
@@ -266,7 +246,6 @@ public class SequenceToStructureClusterer {
 				//		.filter(new GapFilterSPC(0, 0)) // keep protein chains with gap size <= 0 and 0 gaps
 				.filter(t -> t._2 != null)
 				.filter(t -> t._2.isProtein());
-		//				.filter(t -> t._1.equals("4Z2G.A"));
 		return chains;
 	}
 
@@ -348,23 +327,6 @@ public class SequenceToStructureClusterer {
 			}
 		}
 		return strList;
-	}
-
-	/**
-	 * Writes chain id, sequence cluster, and structural cluster to a csv file
-	 * @param writer
-	 * @param list
-	 */
-	private static void writeToCsv(PrintWriter writer, List<Tuple2<String, Integer[]>> list) {
-		for (Tuple2<String, Integer[]> t : list) {
-			writer.print(t._1);
-			for (Integer f: t._2) {
-				writer.print(",");
-				writer.print(f);
-			}
-			writer.println();
-		}
-		writer.flush();
 	}
 
 	/**
