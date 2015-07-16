@@ -2,7 +2,6 @@ package org.rcsb.project3;
 
 import java.util.List;
 
-import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
@@ -13,7 +12,7 @@ import scala.Tuple2;
  * 
  * @author Chris Li
  */
-public class SmithWatermanP3 implements PairFunction<Tuple2<Integer,Integer>,String,Float> {
+public class SmithWatermanP3 implements AlignmentAlgorithmInterface {
 
 	private static final long serialVersionUID = 1L;
 	private Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> data = null;
@@ -31,6 +30,9 @@ public class SmithWatermanP3 implements PairFunction<Tuple2<Integer,Integer>,Str
     // print traceback if it is greater than 0
     private int traceback = 0;
 
+    public SmithWatermanP3() {
+	}
+    
     public SmithWatermanP3(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> data) {
 		this.data = data;
 	}
@@ -196,5 +198,10 @@ public class SmithWatermanP3 implements PairFunction<Tuple2<Integer,Integer>,Str
 		} else {
 			return c > d ? c : d;
 		}
+	}
+
+	@Override
+	public void setSequence(Broadcast<List<Tuple2<String, SequenceFeatureInterface<?>>>> data) {
+		this.data = data;
 	}
 }
