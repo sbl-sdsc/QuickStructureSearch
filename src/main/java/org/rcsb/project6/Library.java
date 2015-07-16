@@ -66,6 +66,12 @@ public class Library
 				.filter(new LengthFilter(50,500)) // keep protein chains with 50 - 500 residues
 				.collect();		
 		
+		
+		
+		
+		
+		
+		
 		ArrayList<Tuple3<String, String, Point3d[]>> lib = new ArrayList<>();
 		
 		// boolean for whether or not to add a fragment to the library
@@ -86,11 +92,22 @@ public class Library
 		// integer for comparison's index
 		int ind = 0;
 		
+		bool go = false;
+		
 		// tuple2 to add to templis
 		Tuple2<Double, Integer> temptup = new Tuple2<Double, Integer>(null, null); // if nulls don't work, use 0's
 				
+				
+				
+				
+				
+		
+		
+		
+		
 		for (Tuple2<String, Point3d[]> t: chains){
-			for(int star=0; star<t._2.length-length; star++){				
+			for (int star = 0; star < t._2.length-length; star++){		
+				
 				// center fragment
 				Point3d[] fragment = new Point3d[length];
 				for (int i = 0; i < length; i++) {
@@ -98,16 +115,16 @@ public class Library
 				}
 				SuperPositionQCP.center(fragment);			
 				
+				
 				// create tuple3 fragment
 				Tuple3<String, String, Point3d[]> tup = 
 						new Tuple3<String, String, Point3d[]>
 							(t._1 + "." + star,
 							lengthy(fragment),
 							fragment);
-				
-				if(!lib.isEmpty()){
-					for(int i = 0; i<lib.size(); i++){
-						if(lib.get(i)._2() == tup._2() && !skiplist.contains(i)){
+				int u = lib.size();
+				if (!lib.isEmpty()) {
+						if (lib.get(i)._2() == tup._2() && !skiplist.contains(i)) {
 							
 							// get (c)RMSD
 							qcp.set(lib.get(i)._3(), tup._3());
@@ -116,62 +133,135 @@ public class Library
 							temptup._1 = q;
 							temptup._2 = ind;
 							
-							// Add RMSD to templist
-							templist.add(temptup);
+/* CHECK THIS???*/							ind++;   //CHECK THIS?????
 							
 							// check if (c)RMSD is less than the threshold (1)
-							if(q<1){
+							if (q < 1) {
 								bool = false;
 								// if this tup isn't in lib, then we don't want to put useless info in comparisons
 								templist.clear();
 								break;
 							}
 							
+							// Add RMSD to templist
+							templist.add(temptup);
+							
 							System.out.println("before loop");
 							
-							// check which fragments in lib to skip
-							for(int k = i; k<lib.size();k++){
-								System.out.println("k loop");
-								if(comparisons.get(k).get(i)!=null){
-									System.out.println("comparisons is not null");
-									if(Math.abs(q-comparisons.get(k).get(i)._1())>1){  // check syntax w/ the ()
-										System.out.println("made it!");
-										
-										// adds indices of fragments to skip to skiplist
-										skiplist.add(comparisons.get(k).get(i)._2);
+							// for (int k = i; k < lib.size(); k++) {
+							
+							
+							// check which fragments in lib to skip w/binary search
+							for (int a = int i; a < u; a++) {
+								if (go) {
+									if (comparisons.get(a).get(i) - q > 1) {
+										//stop
+										go = false;
+										break;
+									}
+									else {
+										// add index to skiplist if it's not already there
+										if (!skiplist.contains(a)) {
+											skiplist.add(a);
+										}
+									}
+								}
+								else {
+									if (q - comparisons.get(a).get(i) <= 1) {
+										//check behind (recursively), then start
+										a -= 1;
+										while (q - comparisons.get(a).get(i) <=1 ) {
+											a -= 1;
+										}
+										go = true;
+									}
+									if (q - comparisons.get((int) ((u-a)/2)).get(i) > 1) {
+										i = (int) ((u-i)/2); // + 1 should be added automatically by for loop
+									}
+									else if(comparisons.get((int) ((u-a)/2)).get(i) - q < 1){
+										u = comparisons.get((int) ((u-a)/2)).get(i);
 									}
 								}
 							}
+								
+								// if (Math.abs(q-comparisons.get(k).get(i)._1()) > 1) {  // check syntax w/ the ()
+								// 	System.out.println("!!!added something to skiplist!!!");
+								// 	// adds indices of fragments to skip to skiplist
+								// 	skiplist.add(comparisons.get(k).get(i)._2);
+								// }
+								// else {
+								// 	System.out.println"not dissimilar enough to add to skiplist");
+								// }
+							// }
 						}
 						else{templist.add(null);}
 					}
 					skiplist.clear();
-				}
 				
-				if (bool == true) {
-					for (int vert = 0; vert < lib.size(); vert++) {
-						for (int hor = vert; hor < lib.size(); hor++) {
-							if (comparisons != null) {
-								if (templist.get(vert) <= comparisons.get(vert).get(hor)) {
-									// set comparisons(vert, hor) to templist(vert)
+
+
+
+
+
+
+
+
+					if (bool == true) {
+						// inserts each item of templist into compariosons at the proper location (Increasing order in each row) w/binary search
+						// note: null values are at the beginning
+						starter: for (int vert = 0; vert < lib.size(); vert++) {
+							for (int hor = vert; hor < lib.size(); hor++) {
+								if (comparisons != null) {
+									
+									//compares elements of comparisons against elements of templist (horizontally)
+									if (templist.get(vert) != null) {
+										if (templist.get(vert) <= comparisons.get(hor).get(vert)) {
+											// set comparisons(hor, vert) to templist(vert)
+											comparisons.get(hor).add(templist(vert));
+										}
+										else if (hor == lib.size()-1) {
+											comparisons.add(templist);
+										}
+									}
+									else {
+										// stuff goes here
+									}
 								}
-								else if (hor == lib.size()-1) {
+								else {
+									//comparisons is null
 									comparisons.add(templist);
+									break starter;
 								}
-							}
-							else {
-								comparisons.add(templist);
 							}
 						}
+						templist.clear();
+						lib.add(tup);
+	//					System.out.println("[" + tup._2() + "] - " + (lib.size()-1) + ": " + Arrays.toString(tup._3()));
 					}
-					templist.clear();
-					lib.add(tup);
-//					System.out.println("[" + tup._2() + "] - " + (lib.size()-1) + ": " + Arrays.toString(tup._3()));
+					
+					
+					
+					
+					
+					
+					
+					
+					
+					
+					bool = true;
 				}
-				bool = true;
 			}
 		}
 		sc.close();
+		
+		
+		
+		
+		
+		
+		
+		
+		
 		
 		// Write the lib list to a text or csv file
 //		PrintWriter writer = new PrintWriter("library.tsv", "UTF-8");
@@ -201,6 +291,11 @@ public class Library
 //		System.out.println("Time: " + (System.nanoTime() - start)/1E9 + " sec.");
 	}
 	
+	
+	
+	
+	
+	// FIND OPTIMAL LENGTH
 	public static String lengthy(Point3d[] p){
 		int round = 2;
 		double i = Math.abs(p[p.length-1].distance(p[0]));
