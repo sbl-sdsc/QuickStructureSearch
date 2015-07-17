@@ -16,6 +16,7 @@ import org.biojava.nbio.structure.align.StructureAlignmentFactory;
 import org.biojava.nbio.structure.align.fatcat.FatCatRigid;
 import org.biojava.nbio.structure.align.fatcat.calc.FatCatParameters;
 import org.biojava.nbio.structure.align.model.AFPChain;
+import org.biojava.nbio.structure.align.util.AFPChainScorer;
 import org.rcsb.hadoop.io.SimplePolymerChain;
 import org.rcsb.project3.SequenceFeatureInterface;
 
@@ -92,7 +93,8 @@ public final class FingerprintMapper {
 		try {
 			StructureAlignment algorithm = StructureAlignmentFactory.getAlgorithm(FatCatRigid.algorithmName);
 			afp = algorithm.align(ca1, ca2, params);
-			// double tmScore = AFPChainScorer.getTMScore(afp, ca1, ca2);
+			double tmScore = AFPChainScorer.getTMScore(afp, ca1, ca2);
+			System.out.println("Tm: " + tmScore);
 			// afp.setTMScore(tmScore);
 		}
 		catch (StructureException e) {

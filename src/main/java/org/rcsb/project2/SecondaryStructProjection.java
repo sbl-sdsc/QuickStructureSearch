@@ -66,11 +66,11 @@ public class SecondaryStructProjection {
 		return new Tuple2<>(new Vector2d(s[i]), new Vector2d(e[i]));
 	}
 
-	public int getCloseTo(Tuple2<Vector2d, Vector2d> t) {
+	public Tuple2<Integer, Double> getCloseTo(Tuple2<Vector2d, Vector2d> t) {
 		return getCloseTo(t._1, t._2);
 	}
 
-	public int getCloseTo(Vector2d st, Vector2d en) {
+	public Tuple2<Integer, Double> getCloseTo(Vector2d st, Vector2d en) {
 		// System.out.println("finding " + st + " , " + en);
 		List<Integer> candX = new ArrayList<>();
 		int indX = search(N, new Predicate<Integer>() {
@@ -109,18 +109,19 @@ public class SecondaryStructProjection {
 		// System.out.println("cand " + i + " : " + s[i]);
 		// }
 		if (candX.size() == 0)
-			return -1;
+			return new Tuple2<>(-1, -1.0);
 		int min = candX.get(0);
 		double score = Double.MAX_VALUE;
 		for (int i : candX) {
-			double d = SecondaryStructFinger.simil(st, en, s[i], e[i]);
+			double d = SecondaryStruct.simil(st, en, s[i], e[i]);
 			// System.out.println("Score for " + i + ", " + d);
 			if (d < score) {
 				score = d;
 				min = i;
 			}
 		}
-		return score < 50 ? min : -1;
+		// System.out.println(min + " Score: " + score);
+		return score < 50 ? new Tuple2<>(min, score) : new Tuple2<>(-1, -1.0);
 	}
 
 	private static int search(int len, Predicate<Integer> bigger) {

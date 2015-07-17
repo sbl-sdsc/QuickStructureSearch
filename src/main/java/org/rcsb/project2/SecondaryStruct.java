@@ -19,17 +19,15 @@ import org.biojava.nbio.structure.Structure;
 import org.biojava.nbio.structure.StructureException;
 import org.biojava.nbio.structure.StructureIO;
 import org.biojava.nbio.structure.StructureTools;
-import org.rcsb.project3.SequenceFeatureInterface;
 
 import scala.Tuple2;
 
-public class SecondaryStructFinger {
-	private static final int NO_MATCH_PENALTY = 100;
+public class SecondaryStruct {
+	private static final int NO_MATCH_PENALTY = 50;
 	public static final double C = 3;
 	public static final double C_SQ = C * C;
 
 	private static final int NUM = 4;
-	private static final String NAME = "4FMW.B";
 
 	// Feature that identifies beta strands
 	private static final Feature BETA_STRAND = new Feature() {
@@ -89,8 +87,6 @@ public class SecondaryStructFinger {
 		}
 
 	};
-	// private static final int NUM_THREADS = 4;
-	// private static final int NUM_TASKS_PER_THREAD = 3;
 
 	private Point3d[] pts;
 	private double[][] dists;
@@ -99,7 +95,7 @@ public class SecondaryStructFinger {
 	SecondaryStructProjection[] alphaProjections = null;
 	SecondaryStructProjection[] betaProjections = null;
 
-	public SecondaryStructFinger(Point3d[] pts) {
+	public SecondaryStruct(Point3d[] pts) {
 		this.pts = pts;
 		dists = dists(pts);
 		alphaHelices = alphaHelices(dists, 4);
@@ -160,6 +156,13 @@ public class SecondaryStructFinger {
 		return betaStrands;
 	}
 
+	/**
+	 * Return a {@link SecondaryStructProjection} for the projection of all the alpha helix vectors onto the ith alpha
+	 * helix plane
+	 * 
+	 * @param i
+	 * @return
+	 */
 	public SecondaryStructProjection getAlphaProjection(int i) {
 		return alphaProjections[i] == null ? alphaProjections[i] = project(pts, getHelices(), i) : alphaProjections[i];
 	}
@@ -228,49 +231,6 @@ public class SecondaryStructFinger {
 		a = alphaHelices(dists, 4);
 		b = betaStrands(dists, 3);
 		return new SecondaryStructureSequenceFeature(dists.length, a, b);
-	}
-
-	public static void main(String[] args) {
-		File f = new File(NAME + ".txt");
-		SecondaryStructFinger s = null;
-		if (f.exists())
-			s = new SecondaryStructFinger(read(NAME));
-		else {
-			Point3d[] pts = null;
-			try {
-				pts = pull(NAME);
-			}
-			catch (IOException | StructureException e) {
-				e.printStackTrace();
-			}
-			write(pts, NAME);
-			s = new SecondaryStructFinger(pts);
-		}
-		SecondaryStructureSequenceFeature sf = s.getSequenceFeature();
-		System.out.println("Start");
-		try (Scanner scan = new Scanner(System.in)) {
-			String in;
-			while (!(in = scan.next()).equals("X")) {
-				if (in.equals("g")) {
-					int st = scan.nextInt();
-					System.out.println(distsToString(s.getRange(st, scan.nextInt()), st));
-				}
-				else if (in.equals("a"))
-					s.printHelices();
-				else if (in.equals("b"))
-					s.printStrands();
-				else if (in.equals("l"))
-					System.out.println(s.length());
-				else if (in.equals("c"))
-					s.printPoints();
-				else if (in.equals("sf"))
-					for (int i = 0; i < s.length(); i++)
-						System.out.println((i + 1) + ":\t" + sf.toString(i));
-				else if (in.equals("test"))
-					s.printBetaProjection(0);
-			}
-		}
-		// sc.close();
 	}
 
 	/**
@@ -477,59 +437,85 @@ public class SecondaryStructFinger {
 		ds.sub(s2);
 		Vector2d de = new Vector2d(e1);
 		de.sub(e2);
-		return ds.dot(ds) + de.dot(de) + 2 * de.dot(ds);
+		return ds.dot(ds) + de.dot(de) - de.dot(ds);
 	}
 
-	public static double rmsd(SecondaryStructProjection p1, SecondaryStructProjection p2) {
+	public static Tuple2<Double, int[]> rmsd(SecondaryStructProjection p1, SecondaryStructProjection p2) {
 		double o1, o2;
 		o1 = o2 = 0;
 		int no1, no2;
 		no1 = no2 = 0;
 
 		int n1 = p1.length();
-		int[] m1 = new int[n1];
-		for (int i = 0; i < n1; i++)
-			m1[i] = -1;
-		for (int i = 0; i < n1; i++)
-			m1[i] = p2.getCloseTo(p1.get(i));
 		int n2 = p2.length();
-		int[] m2 = new int[n2];
-		for (int i = 0; i < n2; i++)
-			m2[i] = -1;
-		for (int i = 0; i < n2; i++)
-			m2[i] = p1.getCloseTo(p2.get(i));
-		System.out.println(Arrays.toString(m1));
-		System.out.println(Arrays.toString(m2));
+		int[] m1, m2;
+		Tuple2<int[], int[]> t = align(p1, p2);
+		m1 = t._1;
+		m2 = t._2;
+		// int[] m1 = align(p1, p2);
+		// int[] m2 = align(p2, p1);
+		// System.out.println(Arrays.toString(m1));
+		// System.out.println(Arrays.toString(m2));
 		for (int i = 0; i < m1.length; i++)
 			if (m1[i] != -1) {
 				double sim = simil(p1.get(i), p2.get(m1[i]));
-				// System.out.println(i + ": " + sim);
+				// System.out.println(i + ", " + m1[i] + ": " + sim);
 				o1 += sim;
 			}
-			else
+			else {
 				no1++;
+				// System.out.println(i + ": " + NO_MATCH_PENALTY);
+			}
 		for (int i = 0; i < m2.length; i++)
 			if (m2[i] != -1) {
 				double sim = simil(p2.get(i), p1.get(m2[i]));
-				System.out.println(i + ": " + sim);
+				// System.out.println(i + ", " + m2[i] + ": " + sim);
 				o2 += sim;
 			}
-			else
+			else {
 				no2++;
-		System.out.println("o1: " + o1);
-		System.out.println("o2: " + o2);
-		o1 += no1 * NO_MATCH_PENALTY;
-		o2 += no2 * NO_MATCH_PENALTY;
-		System.out.println("o1: " + o1);
-		System.out.println("o2: " + o2);
+				// System.out.println(i + ": " + NO_MATCH_PENALTY);
+			}
+		// System.out.println("o1: " + o1);
+		// System.out.println("o2: " + o2);
+		o1 += no1 * NO_MATCH_PENALTY * (no1) / (double) n1;
+		o2 += no2 * NO_MATCH_PENALTY * (no2) / (double) n2;
+		// System.out.println("o1: " + o1);
+		// System.out.println("o2: " + o2);
 		o1 /= n1;
 		o2 /= n2;
 		o1 = Math.sqrt(o1);
 		o2 = Math.sqrt(o2);
-		System.out.println("o1: " + o1);
-		System.out.println("o2: " + o2);
+		// System.out.println("o1: " + o1);
+		// System.out.println("o2: " + o2);
+		return new Tuple2<>(Math.min(o1, o2), m1);
+	}
 
-		return Math.min(o1, o2);
+	public static Tuple2<int[], int[]> align(SecondaryStructProjection p1, SecondaryStructProjection p2) {
+		final double MIN_SIM = 3.0;
+		int n1 = p1.length();
+		int n2 = p2.length();
+		int[] m1 = new int[n1];
+		int[] m2 = new int[n2];
+		// int yay = 0;
+		for (int i = 0; i < n1; i++) {
+			// System.out.print(i + " + ");
+			Tuple2<Integer, Double> t = p2.getCloseTo(p1.get(i));
+			m1[i] = t._1;
+			if (t._2 != -1 && t._2 < MIN_SIM) {
+				// System.out.println("yay " + ++yay);
+				m2[m1[i]] = i;
+			}
+		}
+		// System.out.println(Arrays.toString(m2));
+		int test = 0;
+		for (int i = 0; i < n2; i++) {
+			if (m2[i] == 0) {
+				// System.out.println("hi " + ++test);
+				m2[i] = p1.getCloseTo(p2.get(i))._1;
+			}
+		}
+		return new Tuple2<>(m1, m2);
 	}
 
 	/**
@@ -555,7 +541,7 @@ public class SecondaryStructFinger {
 	}
 
 	/**
-	 * Reads the Array of {@link Point3d} stored by using {@link SecondaryStructFinger#write }.
+	 * Reads the Array of {@link Point3d} stored by using {@link SecondaryStruct#write }.
 	 * 
 	 * @param name
 	 *            pdbID to read the points of.
@@ -602,120 +588,39 @@ public class SecondaryStructFinger {
 		return o;
 	}
 
-	public static class SecondaryStructureSequenceFeature implements
-			SequenceFeature<SecondaryStructureSequenceFeature, Byte> {
-
-		byte[] feat;
-
-		@SafeVarargs
-		public SecondaryStructureSequenceFeature(int len, Tuple2<int[], int[]>... features) {
-			feat = new byte[len];
-			for (int k = 0; k < features.length; k++) {
-				int[] start = features[k]._1;
-				int[] end = features[k]._2;
-				if (start.length != end.length)
-					throw new IllegalArgumentException("Pair " + k + " array lengths not equal.");
-				for (int i = 0; i < start.length; i++)
-					for (int j = start[i]; j < end[i]; j++)
-						feat[j] |= 1 << k;
-			}
-		}
-
-		@Override
-		public double similarity(SequenceFeature<SecondaryStructureSequenceFeature, Byte> sequence2, int i, int j) {
-			int dif = (get(i) ^ sequence2.get(j));
-			int val = 0;
-			if (dif == 1 || dif == 2)
-				val = 1;
-			if (dif == 3)
-				val = 2;
-			return 1 / (1.0 + val);
-		}
-
-		@Override
-		public boolean identity(SequenceFeature<SecondaryStructureSequenceFeature, Byte> sequence2, int i, int j) {
-			return get(i) == sequence2.get(j);
-		}
-
-		@Override
-		public Byte[] getSequence() {
-			Byte[] o = new Byte[feat.length];
-			for (int i = 0; i < feat.length; i++)
-				o[i] = feat[i];
-			return o;
-		}
-
-		@Override
-		public Byte get(int index) {
-			return feat[index];
-		}
-
-		@Override
-		public int length() {
-			return feat.length;
-		}
-
-		@Override
-		public String toString(int index) {
-			switch (get(index).byteValue()) {
-			case 0:
-				return "";
-			case 1:
-				return "A";
-			case 2:
-				return "B";
-			case 3:
-				return "AB";
-			default:
-				return "" + get(index);
-			}
-		}
+	public static void align(SecondaryStruct s1, SecondaryStruct s2, String str1, String str2, boolean alpha, int i1,
+			int i2) {
+		System.out.println(str1 + " vs " + str2);
+		System.out.println(alpha ? "Alpha Helices" : "Beta Strands");
+		System.out.println(SecondaryStruct.rmsd(alpha ? s1.getAlphaProjection(i1) : s1.getBetaProjection(i1),
+				alpha ? s2.getAlphaProjection(i2) : s2.getBetaProjection(i2))._1);
 	}
 
-	public static class SecondaryStructureSequenceFeature2 implements SequenceFeatureInterface<Byte> {
+	public static void align(SecondaryStruct s1, SecondaryStruct s2, String str1, String str2, boolean alpha) {
+		final double MIN_PERFECT_RMSD = 3.0;
+		System.out.println(str1 + " vs " + str2);
+		System.out.println(alpha ? "Alpha Helices" : "Beta Strands");
+		double minRMSD = Double.MAX_VALUE;
+		int minInd1, minInd2;
+		minInd1 = minInd2 = 0;
+		int n1, n2;
+		n1 = alpha ? s1.getAlphaLength() : s1.getBetaLength();
+		n2 = alpha ? s2.getAlphaLength() : s2.getBetaLength();
+		for (int i1 = 0; i1 < n1; i1++) {
+			for (int i2 = 0; i2 < n2; i2++) {
+				Tuple2<Double, int[]> t = SecondaryStruct.rmsd(
+						alpha ? s1.getAlphaProjection(i1) : s1.getBetaProjection(i1), alpha ? s2.getAlphaProjection(i2)
+								: s2.getBetaProjection(i2));
+				double tes = t._1;
 
-		byte[] feat;
-
-		@Override
-		public double similarity(SequenceFeatureInterface<Byte> sequence2, int i, int j) {
-			int dif = (get(i) ^ sequence2.get(j));
-			int val = 0;
-			if (dif == 1 || dif == 2)
-				val = 1;
-			if (dif == 3)
-				val = 2;
-			return 1 / (1.0 + val);
+				if (tes < minRMSD) {
+					minRMSD = tes;
+					minInd1 = i1;
+					minInd2 = i2;
+				}
+				// System.out.println("RMSD " + i1 + ", " + i2 + ": " + tes);
+			}
 		}
-
-		@Override
-		public boolean identity(SequenceFeatureInterface<Byte> sequence2, int i, int j) {
-			return get(i) == sequence2.get(j);
-		}
-
-		@Override
-		public Byte[] getSequence() {
-			return null;
-		}
-
-		@Override
-		public Byte get(int index) {
-			return feat[index];
-		}
-
-		@Override
-		public int length() {
-			return feat.length;
-		}
-
-		@Override
-		public String toString(int index) {
-			return null;
-		}
-
-		@Override
-		public double todouble(int index) {
-			return 0;
-		}
+		System.out.println(minInd1 + "," + minInd2 + " min RMSD: " + minRMSD);
 	}
-
 }
