@@ -28,16 +28,20 @@ public class StructureClusterer implements VoidFunction<Tuple2<Integer, Iterable
 		this.maxRmsd = maxRmsd;
 	}
 
+	public StructureClusterer(Broadcast<Map<String, SimplePolymerChain>> chainMap) {
+		this.chainMap = chainMap;
+	}
+
 	/**
 	 * This method is currently not used
 	 */
 	@Override
 	public void call(Tuple2<Integer, Iterable<String>> tuple) throws Exception {
 		Map<String, SimplePolymerChain> map = chainMap.getValue();
-//		List<Tuple2<String, Integer[]>> writerList = new ArrayList<Tuple2<String, Integer[]>>();
+		//		List<Tuple2<String, Integer[]>> writerList = new ArrayList<Tuple2<String, Integer[]>>();
 		int count = 1;
 
-//		System.out.println("*** Cluster: " + tuple._1 + ": ");
+		//		System.out.println("*** Cluster: " + tuple._1 + ": ");
 		StructuralClusterCreator clusterCreator = new StructuralClusterCreator();
 		List<Tuple2<String, SimplePolymerChain>> list = new ArrayList<Tuple2<String, SimplePolymerChain>>();
 		for (String id: tuple._2) {
@@ -51,9 +55,9 @@ public class StructureClusterer implements VoidFunction<Tuple2<Integer, Iterable
 			System.out.println("***** " + tuple._1 + "-" + count + " Structural Cluster: ");
 			for(Tuple2<String, SimplePolymerChain> tuple2: a) {
 				System.out.println(tuple2._1 + ": " + tuple2._2.getSequence());
-//				writerList.add(new Tuple2<String, Integer[]>(tuple2._1, new Integer[]{tuple._1, count}));
+				//				writerList.add(new Tuple2<String, Integer[]>(tuple2._1, new Integer[]{tuple._1, count}));
 			}
-//			writeToCsv(writer, writerList);
+			//			writeToCsv(writer, writerList);
 			System.out.println();
 			count++;
 		}
@@ -62,7 +66,7 @@ public class StructureClusterer implements VoidFunction<Tuple2<Integer, Iterable
 			System.out.println(id + ": " + c.getSequence());
 		}*/
 	}
-	
+
 	/**
 	 * Returns a list of structural clusters given a sequence cluster
 	 * @param tuple
@@ -74,7 +78,7 @@ public class StructureClusterer implements VoidFunction<Tuple2<Integer, Iterable
 		List<Tuple2<String, Integer[]>> writerList = new ArrayList<Tuple2<String, Integer[]>>();
 		int count = 1;
 
-//		System.out.println("*** Cluster: " + tuple._1 + ": ");
+		//		System.out.println("*** Cluster: " + tuple._1 + ": ");
 		StructuralClusterCreator clusterCreator = new StructuralClusterCreator();
 		List<Tuple2<String, SimplePolymerChain>> list = new ArrayList<Tuple2<String, SimplePolymerChain>>();
 		for (String id: tuple._2) {
@@ -88,13 +92,24 @@ public class StructureClusterer implements VoidFunction<Tuple2<Integer, Iterable
 			}
 		}
 		for (List<Tuple2<String, SimplePolymerChain>> a: clusterCreator.createStructuralCluster(list, maxRmsd)) {
-//			System.out.println("***** " + tuple._1 + "-" + count + " Structural Cluster: ");
+			//			System.out.println("***** " + tuple._1 + "-" + count + " Structural Cluster: ");
 			for(Tuple2<String, SimplePolymerChain> tuple2: a) {
-//				System.out.println(tuple2._1 + ": " + tuple2._2.getSequence());
+				//				System.out.println(tuple2._1 + ": " + tuple2._2.getSequence());
 				writerList.add(new Tuple2<String, Integer[]>(tuple2._1, new Integer[]{tuple._1, count}));
 			}
-//			System.out.println();
+			//			System.out.println();
 			count++;
+		}
+		return writerList;
+	}
+
+	public Tuple2<Integer, List<Tuple2<String, SimplePolymerChain>>> getSequenceCluster(Tuple2<Integer, Iterable<String>> tuple) throws Exception {
+		Map<String, SimplePolymerChain> map = chainMap.getValue();
+		Tuple2<Integer, List<Tuple2<String, SimplePolymerChain>>> writerList = new Tuple2<Integer, List<Tuple2<String, SimplePolymerChain>>>(tuple._1, new ArrayList<Tuple2<String, SimplePolymerChain>>());
+
+		for (String id: tuple._2) {
+			SimplePolymerChain c = map.get(id);
+			writerList._2.add(new Tuple2<String, SimplePolymerChain>(id, c));
 		}
 		return writerList;
 	}

@@ -209,6 +209,29 @@ public class Cluster {
 		setRepChain(tiebreakerList.get(minIndex));
 	}
 	
+	public double similarity() {
+		if(isNull()) {
+			return -1;
+		}else if(size() <= 1) {
+			return 0;
+		}
+		
+		if(getRepChain() == null) {
+			findRepChain();
+		}
+		
+		double sum = 0;
+		List<Integer> startEnd = null;
+		
+		for(int i = 0; i < size(); i++) {
+			startEnd = lcs.longestCommonSubstring(
+					getRepChain()._2.getSequence(), strCluster.get(i)._2.getSequence());
+			sum += getcRmsd(getRepChain(), strCluster.get(i), startEnd.get(0),
+					startEnd.get(1), startEnd.get(2), startEnd.get(3));
+		}
+		return sum / (size() - 1);
+	}
+	
 	/**
 	 * returns a boolean which identifies whether or not the cluster is null
 	 * @return true or false
