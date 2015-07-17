@@ -20,6 +20,7 @@ import org.rcsb.hadoop.io.HadoopToSimpleChainMapper;
 import org.rcsb.project3.AngleSequenceFingerprint;
 import org.rcsb.project3.ChainToSequenceFeatureVectorMapper;
 import org.rcsb.project3.DCT1DSequenceFingerprint;
+import org.rcsb.project3.EndToEndDistanceDoubleSequenceFingerprint;
 import org.rcsb.project3.EndToEndDistanceSequenceFingerprint;
 import org.rcsb.project3.JaccardScoreMapperP3;
 import org.rcsb.project3.LevenshteinMapperP3;
@@ -45,7 +46,7 @@ import scala.Tuple2;
 public class FingerPrintTesterP8 { 
 	private static int NUM_THREADS = 8;
 	private static int NUM_TASKS_PER_THREAD = 3; // Spark recommends 2-3 tasks per thread
-	private static String fingerPrintName = "AngleSequence";
+	private static String fingerPrintName = "EndToEndDistanceDoubleSim";
 	private static String alignmentAlgorithm = "SmithWatermanGotoh";
 
 	public static void main(String[] args ) throws FileNotFoundException
@@ -160,9 +161,10 @@ public class FingerPrintTesterP8 {
 	        JavaPairRDD<String, SequenceFeatureInterface<?>> features = proteinChains
 					.filter(new ChainIdFilter<Point3d[]>(chainIdsBc)) // calculate feature vectors for chains in the training set only
 			        .mapToPair(new ChainSmootherMapper(new SavitzkyGolay7PointSmoother(1))) // add new chain smoother here ...
-		       	    .mapToPair(new ChainToSequenceFeatureVectorMapper(new AngleSequenceFingerprint()))
+//		       	    .mapToPair(new ChainToSequenceFeatureVectorMapper(new AngleSequenceFingerprint()))
 //		       	    .mapToPair(new ChainToSequenceFeatureVectorMapper(new DCT1DSequenceFingerprint()))
 //		       	    .mapToPair(new ChainToSequenceFeatureVectorMapper(new EndToEndDistanceSequenceFingerprint()))
+		       	    .mapToPair(new ChainToSequenceFeatureVectorMapper(new EndToEndDistanceDoubleSequenceFingerprint()))		       	    
 		       	    .cache();
 	        
 	     // broadcast feature vectors
