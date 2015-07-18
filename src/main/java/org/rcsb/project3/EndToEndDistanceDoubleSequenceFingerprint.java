@@ -17,7 +17,6 @@ public class EndToEndDistanceDoubleSequenceFingerprint implements SequenceFinger
 	 * Best default parameter combination: sensitivity: 0.948, specificity: 0.818
 	 */
     private int length = 8;
-    private double binSize = 3.6943572;
  
     /**
      * Default constructor uses default parameters
@@ -30,25 +29,22 @@ public class EndToEndDistanceDoubleSequenceFingerprint implements SequenceFinger
      */
     public EndToEndDistanceDoubleSequenceFingerprint(int length, double binSize) {
         this.length = length;
-        this.binSize = binSize;
 	}
     
     public EndToEndDistanceDoubleSequenceFingerprint(int randomSeed) {
 		Random r = new Random(randomSeed);
 		this.length = 6 + r.nextInt(3);
-		this.binSize = 1.0 + r.nextDouble() * 3;
 	}
 	
 	public float[] getParameters() {
 		float[] parameters = {
-				this.length,
-				(float) this.binSize
+				this.length
 				};
 		return parameters;
 	}
 
     public String getName() {
-    	return this.getClass().getSimpleName() + "_L" + this.length + "B" + this.binSize;
+    	return this.getClass().getSimpleName() + "_L" + this.length;
     }
 
     /**
@@ -59,7 +55,6 @@ public class EndToEndDistanceDoubleSequenceFingerprint implements SequenceFinger
 	@Override
 	public EndToEndDistanceDoubleSequenceFeature getFingerprint(Point3d[] coords) {
 		double[] features = new double[coords.length-this.length+1];
-    	double scale = 1/this.binSize;
     	if (coords.length-this.length < 0) {
     		return new EndToEndDistanceDoubleSequenceFeature(features);
     	}
@@ -73,7 +68,7 @@ public class EndToEndDistanceDoubleSequenceFingerprint implements SequenceFinger
     		}
     		// calculate end to end distance of fragment
     		// and bin values
-    		features[i] = scale*first.distance(last);
+    		features[i] = first.distance(last);
     	}
 		return new EndToEndDistanceDoubleSequenceFeature(features);
 	}

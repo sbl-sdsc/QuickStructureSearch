@@ -18,7 +18,7 @@ public class EndToEndDistanceDoubleSequenceFeature implements SequenceFeatureInt
 	private double match = 1;
 	private double mismatch = -1;
 	private double gap = -1;
-	private double diff = 0.3;
+	private double diff = 1;
 	    
     /**
      * Constructor that will store an int array of DCT1D feature
@@ -54,7 +54,7 @@ public class EndToEndDistanceDoubleSequenceFeature implements SequenceFeatureInt
 			if (difference < diff)
 				return match;
 			else {
-				double similarity = 1 - difference/1;
+				double similarity = 1 - difference/3.6;
 				if (similarity > 0)
 					return similarity;
 				else

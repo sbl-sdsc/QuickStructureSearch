@@ -16,6 +16,7 @@ import org.apache.spark.broadcast.Broadcast;
 import org.rcsb.hadoop.io.HadoopToSimpleChainMapper;
 import org.rcsb.project3.AlignmentAlgorithmInterface;
 import org.rcsb.project3.ChainToSequenceFeatureVectorMapper;
+import org.rcsb.project3.EndToEndDistanceDoubleSequenceFingerprint;
 import org.rcsb.project3.EndToEndDistanceSequenceFingerprint;
 import org.rcsb.project3.SequenceFeatureInterface;
 import org.rcsb.project3.SequenceFingerprint;
@@ -38,9 +39,9 @@ public class OneAgainstAllP8 {
 	private static int NUM_THREADS = 8;
 	private static int NUM_TASKS_PER_THREAD = 3; // Spark recommends 2-3 tasks per thread
 	private static int BATCH_SIZE = 50;
-	private static double fingerPrintFilter = 0.4;
+	private static double fingerPrintFilter = 0.45;
 	// Other fingerPrint: AngleSequenceFingerprint() || DCT1DSequenceFingerprint()
-	private static SequenceFingerprint fingerPrint = new EndToEndDistanceSequenceFingerprint();
+	private static SequenceFingerprint fingerPrint = new EndToEndDistanceDoubleSequenceFingerprint();
 	// Other alignment: LCSFeatureIndexP3() || SmithWatermanP3() || JaccardScoreMapperP3() || LevenshteinMapperP3()
 	private static AlignmentAlgorithmInterface alignmentAlgorithm = new SmithWatermanGotohP3();
 	
@@ -61,7 +62,10 @@ public class OneAgainstAllP8 {
 		}
 		OneAgainstAllP8 o = new OneAgainstAllP8();
 		long st = System.nanoTime();
-		o.run(args[0], sequenceFile, outputPath);
+		String[] testPros = {"4IFJ.A", "1YM8.A", "3A19.D", "4ALZ.A"};//{"3DMW.C","4IFJ.A", "1UH1.E"}; //"1A1R.D", "2DRX.C", 
+		for (String testPro : testPros) {
+			o.run(testPro, sequenceFile, outputPath);
+		}
 		System.out.println("Total Running Time: " + (System.nanoTime()-st)/1E9 + " s");
 	}
 	
@@ -136,7 +140,7 @@ public class OneAgainstAllP8 {
 	    }
 	    
         // output fingerPrint result
-		PrintWriter writer = new PrintWriter(outputPath + "OneAgainstAll_" + targetProteinId + ".csv");
+		PrintWriter writer = new PrintWriter(outputPath + "OneAgainstAll_" + targetProteinId + "_FingerPrint.csv");
 		writer.print("Target Protein");
 		writer.print(",");
 		writer.print("Protein2");
@@ -193,9 +197,9 @@ public class OneAgainstAllP8 {
 	private List<Tuple2<Integer, Integer>> generatePairs(List<Integer> proteinIds, Integer targetProteinId, int BATCH_SIZE) {
 		List<Tuple2<Integer, Integer>> pairs = new ArrayList<Tuple2<Integer, Integer>>();
 		for (int i = 0; i < BATCH_SIZE; i++){
-			pairs.add(new Tuple2<Integer, Integer>(targetProteinId, proteinIds.remove(0)));
 			if (proteinIds.size() == 0)
 				return pairs;
+			pairs.add(new Tuple2<Integer, Integer>(targetProteinId, proteinIds.remove(0)));
 		}
 		return pairs;
 	}
