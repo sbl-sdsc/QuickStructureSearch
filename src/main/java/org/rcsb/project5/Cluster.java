@@ -7,6 +7,7 @@ import javax.vecmath.Point3d;
 
 import org.rcsb.hadoop.io.SimplePolymerChain;
 import org.rcsb.structuralAlignment.SuperPositionQCP;
+import org.rcsb.structuralSimilarity.TmScorer;
 
 import scala.Tuple2;
 
@@ -175,7 +176,8 @@ public class Cluster {
 	 * @param tiebreakerList
 	 */
 	public void tiebreaker(List<Tuple2<String, SimplePolymerChain>> tiebreakerList) {
-		double[][] array = new double[tiebreakerList.size()][tiebreakerList.size()];
+		setRepChain(tiebreakerList.get(0));
+		/*double[][] array = new double[tiebreakerList.size()][tiebreakerList.size()];
 		List<Integer> startEnd = null;
 		double cRmsd;
 		for (int outer = 0; outer < array.length - 1; outer++) {
@@ -206,7 +208,7 @@ public class Cluster {
 				minIndex = i;
 			}
 		}
-		setRepChain(tiebreakerList.get(minIndex));
+		setRepChain(tiebreakerList.get(minIndex));*/
 	}
 	
 	public double similarity() {
@@ -230,6 +232,26 @@ public class Cluster {
 					startEnd.get(1), startEnd.get(2), startEnd.get(3));
 		}
 		return sum / (size() - 1);
+	}
+	
+	public double compare(Cluster c) {
+		if(isNull() || c.isNull()) {
+			return -1;
+		}
+		
+		double max = 0;
+		double temp;
+		
+		for(Tuple2<String, SimplePolymerChain> tuple1: strCluster) {
+			for(Tuple2<String, SimplePolymerChain> tuple2: c.getStrCluster()) {
+				temp = TmScorer.getFatCatTmScore(tuple1._2.getCoordinates(), tuple2._2.getCoordinates())[1];
+				if(temp > max) {
+					max = temp;
+				}
+			}
+		}
+		
+		return max;
 	}
 	
 	/**
