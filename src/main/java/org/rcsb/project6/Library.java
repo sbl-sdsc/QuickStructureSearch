@@ -62,13 +62,14 @@ public class Library
 				.filter(new LengthFilter(50,500)) // keep protein chains with 50 - 500 residues
 				.collect();		
 		
+		// instantiations
 		ArrayList<Tuple3<String, String, Point3d[]>> lib = new ArrayList<>();
 		ArrayList<ArrayList<Tuple2<Double, Integer>>> comparisons = new ArrayList<>();
 		ArrayList<Tuple2<Double, Integer>> templist = new ArrayList<>();
 		SuperPositionQCP qcp = new SuperPositionQCP(true);
 		ArrayList<Integer> skiplist = new ArrayList<>();
 		ArrayList<Integer> numnulls = new ArrayList<Integer>();
-		int numnulls = 0;
+		// int numnulls = 0;
 		Tuple2<Double, Integer> temptup = new Tuple2<Double, Integer>(null, null); // if nulls don't work, use 0's
 		int length = 8;
 		int threshold = 1;
@@ -82,8 +83,17 @@ public class Library
 		// boolean for whether or not to add a fragment to the library
 		boolean bool = true;
 		
+
+
+
+
+
+
+
+
+
 		for (Tuple2<String, Point3d[]> t: chains){
-			for (int star = 0; star < t._2.length-length; star++){
+			for (int star = 0; star < t._2.length-length; star++){								// for each fragment
 				Point3d[] fragment = new Point3d[length];
 				for (int i = 0; i < length; i++) {
 					fragment[i] = new Point3d(t._2[star+i]);
@@ -100,7 +110,10 @@ public class Library
 				
 				ind = 0;
 				
-				for (int i = 0; i < u; i++) {
+
+
+
+				for (int i = 0; i < lib.size(); i++) {											// for each new fragment, loop once through the library
 					if (!lib.isEmpty()) {
 							if (lib.get(i)._2() == tup._2() && !skiplist.contains(i)) {
 								// get (c)RMSD
@@ -120,6 +133,11 @@ public class Library
 								templist.add(temptup);
 								
 								u -= numnulls.get(i);
+
+
+
+
+
 								for (int a = 0; a < u; a++) {
 									if (go) {
 										if (comparisons.get(a).get(i) - q > threshold) {
@@ -139,7 +157,7 @@ public class Library
 											go = true;
 										}
 										if (q - comparisons.get((int) ((u-a)/2)).get(i) > threshold) {
-											i = (int) ((u-i)/2); // + 1 should be added automatically by for loop
+											a = (int) ((u-i)/2); // + 1 should be added automatically by for loop
 										}
 										else if (comparisons.get((int) ((u-a)/2)).get(i) - q < threshold) {
 											u = comparisons.get((int) ((u-a)/2)).get(i);
@@ -153,6 +171,11 @@ public class Library
 						}
 					}
 					skiplist.clear();
+
+
+
+
+
 
 					if (bool == true) {
 						starter: for (int vert = 0; vert < lib.size(); vert++) {
@@ -169,6 +192,7 @@ public class Library
 									else {
 										// templist(vert) is null
 										comparisons.get(hor).add(templist.get(vert));
+										numnulls.set(vert, numnulls.get(vert) + 1);					// CHECKCHECKCHECKCHECK
 									}
 								}
 								else {
@@ -180,31 +204,42 @@ public class Library
 						}
 						templist.clear();
 						lib.add(tup);
-	//					System.out.println("[" + tup._2() + "] - " + (lib.size()-1) + ": " + Arrays.toString(tup._3()));
+						//System.out.println("[" + tup._2() + "] - " + (lib.size()-1) + ": " + Arrays.toString(tup._3()));
 					}
 					bool = true;
 				}
 			}
 		}
 		sc.close();
+
+
+
+
+
+
+
+
+
 		PrintWriter writer = new PrintWriter("library.tsv", "UTF-8");
-		for(Tuple3<String, String, Point3d[]> l: lib){
+		for (Tuple3<String, String, Point3d[]> l: lib) {
 			writer.print("PDBID.ChainID\tlength");
-			for(int i=0; i<length; i++){
+			for (int i=0; i<length; i++) {
 				writer.print("\tPoint " + i);
 			}
 			writer.println();
 			writer.print(l._1() + "\t [" + l._2() + "]");
-			for(Point3d p: l._3()){
+			for (Point3d p: l._3()) {
 				writer.print("\t" + p);
 			}
 			writer.println();
 		}
 		writer.close();
 		System.out.println(lib.size());
-		
-//		System.out.println("Time: " + (System.nanoTime() - start)/1E9 + " sec.");
+		//System.out.println("Time: " + (System.nanoTime() - start)/1E9 + " sec.");
 	}
+
+
+
 	// FIND OPTIMAL LENGTH
 	public static String lengthy(Point3d[] p){
 		int round = 2;
