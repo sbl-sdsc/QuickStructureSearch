@@ -69,15 +69,13 @@ public class PdbChainsWithMoreAtomsToHadoopFileHL {
 		//		List<String> protein = Arrays.asList("4HHB","1STP");
 		//		List<String> pdbIds = dna;
 		Set<String> pdbIds = getAll();
-		pdbIds.clear();
-		pdbIds.add("4HHB.A");
 
 		// create a subset
 	//	List<String> subset = new ArrayList<>(getAll());
 
 
 		StructureIO.setAtomCache(cache);
-		cache.setPath("/Users/hongyuli/Documents/Research/RCSB/data/hadoop/");
+		cache.setPath("/Users/Chris/Documents/RCSB/Data/Protein_chains/cache/");
 
 		long start = System.nanoTime();
 		toSequenceFile(uri, pdbIds, true);
