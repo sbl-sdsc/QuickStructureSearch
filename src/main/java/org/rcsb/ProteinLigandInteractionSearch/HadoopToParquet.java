@@ -8,7 +8,6 @@ import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.api.java.function.Function;
 import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
@@ -17,10 +16,6 @@ import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
 import org.rcsb.hadoop.io.HadoopToParquetFile;
-import org.rcsb.hadoop.io.HadoopToRowMapper;
-import org.rcsb.hadoop.io.SimplePolymerChain;
-import org.rcsb.hadoop.io.SimplePolymerChainCodec;
-import org.rcsb.hadoop.io.SimplePolymerType;
 
 import scala.Tuple2;
 
@@ -54,6 +49,12 @@ public class HadoopToParquet {
 
 		List<StructField> fields = new ArrayList<StructField>();
 		fields.add(DataTypes.createStructField("index", DataTypes.StringType, false));
+		fields.add(DataTypes.createStructField("chainId1", DataTypes.StringType, false));
+		fields.add(DataTypes.createStructField("chainId2", DataTypes.StringType, false));
+		fields.add(DataTypes.createStructField("Rnum1", DataTypes.StringType, false));
+		fields.add(DataTypes.createStructField("Rnum2", DataTypes.StringType, false));
+		fields.add(DataTypes.createStructField("Ins1", DataTypes.StringType, false));
+		fields.add(DataTypes.createStructField("Ins2", DataTypes.StringType, false));
 		fields.add(DataTypes.createStructField("res1", DataTypes.StringType, false));
 		fields.add(DataTypes.createStructField("res2", DataTypes.StringType, false));
 		fields.add(DataTypes.createStructField("atom1", DataTypes.StringType, false));
@@ -63,14 +64,13 @@ public class HadoopToParquet {
 		fields.add(DataTypes.createStructField("distance", DataTypes.IntegerType, false));
 		fields.add(DataTypes.createStructField("pdbId", DataTypes.createArrayType(DataTypes.StringType), false));
 		StructType schema = DataTypes.createStructType(fields);
-		
+
 		// Apply the schema to the RDD.
 		DataFrame dataFrame = sqlContext.createDataFrame(rowRDD, schema);
 
 		dataFrame.write().mode(SaveMode.Overwrite)
 		.partitionBy("index")
-		.parquet("/Users/hina/Data/ExampleFiles/seq_whithoutpartion.parquet");
-		
+		.parquet("/Users/hina/Data/ExampleFiles/seq.parquet");
 		sc.close();
 		System.out.println("Time: " + (System.nanoTime() - start)/1E9 + " sec.");
 	}
@@ -78,8 +78,8 @@ public class HadoopToParquet {
 	private static JavaSparkContext getSparkContext() {
 		SparkConf conf = new SparkConf()
 		.setMaster("local[" + NUM_THREADS + "]")
-		.setAppName(HadoopToParquetFile.class.getSimpleName())
-		.set("spark.driver.maxResultSize", "2g");
+		.setAppName(HadoopToParquetFile.class.getSimpleName());
+		//.set("spark.driver.maxResultSize", "2g");
 		//.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
 
 		//conf.registerKryoClasses(new Class[]{SimplePolymerChain.class, SimplePolymerType.class, SimplePolymerChainCodec.class});

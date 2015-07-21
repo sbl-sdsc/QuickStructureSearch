@@ -21,7 +21,7 @@ public class ReadSeqFile {
 
 	public static void main(String[] args ) throws FileNotFoundException
 	{
-		String sequenceFileName = args[0]; 
+		String sequenceFileName = args[0];
 		
 		long t1 = System.nanoTime();
 		ReadSeqFile creator = new ReadSeqFile();
@@ -50,9 +50,9 @@ public class ReadSeqFile {
 	private JavaSparkContext getSparkContext() {
 		SparkConf conf = new SparkConf()
 				.setMaster("local[" + NUM_THREADS + "]")
-				.setAppName(this.getClass().getSimpleName())
-				.set("spark.driver.maxResultSize", "2g")
-				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
+				.setAppName(this.getClass().getSimpleName());
+				//set("spark.driver.maxResultSize", "2g")
+				//.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
 
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		return sc;
