@@ -1,7 +1,14 @@
 package org.rcsb.project3;
 
 import java.io.Serializable;
+import java.util.ArrayList;
+import java.util.List;
+
 import javax.vecmath.Point3d;
+
+import org.biojava.nbio.structure.Atom;
+import org.biojava.nbio.structure.AtomImpl;
+import org.biojava.nbio.structure.Calc;
 /**
  * This class generate fingerprint that is a sequence of angles which is the angle 
  * between each three points.
@@ -41,8 +48,44 @@ public class StructuralAlphabetFingerprint implements SequenceFingerprint, Seria
      * @return
      */
 	public StructuralAlphabetFeature getFingerprint(Point3d[] coordinates) {
-		return null;
+		List<Double> angles = new ArrayList<Double>();
+		for (int i = 0; i < coordinates.length/3-1; i++) {
+			Atom aCA = point3dToAtom(coordinates[i*3]);
+			Atom aN = point3dToAtom(coordinates[i*3+1]);
+			Atom aC = point3dToAtom(coordinates[i*3+2]);
+			Atom bCA = point3dToAtom(coordinates[i*3+3]);
+			Atom bN = point3dToAtom(coordinates[i*3+4]);
+			Atom bC = point3dToAtom(coordinates[i*3+5]);
+			if (aCA == null || aN == null || aC == null || bCA == null || bN == null || bC == null) {
+				continue;
+			}
+			double psi = Calc.torsionAngle(aN,aCA,aC,bN);
+			double phi = Calc.torsionAngle(aC,bN,bCA,bC);
+			angles.add(psi);
+			angles.add(phi);
+		}
+		String[] assign = new String[(angles.size()-5)/2];
+		for (int i = 0; i < angles.size()-7; i+= 2) {
+			double[] block = new double[8];
+			for (int j = 0; j < 8; j++) {
+				block[j] = angles.get(i+j);
+			}
+			assign[i/2] = assign(block);
+		}
+		for (int i = 0; i < assign.length; i ++) {
+			System.out.print(assign[i]);
+		}
+		System.out.println();
+		return new StructuralAlphabetFeature(assign);
 		
+	}
+	
+	public Atom point3dToAtom(Point3d p) {
+		Atom a = new AtomImpl();
+		a.setX(p.x);
+		a.setY(p.y);
+		a.setZ(p.z);
+		return a;
 	}
 	
 	public String assign(double[] block) {
