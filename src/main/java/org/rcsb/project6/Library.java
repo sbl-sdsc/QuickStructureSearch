@@ -39,9 +39,12 @@ public class Library
 	private static int length = 8;
 	public static void main(String[] args) throws FileNotFoundException, UnsupportedEncodingException
 	{
-		 // arguments
-		 String path = "/Users/grantsummers/Desktop/School/Internship/main/QuickStructureSearch/src/main/java/org/rcsb/project1/protein_chains_All_20150629_002251.seq";
-//		 String outputfilename = "output.txt";
+		// arguments
+//		String path = "/Users/grantsummers/Desktop/School/Internship/main/QuickStructureSearch/src/main/java/org/rcsb/project1/protein_chains_All_20150629_002251.seq";
+		String path = "/Users/MellissaSummers/QuickStructureSearch/src/main/java/org/rcsb/project6/protein_chains_All_20150629_002251.seq";
+//		String path = "~/QuickStructureSearch/src/main/java/org/rcsb/project6/protein_chains_All_20150629_00251.seq";
+		
+//		String outputfilename = "output.txt";
 		 
 		// Spark setup
 		SparkConf conf = new SparkConf().setMaster("local[" + NUM_THREADS + "]")
@@ -165,27 +168,30 @@ public class Library
 
 
 				if (bool == true) {
-					starter: for (int vert = 0; vert < lib.size(); vert++) {
-						for (int hor = vert; hor < lib.size(); hor++) {
+					vert: for (int vert = 0; vert < lib.size(); vert++) {
+						hor: for (int hor = vert; hor < lib.size(); hor++) {
 							if (comparisons != null) {
 								if (templist.get(vert) != null) {
 									if (templist.get(vert)._1 <= comparisons.get(hor).get(vert)._1) {
 										comparisons.get(hor).add(templist.get(vert));
+										break hor;
 									}
 									else if (hor == lib.size()-1) {
 										comparisons.get(hor).add(templist.get(vert));
+										break hor;
 									}
 								}
 								else {
 									// templist(vert) is null
-									comparisons.get(hor).add(templist.get(vert));
-									numnulls.set(vert, numnulls.get(vert) + 1);					// CHECKCHECKCHECKCHECK
+									comparisons.get(lib.size()-2).add(vert, templist.get(vert));;
+									int numb = numnulls.get(vert);
+									numnulls.set(vert, numb + 1);
 								}
 							}
 							else {
 								//comparisons is completely null
 								comparisons.add(templist);
-								break starter;
+								break vert;
 							}
 						}
 					}
