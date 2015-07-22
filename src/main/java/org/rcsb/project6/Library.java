@@ -106,6 +106,8 @@ public class Library
 							fragment);
 				
 				int u = lib.size();
+//				System.out.println("lib.size: " + lib.size());
+//				System.out.println("u: " + u);
 				
 				ind = 0;
 				
@@ -115,9 +117,12 @@ public class Library
 							// get (c)RMSD
 							qcp.set(lib.get(i)._3(), tup._3());
 							double q = qcp.getRmsd();
+//							System.out.println("q: " + q);
 							
 							Tuple2<Double, Integer> temptup = new Tuple2<Double, Integer>(q, ind);
 							ind++;
+//							System.out.println("ind: " + ind);
+							
 							
 							if (q < threshold) {
 								bool = false;
@@ -131,6 +136,7 @@ public class Library
 
 
 							for (int a = 0; a < u; a++) {
+								System.out.println("q - comparisons: " + (q-comparisons.get(a).get(i)._1));
 								if (go) {
 									if (comparisons.get(a).get(i)._1 - q > threshold) {
 										go = false;
@@ -138,6 +144,7 @@ public class Library
 									}
 									else if (!skiplist.contains(a)) {
 										skiplist.add(a);
+										System.out.println("Skiplist: " + a);
 									}
 								}
 								else {
@@ -170,7 +177,7 @@ public class Library
 				if (bool == true) {
 					vert: for (int vert = 0; vert < lib.size(); vert++) {
 						hor: for (int hor = vert; hor < lib.size(); hor++) {
-							if (comparisons != null) {
+							if (comparisons != null && comparisons.size() > lib.size()-2) {
 								if (templist.get(vert) != null) {
 									if (templist.get(vert)._1 <= comparisons.get(hor).get(vert)._1) {
 										comparisons.get(hor).add(templist.get(vert));
@@ -183,9 +190,17 @@ public class Library
 								}
 								else {
 									// templist(vert) is null
-									comparisons.get(lib.size()-2).add(vert, templist.get(vert));;
-									int numb = numnulls.get(vert);
-									numnulls.set(vert, numb + 1);
+//									System.out.println(comparisons.size());
+//									System.out.println(lib.size()-2);
+									comparisons.get(lib.size()-2).add(vert, null);
+									int numb;
+									if (numnulls != null && numnulls.size() > vert) {
+										numb = numnulls.get(vert);
+										numnulls.set(vert, numb + 1);
+									}
+									else {
+										numnulls.add(1);
+									}
 								}
 							}
 							else {
