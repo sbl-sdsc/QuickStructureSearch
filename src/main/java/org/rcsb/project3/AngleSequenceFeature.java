@@ -2,6 +2,8 @@ package org.rcsb.project3;
 
 import java.io.Serializable;
 
+import javax.vecmath.Point3d;
+
 import org.apache.commons.lang.ArrayUtils;
 
 /**
@@ -14,6 +16,7 @@ public class AngleSequenceFeature implements SequenceFeatureInterface<Double>, S
 
 	private static final long serialVersionUID = 1L;
 	private double[] AngleSequence;
+	private Point3d[] coords;
 	// Some setting for calculate similarity score 
 	private double diff = 3.14/72;
 	private double match = 1;
@@ -26,6 +29,11 @@ public class AngleSequenceFeature implements SequenceFeatureInterface<Double>, S
      */
 	public AngleSequenceFeature(double[] AngleSequence) {
 		this.AngleSequence = AngleSequence;
+	}
+	
+	public AngleSequenceFeature(double[] AngleSequence, Point3d[] coords) {
+		this.AngleSequence = AngleSequence;
+		this.coords = coords;
 	}
 	
 	/**
@@ -99,5 +107,10 @@ public class AngleSequenceFeature implements SequenceFeatureInterface<Double>, S
 	@Override
 	public double todouble(int index) {
 		return (double)this.get(index);
+	}
+
+	@Override
+	public Point3d[] getCoords() {
+		return coords;
 	}
 }

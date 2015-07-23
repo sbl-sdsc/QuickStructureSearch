@@ -63,6 +63,11 @@ public final class FingerprintMapper {
 			return 0;
 		}
 
+		@Override
+		public Point3d[] getCoords() {
+			return null;
+		}
+
 	};
 	private static final char MATCH_CHAR = '|';
 	private static final char SIMILAR = ':';
