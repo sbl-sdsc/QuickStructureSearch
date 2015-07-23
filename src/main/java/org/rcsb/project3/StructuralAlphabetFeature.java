@@ -2,6 +2,8 @@ package org.rcsb.project3;
 
 import java.io.Serializable;
 
+import javax.vecmath.Point3d;
+
 /**
  * This class implements the SequenceFeatureInterface.
  * It is used for the calculation for AngleSequenceFingerprint
@@ -12,6 +14,7 @@ public class StructuralAlphabetFeature implements SequenceFeatureInterface<Strin
 
 	private static final long serialVersionUID = 1L;
 	private String[] AlphabetSequence;
+	private Point3d[] coords;
 	// Some setting for calculate similarity score 
 	private double match = 1;
     private double mismatch = -1;
@@ -42,6 +45,11 @@ public class StructuralAlphabetFeature implements SequenceFeatureInterface<Strin
      */
 	public StructuralAlphabetFeature(String[] AlphabetSequence) {
 		this.AlphabetSequence = AlphabetSequence;
+	}
+	
+	public StructuralAlphabetFeature(String[] AlphabetSequence, Point3d[] coords) {
+		this.AlphabetSequence = AlphabetSequence;
+		this.coords = coords;
 	}
 	
 	/**
@@ -114,5 +122,10 @@ public class StructuralAlphabetFeature implements SequenceFeatureInterface<Strin
 	@Override
 	public double todouble(int index) {
 		return 0;
+	}
+
+	@Override
+	public Point3d[] getCoords() {
+		return coords;
 	}
 }

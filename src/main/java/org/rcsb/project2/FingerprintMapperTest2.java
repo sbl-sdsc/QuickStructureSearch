@@ -7,6 +7,8 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
 
+import javax.vecmath.Point3d;
+
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkConf;
@@ -134,6 +136,11 @@ public class FingerprintMapperTest2 {
 					@Override
 					public double todouble(int index) {
 						return 0;
+					}
+
+					@Override
+					public Point3d[] getCoords() {
+						return null;
 					}
 				}
 				StringBuilder test = new StringBuilder(chainId1 + ", " + chainId2);

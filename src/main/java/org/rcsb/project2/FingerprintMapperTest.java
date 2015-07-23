@@ -91,6 +91,11 @@ public class FingerprintMapperTest {
 					public double todouble(int index) {
 						return 0;
 					}
+
+					@Override
+					public Point3d[] getCoords() {
+						return null;
+					}
 				}
 				StringBuilder test = new StringBuilder(chainId1 + ", " + chainId2);
 				// System.out.println(chainId1 + ", " + chainId2);
