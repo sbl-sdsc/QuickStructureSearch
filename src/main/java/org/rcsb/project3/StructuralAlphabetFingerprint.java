@@ -49,6 +49,7 @@ public class StructuralAlphabetFingerprint implements SequenceFingerprint, Seria
      */
 	public StructuralAlphabetFeature getFingerprint(Point3d[] coordinates) {
 		List<Double> angles = new ArrayList<Double>();
+		
 		for (int i = 0; i < coordinates.length/3-1; i++) {
 			Atom aCA = point3dToAtom(coordinates[i*3]);
 			Atom aN = point3dToAtom(coordinates[i*3+1]);
@@ -72,10 +73,10 @@ public class StructuralAlphabetFingerprint implements SequenceFingerprint, Seria
 			}
 			assign[i/2] = assign(block);
 		}
-		for (int i = 0; i < assign.length; i ++) {
-			System.out.print(assign[i]);
-		}
-		System.out.println();
+//		for (int i = 0; i < assign.length; i ++) {
+//			System.out.print(assign[i]);
+//		}
+//		System.out.println();
 		return new StructuralAlphabetFeature(assign);
 		
 	}
@@ -89,7 +90,7 @@ public class StructuralAlphabetFingerprint implements SequenceFingerprint, Seria
 	}
 	
 	public String assign(double[] block) {
-		double minRmsda = 9999999;
+		double minRmsda = Double.MAX_VALUE;
 		char minBlock = 0;
 		for (int i = 0; i < references.length; i++) {
 			double rmsda = rmsda(references[i],block);
