@@ -1,5 +1,7 @@
 package org.rcsb.project3;
 
+import javax.vecmath.Point3d;
+
 /**
  * This is an interface used to store the fingerprint which is a sequence of feature of the protein
  * @author Chris Li
@@ -51,4 +53,9 @@ public interface SequenceFeatureInterface<T> {
 	 * @return
 	 */
 	public double todouble(int index);
+	/**
+	 * Get the point3d coords of the protein
+	 * @return
+	 */
+	public Point3d[] getCoords();
 }

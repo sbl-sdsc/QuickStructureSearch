@@ -44,10 +44,11 @@ import scala.Tuple2;
  * 
  * @author  Chris Li, Peter Rose
  */
-public class FingerPrintTesterP8 { 
+public class MultiFingerPrintTesterP8 { 
 	private static int NUM_THREADS = 8;
 	private static int NUM_TASKS_PER_THREAD = 3; // Spark recommends 2-3 tasks per thread
-	private static String fingerPrintName = "RmsdDistance";
+	private static String fingerPrintName1 = "RmsdDistance";
+	private static String fingerPrintName2 = "RmsdDistance";
 	private static String alignmentAlgorithm = "SmithWatermanGotoh";
 
 	public static void main(String[] args ) throws FileNotFoundException
@@ -65,7 +66,7 @@ public class FingerPrintTesterP8 {
 			sequenceFile = args[1]; 
 			outputPath = args[2];
 		}
-		FingerPrintTesterP8 tester = new FingerPrintTesterP8();
+		MultiFingerPrintTesterP8 tester = new MultiFingerPrintTesterP8();
 		tester.run(args[0], sequenceFile, outputPath);
 	}
 
@@ -94,7 +95,7 @@ public class FingerPrintTesterP8 {
 
 		JavaSparkContext sc = new JavaSparkContext(conf);
 						
-		PrintWriter writer = new PrintWriter(outputPath + "result_" + fingerPrintName + "_" + alignmentAlgorithm + ".csv");
+		PrintWriter writer = new PrintWriter(outputPath + "result_" + fingerPrintName1 + "_" + alignmentAlgorithm + ".csv");
 		writer.print("FingerPrint");
 		writer.print(",");
 		writer.print("Alignment Algorithm");
@@ -195,9 +196,9 @@ public class FingerPrintTesterP8 {
 			// write results to .csv file
 		    totalPairs += results.size();
 		    resultSet.addAll(results);
-			writeToCsv(writer, fingerPrintName, alignmentAlgorithm, inputFileName, results);
+			writeToCsv(writer, fingerPrintName1, alignmentAlgorithm, inputFileName, results);
 		}
-		writeToCsv(writer, fingerPrintName, alignmentAlgorithm, "All", resultSet);
+		writeToCsv(writer, fingerPrintName1, alignmentAlgorithm, "All", resultSet);
 		writer.println("Total Pairs: " + totalPairs);
 		writer.println("Total Running Time: " + (System.nanoTime()-t1)/1E9 + " s");
 		writer.flush();

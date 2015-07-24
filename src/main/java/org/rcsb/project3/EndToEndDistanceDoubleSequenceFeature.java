@@ -2,6 +2,8 @@ package org.rcsb.project3;
 
 import java.io.Serializable;
 
+import javax.vecmath.Point3d;
+
 import org.apache.commons.lang.ArrayUtils;
 
 /**
@@ -14,12 +16,18 @@ public class EndToEndDistanceDoubleSequenceFeature implements SequenceFeatureInt
 
 	private static final long serialVersionUID = 1L;
 	private double[] EndToEndSequence;
+	private Point3d[] coords;
 	// Some setting for calculate similarity score 
 	private double match = 1;
 	private double mismatch = -1;
 	private double gap = -1;
 	private double diff = 1;
 	    
+	public EndToEndDistanceDoubleSequenceFeature(double[] EndToEndSequence, Point3d[] coords) {
+		this.EndToEndSequence = EndToEndSequence;
+		this.coords = coords;
+	}
+	
     /**
      * Constructor that will store an int array of DCT1D feature
      * @param DCT1DSequence
@@ -106,5 +114,10 @@ public class EndToEndDistanceDoubleSequenceFeature implements SequenceFeatureInt
 	@Override
 	public double todouble(int index) {
 		return this.get(index);
+	}
+
+	@Override
+	public Point3d[] getCoords() {
+		return coords;
 	}
 }

@@ -36,11 +36,15 @@ public class Library
 {
 	private static int NUM_THREADS = 4;
 	private static int NUM_TASKS_PER_THREAD = 3;	
+	private static int length = 8;
 	public static void main(String[] args) throws FileNotFoundException, UnsupportedEncodingException
 	{
-		 // arguments
-		 String path = "/Users/grantsummers/Desktop/School/Internship/main/QuickStructureSearch/src/main/java/org/rcsb/project1/protein_chains_All_20150629_002251.seq";
-//		 String outputfilename = "output.txt";
+		// arguments
+//		String path = "/Users/grantsummers/Desktop/School/Internship/main/QuickStructureSearch/src/main/java/org/rcsb/project1/protein_chains_All_20150629_002251.seq";
+		String path = "/Users/MellissaSummers/QuickStructureSearch/src/main/java/org/rcsb/project6/protein_chains_All_20150629_002251.seq";
+//		String path = "~/QuickStructureSearch/src/main/java/org/rcsb/project6/protein_chains_All_20150629_00251.seq";
+		
+//		String outputfilename = "output.txt";
 		 
 		// Spark setup
 		SparkConf conf = new SparkConf().setMaster("local[" + NUM_THREADS + "]")
@@ -70,23 +74,18 @@ public class Library
 		ArrayList<Integer> skiplist = new ArrayList<>();
 		ArrayList<Integer> numnulls = new ArrayList<Integer>();
 		// int numnulls = 0;
-		Tuple2<Double, Integer> temptup = new Tuple2<Double, Integer>(null, null); // if nulls don't work, use 0's
-		int length = 8;
+		// int length = 8;
 		int threshold = 1;
 		
 		// integer for comparison's index
 		int ind = 0;
 		
 		// boolean for when to start adding to skiplist
-		bool go = false;
+		boolean go = false;
 		
 		// boolean for whether or not to add a fragment to the library
 		boolean bool = true;
 		
-
-
-
-
 
 
 
@@ -107,115 +106,118 @@ public class Library
 							fragment);
 				
 				int u = lib.size();
+//				System.out.println("lib.size: " + lib.size());
+//				System.out.println("u: " + u);
 				
 				ind = 0;
 				
-
-
-
 				for (int i = 0; i < lib.size(); i++) {											// for each new fragment, loop once through the library
 					if (!lib.isEmpty()) {
-							if (lib.get(i)._2() == tup._2() && !skiplist.contains(i)) {
-								// get (c)RMSD
-								qcp.set(lib.get(i)._3(), tup._3());
-								double q = qcp.getRmsd();
-								
-								temptup._1 = q;
-								temptup._2 = ind;
-								
-								ind++;
-								
-								if (q < threshold) {
-									bool = false;
-									templist.clear();
-									break;
+						if (lib.get(i)._2() == tup._2() && !skiplist.contains(i)) {
+							// get (c)RMSD
+							qcp.set(lib.get(i)._3(), tup._3());
+							double q = qcp.getRmsd();
+//							System.out.println("q: " + q);
+							
+							Tuple2<Double, Integer> temptup = new Tuple2<Double, Integer>(q, ind);
+							ind++;
+//							System.out.println("ind: " + ind);
+							
+							
+							if (q < threshold) {
+								bool = false;
+								templist.clear();
+								break;
+							}
+							templist.add(temptup);
+							
+							u -= numnulls.get(i);
+
+
+
+							for (int a = 0; a < u; a++) {
+								System.out.println("q - comparisons: " + (q-comparisons.get(a).get(i)._1));
+								if (go) {
+									if (comparisons.get(a).get(i)._1 - q > threshold) {
+										go = false;
+										break;
+									}
+									else if (!skiplist.contains(a)) {
+										skiplist.add(a);
+										System.out.println("Skiplist: " + a);
+									}
 								}
-								templist.add(temptup);
-								
-								u -= numnulls.get(i);
-
-
-
-
-
-								for (int a = 0; a < u; a++) {
-									if (go) {
-										if (comparisons.get(a).get(i) - q > threshold) {
-											go = false;
-											break;
+								else {
+									if (q - comparisons.get(a).get(i)._1 <= threshold) {
+										a -= 1;
+										while (q - comparisons.get(a).get(i)._1 <= threshold) {
+											a -= 1;
 										}
-										else if (!skiplist.contains(a)) {
-											skiplist.add(a);
-										}
+										go = true;
+									}
+									if (q - comparisons.get((int) ((u-a)/2)).get(i)._1 > threshold) {
+										a = (int) ((u-i)/2); // + 1 should be added automatically by for loop
+									}
+									else if (comparisons.get((int) ((u-a)/2)).get(i)._1 - q < threshold) {
+										u = (int) ((u-a)/2);   															// CHECKCHECKCHECKCHECKCHECK
+									}
+								}
+							}
+						}
+						else {
+							templist.add(null);
+						}
+					}
+				}
+				skiplist.clear();
+
+
+
+
+				if (bool == true) {
+					vert: for (int vert = 0; vert < lib.size(); vert++) {
+						hor: for (int hor = vert; hor < lib.size(); hor++) {
+							if (comparisons != null && comparisons.size() > lib.size()-2) {
+								if (templist.get(vert) != null) {
+									if (templist.get(vert)._1 <= comparisons.get(hor).get(vert)._1) {
+										comparisons.get(hor).add(templist.get(vert));
+										break hor;
+									}
+									else if (hor == lib.size()-1) {
+										comparisons.get(hor).add(templist.get(vert));
+										break hor;
+									}
+								}
+								else {
+									// templist(vert) is null
+//									System.out.println(comparisons.size());
+//									System.out.println(lib.size()-2);
+									comparisons.get(lib.size()-2).add(vert, null);
+									int numb;
+									if (numnulls != null && numnulls.size() > vert) {
+										numb = numnulls.get(vert);
+										numnulls.set(vert, numb + 1);
 									}
 									else {
-										if (q - comparisons.get(a).get(i) <= threshold) {
-											a -= 1;
-											while (q - comparisons.get(a).get(i) <= threshold) {
-												a -= 1;
-											}
-											go = true;
-										}
-										if (q - comparisons.get((int) ((u-a)/2)).get(i) > threshold) {
-											a = (int) ((u-i)/2); // + 1 should be added automatically by for loop
-										}
-										else if (comparisons.get((int) ((u-a)/2)).get(i) - q < threshold) {
-											u = comparisons.get((int) ((u-a)/2)).get(i);
-										}
+										numnulls.add(1);
 									}
 								}
 							}
 							else {
-								templist.add(null);
+								//comparisons is completely null
+								comparisons.add(templist);
+								break vert;
 							}
 						}
 					}
-					skiplist.clear();
-
-
-
-
-
-
-					if (bool == true) {
-						starter: for (int vert = 0; vert < lib.size(); vert++) {
-							for (int hor = vert; hor < lib.size(); hor++) {
-								if (comparisons != null) {
-									if (templist.get(vert) != null) {
-										if (templist.get(vert) <= comparisons.get(hor).get(vert)) {
-											comparisons.get(hor).add(templist(vert));
-										}
-										else if (hor == lib.size()-1) {
-											comparisons.get(hor).add(templist.get(vert));
-										}
-									}
-									else {
-										// templist(vert) is null
-										comparisons.get(hor).add(templist.get(vert));
-										numnulls.set(vert, numnulls.get(vert) + 1);					// CHECKCHECKCHECKCHECK
-									}
-								}
-								else {
-									//comparisons is completely null
-									comparisons.add(templist);
-									break starter;
-								}
-							}
-						}
-						templist.clear();
-						lib.add(tup);
-						//System.out.println("[" + tup._2() + "] - " + (lib.size()-1) + ": " + Arrays.toString(tup._3()));
-					}
-					bool = true;
+					templist.clear();
+					lib.add(tup);
+					//System.out.println("[" + tup._2() + "] - " + (lib.size()-1) + ": " + Arrays.toString(tup._3()));
 				}
+				bool = true;
 			}
 		}
 		sc.close();
-
-
-
-
-
 
 
 
@@ -237,6 +239,7 @@ public class Library
 		System.out.println(lib.size());
 		//System.out.println("Time: " + (System.nanoTime() - start)/1E9 + " sec.");
 	}
+
 
 
 

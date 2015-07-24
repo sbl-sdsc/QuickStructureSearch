@@ -1,8 +1,13 @@
 package org.rcsb.project2;
 
+import java.io.BufferedReader;
+import java.io.FileReader;
+import java.io.IOException;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.function.Consumer;
+
+import javax.vecmath.Point3d;
 
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.Text;
@@ -18,7 +23,54 @@ public class FingerprintMapperTest2 {
 	private static final int NUM_THREADS = 4;
 	private static final int NUM_TASKS_PER_THREAD = 3;
 
-	public static void main(String[] args) {
+	public static void main(String[] args) throws IOException {
+		String[] id1, id2;
+		BufferedReader br = new BufferedReader(new FileReader("data/pairs.txt"));
+		int N = Integer.parseInt(br.readLine());
+		id1 = new String[N];
+		id2 = new String[N];
+		for (int i = 0; i < N; i++) {
+			String[] spl = br.readLine().split(",");
+			id1[i] = spl[0];
+			id2[i] = spl[1];
+			try {
+				System.out.println(id1[i]);
+				SecondaryStructTools.write(SecondaryStructTools.pull(id1[i]), id1[i]);
+				System.out.println(id2[i]);
+				SecondaryStructTools.write(SecondaryStructTools.pull(id2[i]), id2[i]);
+			}
+			catch (Exception e) {
+				System.err.println("BAD " + id1[i] + " : " + id2[i]);
+				e.printStackTrace();
+			}
+		}
+		br.close();
+	}
+
+	public static void run2(String[] args) {
+		String path = args[0];
+		SparkConf conf = new SparkConf().setMaster("local[" + NUM_THREADS + "]")
+				.setAppName(FingerprintMapperTest2.class.getSimpleName())
+				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
+		JavaSparkContext sc = new JavaSparkContext(conf);
+		List<Tuple2<String, SimplePolymerChain>> list = sc
+				.sequenceFile(path, Text.class, ArrayWritable.class, NUM_THREADS * NUM_TASKS_PER_THREAD)
+				.sample(false, 0.02, 2346)// sample
+				.mapToPair(new HadoopToSimpleChainMapper())
+				// .filter(new GapFilter(0, 0)) // filter chains with zero gap length and zero gaps
+				.filter(t -> t._2.isProtein())// filter test
+				.collect();
+		List<Integer> valid = new ArrayList<>();
+		for (int i = 0; i < list.size() - 1; i++)
+			if (list.get(i)._2.getCoordinates().length == list.get(i + 1)._2.getCoordinates().length)
+				valid.add(i);
+		for (int i : valid) {
+			System.out.println(list.get(i)._1 + ", " + list.get(i + 1)._1);
+		}
+		sc.close();
+	}
+
+	public static void run1(String[] args) {
 		String path = args[0];
 		SparkConf conf = new SparkConf().setMaster("local[" + NUM_THREADS + "]")
 				.setAppName(FingerprintMapperTest2.class.getSimpleName())
@@ -84,6 +136,11 @@ public class FingerprintMapperTest2 {
 					@Override
 					public double todouble(int index) {
 						return 0;
+					}
+
+					@Override
+					public Point3d[] getCoords() {
+						return null;
 					}
 				}
 				StringBuilder test = new StringBuilder(chainId1 + ", " + chainId2);

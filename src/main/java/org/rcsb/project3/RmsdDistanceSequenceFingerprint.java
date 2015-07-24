@@ -11,7 +11,7 @@ import javax.vecmath.Point3d;
  *
  * @author Peter Rose
  */
-public class EndToEndDistanceDoubleSequenceFingerprint implements SequenceFingerprint, Serializable {
+public class RmsdDistanceSequenceFingerprint implements SequenceFingerprint, Serializable {
 	private static final long serialVersionUID = 1L;
 	/*
 	 * Best default parameter combination: sensitivity: 0.948, specificity: 0.818
@@ -21,17 +21,17 @@ public class EndToEndDistanceDoubleSequenceFingerprint implements SequenceFinger
     /**
      * Default constructor uses default parameters
      */
-    public EndToEndDistanceDoubleSequenceFingerprint() {}
+    public RmsdDistanceSequenceFingerprint() {}
     
     /**
      * Constructor with all parameters
      * @param length fragment length
      */
-    public EndToEndDistanceDoubleSequenceFingerprint(int length, double binSize) {
+    public RmsdDistanceSequenceFingerprint(int length, double binSize) {
         this.length = length;
 	}
     
-    public EndToEndDistanceDoubleSequenceFingerprint(int randomSeed) {
+    public RmsdDistanceSequenceFingerprint(int randomSeed) {
 		Random r = new Random(randomSeed);
 		this.length = 6 + r.nextInt(3);
 	}
@@ -60,16 +60,23 @@ public class EndToEndDistanceDoubleSequenceFingerprint implements SequenceFinger
     	}
 
     	for (int i = 0; i < coords.length-this.length+1; i++) {
-    		Point3d first = coords[i];
-    		Point3d last = coords[i+this.length-1];
-    		// skip gaps
-    		if (first == null || last  == null) {
-    			continue;
+    		features[i] = 0;
+    		for (int j = i; j < i + this.length - 1; j++) {
+        		Point3d p1 = coords[j];
+        		if (p1 == null)
+        			continue;
+        		for (int k = i; k < i + this.length - 1; k++) {
+        			if (k == j)
+        				continue;
+        			Point3d p2 = coords[k];
+        			if (p2 == null)
+        				continue;
+        			double dist = p1.distance(p2);
+        			features[i] += dist * dist;
+        		}
     		}
-    		// calculate end to end distance of fragment
-    		// and bin values
-    		features[i] = first.distance(last);
+    		features[i] = features[i]/(this.length * this.length);
     	}
-		return new EndToEndDistanceDoubleSequenceFeature(features, coords);
+		return new EndToEndDistanceDoubleSequenceFeature(features);
 	}
 }
