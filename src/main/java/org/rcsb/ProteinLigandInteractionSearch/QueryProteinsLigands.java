@@ -1,7 +1,6 @@
 package org.rcsb.ProteinLigandInteractionSearch;
 
 import java.io.FileNotFoundException;
-import java.util.Arrays;
 import java.util.List;
 import java.util.Scanner;
 
@@ -37,213 +36,348 @@ public class QueryProteinsLigands {
 		data.registerTempTable("Distances");
 		DataFrame results=null;
 		long querystart = System.nanoTime();
-		// SQL can be run over RDDs that have been registered as tables.
 
-		//results = sqlContext.sql("SELECT count(*) from Distances");
-		//unique interactions, with distances.
-		//	results = sqlContext.sql("SELECT * FROM Distances");
-
-		//unique interactions, without distances
-		//results = sqlContext.sql("SELECT count(*) FROM Distances GROUP BY res1,res2,atom1,atom2,element1,element2");
-
-		//List<String> aminos=Arrays.asList("'ARG'", "'HIS'","'LYS'","'ASP'","'GLU'","'SER'","'THR'","'ASN'","'GLN'",
-		//"'CYS'","'GLY'","'PRO'","'ALA'","'VAL'","'ILE'","'LEU'","'MET'","'PHE'","'TYR'","'TRP'");
-
-		System.out.println("Enter the first Protein residue,atom and number  : ");
+		System.out.println("Choose either:  1. Atom name or 2.Element name  ");
 		Scanner scan = new Scanner(System.in);
-		String input1 = scan.nextLine();   
-		String[] str1 = input1.trim().split("\\s+");
-		String [] P1= new String[3];
-		for(int i=0;i<3;i++){
-			P1[i]="'"+str1[i]+"'";
-		}
-		//System.out.println("P1 :"+ Arrays.toString(P1));
-		//System.out.println("choice :"+ P1[2]);
-		System.out.println("Enter the first Ligand residue,atom and number  : ");
-		Scanner scan2 = new Scanner(System.in);
-		String input2 = scan.nextLine();   
-		String[] str2 = input2.trim().split("\\s+");
-		String [] L1= new String[3];
-		for(int i=0;i<3;i++){
-			L1[i]="'"+str2[i]+"'";
-		}
-		
-		System.out.println("Enter the Distance range  : ");
-		Scanner scan5 = new Scanner(System.in);
-		int [] D1 = new int[2];
-		for (int i = 0; i < 2; i++) {
-		     if (scan5.hasNextInt()) {
-		        D1[i]=scan5.nextInt();
-		     }
-		     else {
-	                System.out.println("You didn't provide enough numbers");
-	                break;
-	            }
-		  }
-		
-	/*	for(int i=0;i<2;i++){
-			D1[i]="'"+D1[i]+"'";
-		}*/
-		
-		System.out.println("Enter the Second Protein residue,atom and number  : ");
-		Scanner scan3 = new Scanner(System.in);
-		String input3 = scan.nextLine();   
-		String[] str3 = input3.trim().split("\\s+");
-		String [] P2= new String[3];
-		for(int i=0;i<3;i++){
-			P2[i]="'"+str3[i]+"'";
-		}
-		
-		System.out.println("Enter the Second Ligand residue,atom and number  : ");
-		Scanner scan4 = new Scanner(System.in);
-		String input4 = null;
-		//if (scan4.hasNextLine()) {
-		input4 = scan.nextLine();  
-		//}
-		//else{
-		//	System.out.println("You didn't provide enough input");
-		//}
-		String[] str4 = input4.trim().split("\\s+");
-		String [] L2= new String[3];
-		for(int i=0;i<3;i++){
-			L2[i]="'"+str4[i]+"'";
-		}
-		
-		System.out.println("Enter the Distance range  : ");
-		Scanner scan6 = new Scanner(System.in);
-		int [] D2 = new int[2];
-		for (int i = 0; i < 2; i++) {
-		     if (scan6.hasNextInt()) {
-		        D2[i]=scan6.nextInt();
-		     }
-		     else {
-	                System.out.println("You didn't provide enough numbers");
-	                break;
-	            }
-		  }
-		
-		//1
-		if(P1[2].equalsIgnoreCase("'1'") && P2[2].equalsIgnoreCase("'2'") && L1[2].equalsIgnoreCase("'3'") && L2[2].equalsIgnoreCase("'4'")){
-			System.out.println("Case 1");
-			results = sqlContext.sql ("SELECT D2.pdbId FROM Distances D1"+
-					" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ P1[0]+" AND D1.res2=" +L1[0]+ 
-					" AND D1.atom1="+ P1[1]+" AND D1.atom2="+L1[1] + " AND D1.distance >="+  D1[0]+ 
-					" AND D1.distance <="+ D1[1]+" AND D2.res1=" + P2[0]+" AND D2.res2=" +L2[0]+ " AND D2.atom1="+ 
-					P2[1]+" AND D2.atom2=" +P2[1] + " AND D2.distance >="+  D2[0]+ " AND D2.distance <=" + D2[1]+
-					"AND D1.chainId1!=D2.chainId1 AND D1.Rnum1!=D2.Rnum1 AND D1.Ins1!=D2.Ins1 AND "
-					+ "D1.chainId2!=D2.chainId2 AND D1.Rnum2!=D2.Rnum2 AND D1.Ins2!=D2.Ins2");
-		}
-		//2
-		else if (P1[2].equalsIgnoreCase("'1'") && P2[2].equalsIgnoreCase("'2'") && L1[2].equalsIgnoreCase("'3a'") && L2[2].equalsIgnoreCase("'3b'")){
-			System.out.println("Case 2");
-			results = sqlContext.sql ("SELECT D2.pdbId FROM Distances D1"+
-					" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ P1[0]+" AND D1.res2=" +L1[0]+ 
-					" AND D1.atom1="+ P1[1]+" AND D1.atom2="+L1[1] + " AND D1.distance >="+  D1[0]+ 
-					" AND D1.distance <="+ D1[1]+" AND D2.res1=" + P2[0]+" AND D2.res2=" +L2[0]+ " AND D2.atom1="+ 
-					P2[1]+" AND D2.atom2=" +P2[1] + " AND D2.distance >="+  D2[0]+ " AND D2.distance <=" + D2[1]+
-					"AND D1.chainId1!=D2.chainId1 AND D1.Rnum1!=D2.Rnum1 AND D1.Ins1!=D2.Ins1"
-					+ "AND D1.chainId2=D2.chainId2 AND D1.Rnum2=D2.Rnum2 AND D1.Ins2=D2.Ins2");
-		}
-		//3
-		else if (P1[2].equalsIgnoreCase("'1a'") && P2[2].equalsIgnoreCase("'1b'") && L1[2].equalsIgnoreCase("'2'") && L2[2].equalsIgnoreCase("'3'")){
-			System.out.println("Case 3");
-			results = sqlContext.sql ("SELECT D2.pdbId FROM Distances D1"+
-					" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ P1[0]+" AND D1.res2=" +L1[0]+ 
-					" AND D1.atom1="+ P1[1]+" AND D1.atom2="+L1[1] + " AND D1.distance >="+  D1[0]+ 
-					" AND D1.distance <="+ D1[1]+" AND D2.res1=" + P2[0]+" AND D2.res2=" +L2[0]+ " AND D2.atom1="+ 
-					P2[1]+" AND D2.atom2=" +P2[1] + " AND D2.distance >="+  D2[0]+ " AND D2.distance <=" + D2[1]+
-					"AND D1.chainId1=D2.chainId1 AND D1.Rnum1=D2.Rnum1 AND D1.Ins1=D2.Ins1"
-					+ "AND D1.chainId2!=D2.chainId2 AND D1.Rnum2!=D2.Rnum2 AND D1.Ins2!=D2.Ins2");
-		}
-		//4
-		else if (P1[2].equalsIgnoreCase("'1a'") && P2[2].equalsIgnoreCase("'1b'") && L1[2].equalsIgnoreCase("'2a'") && L2[2].equalsIgnoreCase("'2b'")){
-			System.out.println("Case 4");
-			results = sqlContext.sql ("SELECT D2.pdbId FROM Distances D1"+
-					" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ P1[0]+" AND D1.res2=" +L1[0]+ 
-					" AND D1.atom1="+ P1[1]+" AND D1.atom2="+L1[1] + " AND D1.distance >="+  D1[0]+ 
-					" AND D1.distance <="+ D1[1]+" AND D2.res1=" + P2[0]+" AND D2.res2=" +L2[0]+ " AND D2.atom1="+ 
-					P2[1]+" AND D2.atom2=" +P2[1] + " AND D2.distance >="+  D2[0]+ " AND D2.distance <=" + D2[1]+
-					" AND D1.chainId1=D2.chainId1 AND D1.Rnum1=D2.Rnum1 AND D1.Ins1=D2.Ins1"+
-					" AND D1.chainId2=D2.chainId2 AND D1.Rnum2=D2.Rnum2 AND D1.Ins2=D2.Ins2");
-		}
-		//5
-		else if (P1[2].equalsIgnoreCase("'1'") && P2[2].equalsIgnoreCase("'2'") && L1[2].equalsIgnoreCase("'3'") && L2[2].equalsIgnoreCase("'3'")){
-			System.out.println("Case 5");
-			results = sqlContext.sql ("SELECT D2.pdbId FROM Distances D1"+
-					" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ P1[0]+" AND D1.res2=" +L1[0]+ 
-					" AND D1.atom1="+ P1[1]+" AND D1.atom2="+L1[1] + " AND D1.distance >="+  D1[0]+ 
-					" AND D1.distance <="+ D1[1]+" AND D2.res1=" + P2[0]+" AND D2.res2=" +L2[0]+ " AND D2.atom1="+ 
-					P2[1]+" AND D2.atom2=" +P2[1] + " AND D2.distance >="+  D2[0]+ " AND D2.distance <=" + D2[1]+
-					" AND D1.chainId1!=D2.chainId1 AND D1.Rnum1!=D2.Rnum1 AND D1.Ins1!=D2.Ins1"+
-					" AND D1.chainId2=D2.chainId2 AND D1.Rnum2=D2.Rnum2 AND D1.Ins2=D2.Ins2");
-		}	
-		//6
-		else if (P1[2].equalsIgnoreCase("'1a'") && P2[2].equalsIgnoreCase("'1b'") && L1[2].equalsIgnoreCase("'2'") && L2[2].equalsIgnoreCase("'2'")){
-			System.out.println("Case 6");
-			results = sqlContext.sql ("SELECT D2.pdbId FROM Distances D1"+
-					" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ P1[0]+" AND D1.res2=" +L1[0]+ 
-					" AND D1.atom1="+ P1[1]+" AND D1.atom2="+L1[1] + " AND D1.distance >="+  D1[0]+ 
-					" AND D1.distance <="+ D1[1]+" AND D2.res1=" + P2[0]+" AND D2.res2=" +L2[0]+ " AND D2.atom1="+ 
-					P2[1]+" AND D2.atom2=" +P2[1] + " AND D2.distance >="+  D2[0]+ " AND D2.distance <=" + D2[1]+
-					" AND D1.chainId1=D2.chainId1 AND D1.Rnum1=D2.Rnum1 AND D1.Ins1=D2.Ins1"+
-					" AND D1.chainId2=D2.chainId2 AND D1.Rnum2=D2.Rnum2 AND D1.Ins2=D2.Ins2");// 1a 1b
-		}	
-		//7
-		else if (P1[2].equalsIgnoreCase("'1'") && P2[2].equalsIgnoreCase("'1'") && L1[2].equalsIgnoreCase("'2'") && L2[2].equalsIgnoreCase("'3'")){
-			System.out.println("Case 7");
-			results = sqlContext.sql ("SELECT D2.pdbId FROM Distances D1"+
-					" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ P1[0]+" AND D1.res2=" +L1[0]+ 
-					" AND D1.atom1="+ P1[1]+" AND D1.atom2="+L1[1] + " AND D1.distance >="+  D1[0]+ 
-					" AND D1.distance <="+ D1[1]+" AND D2.res1=" + P2[0]+" AND D2.res2=" +L2[0]+ " AND D2.atom1="+ 
-					P2[1]+" AND D2.atom2=" +P2[1] + " AND D2.distance >="+  D2[0]+ " AND D2.distance <=" + D2[1]+
-					" AND D1.chainId1=D2.chainId1 AND D1.Rnum1=D2.Rnum1 AND D1.Ins1=D2.Ins1"+
-					" AND D1.chainId2!=D2.chainId2 AND D1.Rnum2!=D2.Rnum2 AND D1.Ins2!=D2.Ins2");
-		}	
-		//8
-		else if (P1[2].equalsIgnoreCase("'1'") && P2[2].equalsIgnoreCase("'1'") && L1[2].equalsIgnoreCase("'2a'") && L2[2].equalsIgnoreCase("'2b'")){
-			System.out.println("Case 8");
-			results = sqlContext.sql ("SELECT D2.pdbId FROM Distances D1"+
-					" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ P1[0]+" AND D1.res2=" +L1[0]+ 
-					" AND D1.atom1="+ P1[1]+" AND D1.atom2="+L1[1] + " AND D1.distance >="+  D1[0]+ 
-					" AND D1.distance <="+ D1[1]+" AND D2.res1=" + P2[0]+" AND D2.res2=" +L2[0]+ " AND D2.atom1="+ 
-					P2[1]+" AND D2.atom2=" +P2[1] + " AND D2.distance >="+  D2[0]+ " AND D2.distance <=" + D2[1]+
-					" AND D1.chainId1=D2.chainId1 AND D1.Rnum1=D2.Rnum1 AND D1.Ins1=D2.Ins1"+
-					" AND D1.chainId2=D2.chainId2 AND D1.Rnum2=D2.Rnum2 AND D1.Ins2=D2.Ins2");// 2a 2b
-		}
-		else{
-			System.out.println("NOT FOUND!");
-			System.exit(-1);
-		}
-		
+		int choice = scan.nextInt();   
 
-		/*try {
-			FileWriter writer = new FileWriter("/Users/hina/Data/#interactions.csv");
+		switch (choice) {
+		case 1:
 
-		for (int i=0; i<20;i++){
-			String protein=aminos.get(i);
-			results = sqlContext.sql("SELECT * FROM Distances WHERE res1="+protein);
-			long numberofint= results.distinct().count();
-			System.out.println(protein+" " +numberofint);
-			String count= " "+numberofint;
-			writer.append(protein);
-			writer.append(",");
-		    writer.append(count);
-			writer.append("\n");
+			System.out.println("Enter the first Protein residue,atom and number  : ");
+			Scanner scan1 = new Scanner(System.in);
+			String input1 = scan1.nextLine();   
+			String[] str1 = input1.trim().split("\\s+");
+			String [] P1= new String[3];
+			for(int i=0;i<3;i++){
+				P1[i]="'"+str1[i]+"'";
+			}
+			//System.out.println("P1 :"+ Arrays.toString(P1));
+			//System.out.println("choice :"+ P1[2]);
+			System.out.println("Enter the first Ligand residue,atom and number  : ");
+			Scanner scan2 = new Scanner(System.in);
+			String input2 = scan2.nextLine();   
+			String[] str2 = input2.trim().split("\\s+");
+			String [] L1= new String[3];
+			for(int i=0;i<3;i++){
+				L1[i]="'"+str2[i]+"'";
+			}
+
+			System.out.println("Enter the Distance range  : ");
+			Scanner scan5 = new Scanner(System.in);
+			int [] input5 = new int[2];
+			for (int i = 0; i < 2; i++) {
+				if (scan5.hasNextInt()) {
+					input5[i]=scan5.nextInt();
+				}
+				else {
+					System.out.println("You didn't provide enough numbers");
+					System.exit(-1);
+				}
+			}
+			int [] D1=input5;
+
+			System.out.println("Enter the Second Protein residue,atom and number  : ");
+			Scanner scan3 = new Scanner(System.in);
+			String input3 = scan3.nextLine();   
+			String[] str3 = input3.trim().split("\\s+");
+			String [] P2= new String[3];
+			for(int i=0;i<3;i++){
+				P2[i]="'"+str3[i]+"'";
+			}
+
+			System.out.println("Enter the Second Ligand residue,atom and number  : ");
+			Scanner scan4 = new Scanner(System.in);
+			String input4 = scan4.nextLine();  
+			String[] str4 = input4.trim().split("\\s+");
+			String [] L2= new String[3];
+			for(int i=0;i<3;i++){
+				L2[i]="'"+str4[i]+"'";
+			}
+
+			System.out.println("Enter the Distance range  : ");
+			Scanner scan6 = new Scanner(System.in);
+			int [] input6 = new int[2];
+			for (int i = 0; i < 2; i++) {
+				if (scan6.hasNextInt()) {
+					input6[i]=scan6.nextInt();
+				}
+				else {
+					System.out.println("You didn't provide enough numbers");
+					System.exit(-1);
+				}
+			}
+			int [] D2=input6;
+			// SQL can be run over RDDs that have been registered as tables.
+			//1
+			if(P1[2].equalsIgnoreCase("'1'") && P2[2].equalsIgnoreCase("'2'") && L1[2].equalsIgnoreCase("'3'") && L2[2].equalsIgnoreCase("'4'")){
+				System.out.println("Case 1");
+				results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
+						" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ P1[0]+" AND D1.res2=" +L1[0]+ 
+						" AND D1.atom1="+ P1[1]+" AND D1.atom2="+L1[1] + " AND D1.distance >="+  D1[0]+ 
+						" AND D1.distance <="+ D1[1] +" AND D2.res1=" + P2[0]+" AND D2.res2=" +L2[0]+ " AND D2.atom1="
+						+ P2[1]+" AND D2.atom2=" +L2[1] + " AND D2.distance >="+  D2[0]+ " AND D2.distance <=" + D2[1]
+								+" AND (D1.chainId1<>D2.chainId1 OR D1.Rnum1<>D2.Rnum1) "
+								+ " AND (D1.chainId2<>D2.chainId2 OR D1.Rnum2<>D2.Rnum2)");
+			}
+			//2
+			else if (P1[2].equalsIgnoreCase("'1'") && P2[2].equalsIgnoreCase("'2'") && L1[2].equalsIgnoreCase("'3a'") && L2[2].equalsIgnoreCase("'3b'")){
+				System.out.println("Case 2");
+				results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
+						" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ P1[0]+" AND D1.res2=" +L1[0]+ 
+						" AND D1.atom1="+ P1[1]+" AND D1.atom2="+L1[1] + " AND D1.distance >="+  D1[0]+ 
+						" AND D1.distance <="+ D1[1]+" AND D2.res1=" + P2[0]+" AND D2.res2=" +L2[0]+ " AND D2.atom1="+ 
+						P2[1]+" AND D2.atom2=" +L2[1] + " AND D2.distance >="+  D2[0]+ " AND D2.distance <=" + D2[1]
+								+ " AND (D1.chainId1<>D2.chainId1 OR D1.Rnum1<>D2.Rnum1)"
+								+ " AND D1.chainId2=D2.chainId2 AND D1.Rnum2=D2.Rnum2 AND D1.Ins2=D2.Ins2");
+			}
+			//3
+			else if (P1[2].equalsIgnoreCase("'1a'") && P2[2].equalsIgnoreCase("'1b'") && L1[2].equalsIgnoreCase("'2'") && L2[2].equalsIgnoreCase("'3'")){
+				System.out.println("Case 3");
+				results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
+						" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ P1[0]+" AND D1.res2=" +L1[0]+ 
+						" AND D1.atom1="+ P1[1]+" AND D1.atom2="+L1[1] + " AND D1.distance >="+  D1[0]+ 
+						" AND D1.distance <="+ D1[1]+" AND D2.res1=" + P2[0]+" AND D2.res2=" +L2[0]+ " AND D2.atom1="+ 
+						P2[1]+" AND D2.atom2=" +L2[1] + " AND D2.distance >="+  D2[0]+ " AND D2.distance <=" + D2[1]+
+						" AND D1.chainId1=D2.chainId1 AND D1.Rnum1=D2.Rnum1 AND D1.Ins1=D2.Ins1"
+						+ " AND (D1.chainId2<>D2.chainId2 OR D1.Rnum2<>D2.Rnum2) ");
+			}
+			//4
+			else if (P1[2].equalsIgnoreCase("'1a'") && P2[2].equalsIgnoreCase("'1b'") && L1[2].equalsIgnoreCase("'2a'") && L2[2].equalsIgnoreCase("'2b'")){
+				System.out.println("Case 4");
+				results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
+						" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ P1[0]+" AND D1.res2=" +L1[0]+ 
+						" AND D1.atom1="+ P1[1]+" AND D1.atom2="+L1[1] + " AND D1.distance >="+  D1[0]+ 
+						" AND D1.distance <="+ D1[1]+" AND D2.res1=" + P2[0]+" AND D2.res2=" +L2[0]+ " AND D2.atom1="+ 
+						P2[1]+" AND D2.atom2=" +L2[1] + " AND D2.distance >="+  D2[0]+ " AND D2.distance <=" + D2[1]+
+						" AND D1.chainId1=D2.chainId1 AND D1.Rnum1=D2.Rnum1 AND D1.Ins1=D2.Ins1"+
+						" AND D1.chainId2=D2.chainId2 AND D1.Rnum2=D2.Rnum2 AND D1.Ins2=D2.Ins2");
+			}
+			//5
+			else if (P1[2].equalsIgnoreCase("'1'") && P2[2].equalsIgnoreCase("'2'") && L1[2].equalsIgnoreCase("'3'") && L2[2].equalsIgnoreCase("'3'")){
+				System.out.println("Case 5");
+				results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
+						" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ P1[0]+" AND D1.res2=" +L1[0]+ 
+						" AND D1.atom1= "+ P1[1]+" AND D1.atom2= "+L1[1] + " AND D1.distance >="+  D1[0]+ 
+						" AND D1.distance <="+ D1[1]+" AND D2.res1= " + P2[0]+" AND D2.res2= " +L2[0]+ " AND D2.atom1= "+ 
+						P2[1]+" AND D2.atom2= " +L2[1] + " AND D2.distance >= "+  D2[0]+ " AND D2.distance <= " + D2[1]+
+						" AND (D1.chainId1<>D2.chainId1 OR D1.Rnum1<>D2.Rnum1)"+
+						" AND D1.chainId2=D2.chainId2 AND D1.Rnum2=D2.Rnum2 AND D1.Ins2=D2.Ins2");
+			}	
+			//6
+			else if (P1[2].equalsIgnoreCase("'1a'") && P2[2].equalsIgnoreCase("'1b'") && L1[2].equalsIgnoreCase("'2'") && L2[2].equalsIgnoreCase("'2'")){
+				System.out.println("Case 6");
+				results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
+						" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ P1[0]+" AND D1.res2=" +L1[0]+ 
+						" AND D1.atom1="+ P1[1]+" AND D1.atom2="+L1[1] + " AND D1.distance >="+  D1[0]+ 
+						" AND D1.distance <="+ D1[1]+" AND D2.res1=" + P2[0]+" AND D2.res2=" +L2[0]+ " AND D2.atom1="+ 
+						P2[1]+" AND D2.atom2=" +L2[1] + " AND D2.distance >="+  D2[0]+ " AND D2.distance <=" + D2[1]+
+						" AND D1.chainId1=D2.chainId1 AND D1.Rnum1=D2.Rnum1 AND D1.Ins1=D2.Ins1"+
+						" AND D1.chainId2=D2.chainId2 AND D1.Rnum2=D2.Rnum2 AND D1.Ins2=D2.Ins2");// 1a 1b
+			}	
+			//7
+			else if (P1[2].equalsIgnoreCase("'1'") && P2[2].equalsIgnoreCase("'1'") && L1[2].equalsIgnoreCase("'2'") && L2[2].equalsIgnoreCase("'3'")){
+				System.out.println("Case 7");
+				results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
+						" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ P1[0]+" AND D1.res2=" +L1[0]+ 
+						" AND D1.atom1="+ P1[1]+" AND D1.atom2="+L1[1] + " AND D1.distance >="+  D1[0]+ 
+						" AND D1.distance <="+ D1[1]+" AND D2.res1=" + P2[0]+" AND D2.res2=" +L2[0]+ " AND D2.atom1="+ 
+						P2[1]+" AND D2.atom2=" +L2[1] + " AND D2.distance >="+  D2[0]+ " AND D2.distance <=" + D2[1]+
+						" AND D1.chainId1=D2.chainId1 AND D1.Rnum1=D2.Rnum1 AND D1.Ins1=D2.Ins1"+
+						" AND (D1.chainId2<>D2.chainId2 OR D1.Rnum2<>D2.Rnum2 )");
+			}	
+			//8
+			else if (P1[2].equalsIgnoreCase("'1'") && P2[2].equalsIgnoreCase("'1'") && L1[2].equalsIgnoreCase("'2a'") && L2[2].equalsIgnoreCase("'2b'")){
+				System.out.println("Case 8");
+				results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
+						" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ P1[0]+" AND D1.res2=" +L1[0]+ 
+						" AND D1.atom1="+ P1[1]+" AND D1.atom2="+L1[1] + " AND D1.distance >="+  D1[0]+ 
+						" AND D1.distance <="+ D1[1]+" AND D2.res1=" + P2[0]+" AND D2.res2=" +L2[0]+ " AND D2.atom1="+ 
+						P2[1]+" AND D2.atom2=" +L2[1] + " AND D2.distance >="+  D2[0]+ " AND D2.distance <=" + D2[1]+
+						" AND D1.chainId1=D2.chainId1 AND D1.Rnum1=D2.Rnum1 AND D1.Ins1=D2.Ins1"+
+						" AND D1.chainId2=D2.chainId2 AND D1.Rnum2=D2.Rnum2 AND D1.Ins2=D2.Ins2");// 2a 2b
+			}
+			else{
+				System.out.println("NOT FOUND!");
+				System.exit(-1);
+			}
+			break;
+
+		case 2: 
+
+			System.out.println("Enter the first Protein residue,element and number  : ");
+			Scanner scan11 = new Scanner(System.in);
+			String input11 = scan11.nextLine();   
+			String[] str11 = input11.trim().split("\\s+");
+			String [] P11= new String[3];
+			for(int i=0;i<3;i++){
+				P11[i]="'"+str11[i]+"'";
+			}
+	
+			System.out.println("Enter the first Ligand residue,element and number  : ");
+			Scanner scan21 = new Scanner(System.in);
+			String input21 = scan21.nextLine();   
+			String[] str21 = input21.trim().split("\\s+");
+			String [] L11= new String[3];
+			for(int i=0;i<3;i++){
+				L11[i]="'"+str21[i]+"'";
+			}
+
+			System.out.println("Enter the Distance range  : ");
+			Scanner scan51 = new Scanner(System.in);
+			int [] input51 = new int[2];
+			for (int i = 0; i < 2; i++) {
+				if (scan51.hasNextInt()) {
+					input51[i]=scan51.nextInt();
+				}
+				else {
+					System.out.println("You didn't provide enough numbers");
+					System.exit(-1);
+				}
+			}
+			int [] D11=input51;
+
+			System.out.println("Enter the Second Protein residue,element and number  : ");
+			Scanner scan31 = new Scanner(System.in);
+			String input31 = scan31.nextLine();   
+			String[] str31 = input31.trim().split("\\s+");
+			String [] P21= new String[3];
+			for(int i=0;i<3;i++){
+				P21[i]="'"+str31[i]+"'";
+			}
+
+			System.out.println("Enter the Second Ligand residue,element and number  : ");
+			Scanner scan41 = new Scanner(System.in);
+			String input41 = scan41.nextLine();  
+			String[] str41 = input41.trim().split("\\s+");
+			String [] L21= new String[3];
+			for(int i=0;i<3;i++){
+				L21[i]="'"+str41[i]+"'";
+			}
+
+			System.out.println("Enter the Distance range  : ");
+			Scanner scan61 = new Scanner(System.in);
+			int [] input61 = new int[2];
+			for (int i = 0; i < 2; i++) {
+				if (scan61.hasNextInt()) {
+					input61[i]=scan61.nextInt();
+				}
+				else {
+					System.out.println("You didn't provide enough numbers");
+					System.exit(-1);
+				}
+			}
+			int [] D21=input61;
+			// SQL can be run over RDDs that have been registered as tables.
+			//1
+			if(P11[2].equalsIgnoreCase("'1'") && P21[2].equalsIgnoreCase("'2'") && L11[2].equalsIgnoreCase("'3'") && L21[2].equalsIgnoreCase("'4'")){
+				System.out.println("Case 2.1");
+				results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
+						" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ P11[0]+" AND D1.res2=" +L11[0]+ 
+						" AND D1.element1="+ P11[1]+" AND D1.element2="+L11[1] + " AND D1.distance >="+  D11[0]+ 
+						" AND D1.distance <="+ D11[1] +" AND D2.res1=" + P21[0]+" AND D2.res2=" +L21[0]+ " AND D2.element1="
+						+ P21[1]+" AND D2.element2=" +L21[1] + " AND D2.distance >="+  D21[0]+ " AND D2.distance <=" + D21[1]
+								+" AND (D1.chainId1<>D2.chainId1 OR D1.Rnum1<>D2.Rnum1) "
+								+ " AND (D1.chainId2<>D2.chainId2 OR D1.Rnum2<>D2.Rnum2)");
+			}
+			//2
+			else if (P11[2].equalsIgnoreCase("'1'") && P21[2].equalsIgnoreCase("'2'") && L11[2].equalsIgnoreCase("'3a'") && L21[2].equalsIgnoreCase("'3b'")){
+				System.out.println("Case 2.2");
+				results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
+						" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ P11[0]+" AND D1.res2=" +L11[0]+ 
+						" AND D1.element1="+ P11[1]+" AND D1.element2="+L11[1] + " AND D1.distance >="+  D11[0]+ 
+						" AND D1.distance <="+ D11[1]+" AND D2.res1=" + P21[0]+" AND D2.res2=" +L21[0]+ " AND D2.element1="+ 
+						P21[1]+" AND D2.element2=" +L21[1] + " AND D2.distance >="+  D21[0]+ " AND D2.distance <=" + D21[1]+
+						" AND D1.atom2<>D2.atom2"+ " AND (D1.chainId1<>D2.chainId1 OR D1.Rnum1<>D2.Rnum1)"+
+						" AND D1.chainId2=D2.chainId2 AND D1.Rnum2=D2.Rnum2 AND D1.Ins2=D2.Ins2");
+			}
+			//3
+			else if (P11[2].equalsIgnoreCase("'1a'") && P21[2].equalsIgnoreCase("'1b'") && L11[2].equalsIgnoreCase("'2'") && L21[2].equalsIgnoreCase("'3'")){
+				System.out.println("Case 2.3");
+				results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
+						" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ P11[0]+" AND D1.res2=" +L11[0]+ 
+						" AND D1.element1="+ P11[1]+" AND D1.element2="+L11[1] + " AND D1.distance >="+  D11[0]+ 
+						" AND D1.distance <="+ D11[1]+" AND D2.res1=" + P21[0]+" AND D2.res2=" +L21[0]+ " AND D2.element1="+ 
+						P21[1]+" AND D2.element2=" +L21[1] + " AND D2.distance >="+  D21[0]+ " AND D2.distance <=" + D21[1]+
+						" AND D1.atom1<>D2.atom1"+ " AND D1.chainId1=D2.chainId1 AND D1.Rnum1=D2.Rnum1 AND D1.Ins1=D2.Ins1"
+						+ " AND (D1.chainId2<>D2.chainId2 OR D1.Rnum2<>D2.Rnum2) ");
+			}
+			//4
+			else if (P11[2].equalsIgnoreCase("'1a'") && P21[2].equalsIgnoreCase("'1b'") && L11[2].equalsIgnoreCase("'2a'") && L21[2].equalsIgnoreCase("'2b'")){
+				System.out.println("Case 2.4");
+				results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
+						" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ P11[0]+" AND D1.res2=" +L11[0]+ 
+						" AND D1.element1="+ P11[1]+" AND D1.element2="+L11[1] + " AND D1.distance >="+  D11[0]+ 
+						" AND D1.distance <="+ D11[1]+" AND D2.res1=" + P21[0]+" AND D2.res2=" +L21[0]+ " AND D2.element1="+ 
+						P21[1]+" AND D2.element2=" +L21[1] + " AND D2.distance >="+  D21[0]+ " AND D2.distance <=" + D21[1]+
+						" AND D1.atom2<>D2.atom2 AND D1.atom1<>D2.atom1"+ " AND D1.chainId1=D2.chainId1 AND D1.Rnum1=D2.Rnum1 AND D1.Ins1=D2.Ins1"+
+						" AND D1.chainId2=D2.chainId2 AND D1.Rnum2=D2.Rnum2 AND D1.Ins2=D2.Ins2");
+			}
+			//5
+			else if (P11[2].equalsIgnoreCase("'1'") && P21[2].equalsIgnoreCase("'2'") && L11[2].equalsIgnoreCase("'3'") && L21[2].equalsIgnoreCase("'3'")){
+				System.out.println("Case 2.5");
+				results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
+						" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ P11[0]+" AND D1.res2=" +L11[0]+ 
+						" AND D1.element1= "+ P11[1]+" AND D1.element2= "+L11[1] + " AND D1.distance >="+  D11[0]+ 
+						" AND D1.distance <="+ D11[1]+" AND D2.res1= " + P21[0]+" AND D2.res2= " +L21[0]+ " AND D2.element1= "+ 
+						P21[1]+" AND D2.element2= " +L21[1] + " AND D2.distance >= "+  D21[0]+ " AND D2.distance <= " + D21[1]+
+						" AND D1.atom2=D2.atom2" + " AND (D1.chainId1<>D2.chainId1 OR D1.Rnum1<>D2.Rnum1)"+
+						" AND D1.chainId2=D2.chainId2 AND D1.Rnum2=D2.Rnum2 AND D1.Ins2=D2.Ins2");
+			}	
+			//6
+			else if (P11[2].equalsIgnoreCase("'1a'") && P21[2].equalsIgnoreCase("'1b'") && L11[2].equalsIgnoreCase("'2'") && L21[2].equalsIgnoreCase("'2'")){
+				System.out.println("Case 2.6");
+				results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
+						" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ P11[0]+" AND D1.res2=" +L11[0]+ 
+						" AND D1.element1="+ P11[1]+" AND D1.element2="+L11[1] + " AND D1.distance >="+  D11[0]+ 
+						" AND D1.distance <="+ D11[1]+" AND D2.res1=" + P21[0]+" AND D2.res2=" +L21[0]+ " AND D2.element1="+ 
+						P21[1]+" AND D2.element2=" +L21[1] + " AND D2.distance >="+  D21[0]+ " AND D2.distance <=" + D21[1]+
+						" AND D1.atom2=D2.atom2 AND D1.atom1<>D2.atom1"+" AND D1.chainId1=D2.chainId1 AND D1.Rnum1=D2.Rnum1 AND D1.Ins1=D2.Ins1"+
+						" AND D1.chainId2=D2.chainId2 AND D1.Rnum2=D2.Rnum2 AND D1.Ins2=D2.Ins2");// 1a 1b
+			}	
+			//7
+			else if (P11[2].equalsIgnoreCase("'1'") && P21[2].equalsIgnoreCase("'1'") && L11[2].equalsIgnoreCase("'2'") && L21[2].equalsIgnoreCase("'3'")){
+				System.out.println("Case 2.7");
+				results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
+						" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ P11[0]+" AND D1.res2=" +L11[0]+ 
+						" AND D1.element1="+ P11[1]+" AND D1.element2="+L11[1] + " AND D1.distance >="+  D11[0]+ 
+						" AND D1.distance <="+ D11[1]+" AND D2.res1=" + P21[0]+" AND D2.res2=" +L21[0]+ " AND D2.element1="+ 
+						P21[1]+" AND D2.element2=" +L21[1] + " AND D2.distance >="+  D21[0]+ " AND D2.distance <=" + D21[1]+
+						" AND D1.atom1=D2.atom1 "+" AND D1.chainId1=D2.chainId1 AND D1.Rnum1=D2.Rnum1 AND D1.Ins1=D2.Ins1"+
+						" AND (D1.chainId2<>D2.chainId2 OR D1.Rnum2<>D2.Rnum2 )");
+			}	
+			//8
+			else if (P11[2].equalsIgnoreCase("'1'") && P21[2].equalsIgnoreCase("'1'") && L11[2].equalsIgnoreCase("'2a'") && L21[2].equalsIgnoreCase("'2b'")){
+				System.out.println("Case 2.8");
+				results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
+						" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ P11[0]+" AND D1.res2=" +L11[0]+ 
+						" AND D1.element1="+ P11[1]+" AND D1.element2="+L11[1] + " AND D1.distance >="+  D11[0]+ 
+						" AND D1.distance <="+ D11[1]+" AND D2.res1=" + P21[0]+" AND D2.res2=" +L21[0]+ " AND D2.element1="+ 
+						P21[1]+" AND D2.element2=" +L21[1] + " AND D2.distance >="+  D21[0]+ " AND D2.distance <=" + D21[1]+
+						" AND D1.atom2<>D2.atom2 AND D1.atom1=D2.atom1"+" AND D1.chainId1=D2.chainId1 AND D1.Rnum1=D2.Rnum1 AND D1.Ins1=D2.Ins1"+
+						" AND D1.chainId2=D2.chainId2 AND D1.Rnum2=D2.Rnum2 AND D1.Ins2=D2.Ins2");// 2a 2b
+			}
+			else{
+				System.out.println("NOT FOUND!");
+				System.exit(-1);
+			}
+
+			break;
+
+		default:
+			System.out.println("Choose either 1 or 2");
 		}
-		writer.flush();
-	    writer.close();
-		}
-		catch (IOException e) {
-			e.printStackTrace();
-		}*/
-		//'ASP' '017' 'OD2' 'O18' '24' '26'
-		//'GLY' '017' 'O' 'N20' '30' '32'
-		//results.write().mode(SaveMode.Overwrite).save("/Users/hina/Data/ExampleFiles/Distanes_queryResults.parquet");
+
 		System.out.println("Querying Time: " + (System.nanoTime() - querystart)/1E9 + " sec.");
 
 		// The results of SQL queries are DataFrames and support all the normal RDD operations.
 		// The columns of a row in the result can be accessed by ordinal.
 		List<String> Rows = results.javaRDD().map(new Function<Row, String>() {
+			/**
+			 * 
+			 */
+			private static final long serialVersionUID = 1L;
+
 			public String call(Row row) {
 				return  row.get(0) +" "; //+row.get(1);
 				//+" "+row.getString(2)+" "+row.getString(3)+" "+ row.getString(4)+" "
@@ -251,15 +385,12 @@ public class QueryProteinsLigands {
 				//+ " Distance: "+row.getInt(6) +" PdbIds: "+ row.get(7);
 			}
 		}).collect();
-
-		for (String s: Rows){
-			System.out.println(s);
+		if (Rows.isEmpty()){
+			System.out.println("QUERY RETURNS NO RESULTS");
 		}
-		/*		long count_withdistance= results.distinct().count();
-		System.out.println("unique interactins: " +count_withdistance);
-		long count_withoutdistance= results.count();
-		System.out.println("unique interactins: " +count_withoutdistance);
-		sc.close();*/
+		for (String s: Rows){
+			System.out.println(s.toCharArray());
+		}
 
 		System.out.println("Time: " + (System.nanoTime() - start)/1E9 + " sec.");
 	}
