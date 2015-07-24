@@ -1,10 +1,13 @@
 package org.rcsb.project3;
 
+import java.util.ArrayList;
 import java.util.List;
 
+import javax.vecmath.Matrix4d;
 import javax.vecmath.Point3d;
 
 import org.apache.spark.broadcast.Broadcast;
+import org.rcsb.structuralAlignment.SuperPositionQCP;
 
 import scala.Tuple2;
 
@@ -83,53 +86,43 @@ public class SmithWatermanWithGeoComp implements AlignmentAlgorithmInterface {
 
 		Integer[] v1Order = SWAlignment.getSequence1();
 		Integer[] v2Order = SWAlignment.getSequence2();
-		if (v1Order.length > 0) {
-			int min = Integer.MAX_VALUE;
-			int minIndex = 0;
-			for (int i = 0; i < v1Order.length; i++) {
-				Integer a1 = v1Order[i];
-				Integer a2 = v2Order[i];
-				if (a1 != null && a2 != null) {
-					int unAlign = 0;
-					for (int j =0; j < v1Order.length; j++) {
-						Integer b1 = v1Order[j];
-						Integer b2 = v2Order[j];
-						if (b1 != null && b2 != null) {
-							double dist1 = c1[a1].distance(c1[b1]);
-							double dist2 = c2[a2].distance(c2[b2]);
-							if (dist1 - dist2 < -8 || dist1 - dist2 > 8) {
-								unAlign++;
-							}
-						}
-					}
-					if (unAlign < min) {
-						min = unAlign;
-						minIndex = i;
-					}
-				}
-			}
-			Integer min1 = v1Order[minIndex];
-			Integer min2 = v2Order[minIndex];
-			for (int i =0; i < v1Order.length; i++) {
-				Integer a1 = v1Order[i];
-				Integer a2 = v2Order[i];
-				if (a1 != null && a2 != null) {
-					double dist1 = c1[min1].distance(c1[a1]);
-					double dist2 = c2[min2].distance(c2[a2]);
-					if (dist1 - dist2 < -8 || dist1 - dist2 > 8) {
-						if ((i != 0 && v1Order[i-1] == null) || (i != v1Order.length-1 && v1Order[i+1] == null))
-							v1Order[i] = null;
-						else
-							v2Order[i] = null;
-	 				}
-				}
-			}
-		}
+		
+		SuperPositionQCP qcp = new SuperPositionQCP();
 		
 		SWAlignment.setSequence1(v1Order);
 		SWAlignment.setSequence2(v2Order);
 		
-		float value = (float) SWAlignment.calculateScore();
+		List<Point3d> lp1 = new ArrayList<Point3d>();
+		List<Point3d> lp2 = new ArrayList<Point3d>();
+		for (int i = 0; i < v1Order.length; i++) {
+			if (v1Order[i] != null && v2Order[i] != null) {
+				lp1.add(c1[v1Order[i]]);
+				lp2.add(c2[v2Order[i]]);
+			}
+		}
+		Alignment<?> SWAlignment2 = null;
+		if (lp1.size() > 0) {
+			Point3d[] p1 = new Point3d[lp1.size()];
+			Point3d[] p2 = new Point3d[lp2.size()];
+			for (int i = 0; i < p1.length; i++) {
+				p1[i] = lp1.get(i);
+				p2[i] = lp2.get(i);
+			}
+			qcp.set(p1,p2);
+			Matrix4d m = qcp.getTransformationMatrix();
+			SuperPositionQCP.transform(m, c2);
+			SequenceFeatureInterface<Point3d> s1 = new Point3dFeature(c1);
+			SequenceFeatureInterface<Point3d> s2 = new Point3dFeature(c2);
+			SWAlignment2 = getAlignment(s1, s2, open, extend);
+		}
+		
+		float value = 0;
+		
+		if (SWAlignment2 == null)
+			value = (float) SWAlignment.calculateScore();
+		else
+			value = (float) SWAlignment2.calculateScore();
+		
 		int v1L = v1.length();
 		int v2L = v2.length();
 		if (v1L > v2L)

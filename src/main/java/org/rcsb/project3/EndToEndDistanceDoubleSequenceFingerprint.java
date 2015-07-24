@@ -70,6 +70,6 @@ public class EndToEndDistanceDoubleSequenceFingerprint implements SequenceFinger
     		// and bin values
     		features[i] = first.distance(last);
     	}
-		return new EndToEndDistanceDoubleSequenceFeature(features);
+		return new EndToEndDistanceDoubleSequenceFeature(features, coords);
 	}
 }
