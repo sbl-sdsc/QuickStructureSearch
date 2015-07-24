@@ -71,6 +71,7 @@ public class SecondaryStructProjection {
 	}
 
 	public Tuple2<Integer, Double> getCloseTo(Vector2d st, Vector2d en) {
+		Tuple2<Integer, Double> NO_MATCH = new Tuple2<>(-1, -1.0);
 		// System.out.println("finding " + st + " , " + en);
 		List<Integer> candX = new ArrayList<>();
 		int indX = search(N, new Predicate<Integer>() {
@@ -80,11 +81,16 @@ public class SecondaryStructProjection {
 			}
 		});
 		// System.out.println("indX: " + indX + ", " + mapXS[indX] + ", " + s[mapXS[indX]]);
-		do {
-			// System.out.println("x is " + s[mapXS[indX]].x);
-			candX.add(mapXS[indX]);
-		} while (++indX < N && s[mapXS[indX]].x < st.x + X_DIFF);
 
+		// do {
+		// // System.out.println("x is " + s[mapXS[indX]].x);
+		// candX.add(mapXS[indX]);
+		// } while (++indX < N && s[mapXS[indX]].x < st.x + X_DIFF);
+
+		while (indX < N && s[mapXS[indX]].x < st.x + X_DIFF) {
+			candX.add(mapXS[indX++]);
+		}
+		// System.out.println("CANDX: " + candX);
 		List<Integer> candY = new ArrayList<>();
 		int indY = search(N, new Predicate<Integer>() {
 			@Override
@@ -92,9 +98,9 @@ public class SecondaryStructProjection {
 				return st.y - Y_DIFF > s[mapYS[t]].y;
 			}
 		});
-		do
-			candY.add(mapYS[indY]);
-		while (++indY < N && s[mapYS[indY]].y < st.y + Y_DIFF);
+		while (indY < N && s[mapYS[indY]].y < st.y + Y_DIFF) {
+			candY.add(mapYS[indY++]);
+		}
 		// System.out.println("X: " + candX);
 		// for (int i : candX) {
 		// System.out.println("possible x : " + s[i].x);
@@ -109,11 +115,11 @@ public class SecondaryStructProjection {
 		// System.out.println("cand " + i + " : " + s[i]);
 		// }
 		if (candX.size() == 0)
-			return new Tuple2<>(-1, -1.0);
+			return NO_MATCH;
 		int min = candX.get(0);
 		double score = Double.MAX_VALUE;
 		for (int i : candX) {
-			double d = SecondaryStruct.simil(st, en, s[i], e[i]);
+			double d = SecondaryStructTools.simil(st, en, s[i], e[i]);
 			// System.out.println("Score for " + i + ", " + d);
 			if (d < score) {
 				score = d;
@@ -121,7 +127,7 @@ public class SecondaryStructProjection {
 			}
 		}
 		// System.out.println(min + " Score: " + score);
-		return score < 50 ? new Tuple2<>(min, score) : new Tuple2<>(-1, -1.0);
+		return score < 50 ? new Tuple2<>(min, score) : NO_MATCH;
 	}
 
 	private static int search(int len, Predicate<Integer> bigger) {

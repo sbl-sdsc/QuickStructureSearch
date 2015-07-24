@@ -10,32 +10,33 @@ import org.biojava.nbio.structure.StructureException;
 
 public class SecondaryStructTest2 {
 
-	private static final String NAME = "4FMW.B";
+	private static final String NAME = "1NB5.J";
 
 	public static void main(String[] args) {
-		File f = new File(NAME + ".txt");
+		File f = new File("data/" + NAME + ".txt");
 		SecondaryStruct s = null;
 		if (f.exists())
-			s = new SecondaryStruct(SecondaryStruct.read(NAME));
+			s = new SecondaryStruct(SecondaryStructTools.read(NAME));
 		else {
 			Point3d[] pts = null;
 			try {
-				pts = SecondaryStruct.pull(NAME);
+				pts = SecondaryStructTools.pull(NAME);
 			}
 			catch (IOException | StructureException e) {
 				e.printStackTrace();
 			}
-			SecondaryStruct.write(pts, NAME);
+			SecondaryStructTools.write(pts, NAME);
 			s = new SecondaryStruct(pts);
 		}
 		SecondaryStructureSequenceFeature sf = s.getSequenceFeature();
 		System.out.println("Start");
+		System.out.println(NAME);
 		try (Scanner scan = new Scanner(System.in)) {
 			String in;
 			while (!(in = scan.next()).equals("X")) {
 				if (in.equals("g")) {
 					int st = scan.nextInt();
-					System.out.println(SecondaryStruct.distsToString(s.getRange(st, scan.nextInt()), st));
+					System.out.println(SecondaryStructTools.distsToString(s.getRange(st, scan.nextInt()), st));
 				}
 				else if (in.equals("a"))
 					s.printHelices();
@@ -49,7 +50,11 @@ public class SecondaryStructTest2 {
 					for (int i = 0; i < s.length(); i++)
 						System.out.println((i + 1) + ":\t" + sf.toString(i));
 				else if (in.equals("test"))
-					s.printBetaProjection(0);
+					s.testPrint(s.getHelices());
+				else if (in.equals("test1"))
+					System.out.println("=(0,0,0)\t=" + s.normP + "*50\t=" + s.normX + "*50");
+				else if (in.equals("test2"))
+					SecondaryStruct.printProjection(s.getAlphaNormProjection((byte) 0b00000000));
 			}
 		}
 		// sc.close();
