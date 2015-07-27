@@ -27,6 +27,7 @@ import org.biojava.nbio.structure.Chain;
 import org.biojava.nbio.structure.Element;
 import org.biojava.nbio.structure.Group;
 import org.biojava.nbio.structure.GroupType;
+import org.biojava.nbio.structure.ResidueNumber;
 import org.biojava.nbio.structure.Structure;
 import org.biojava.nbio.structure.StructureIO;
 import org.biojava.nbio.structure.align.util.AtomCache;
@@ -43,16 +44,24 @@ public class WriteSeqFile {
 	public static void main(String[] args) throws IOException {
 		String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
 
-		String uri = "/Users/hina/DistanceData/protein_ligand_distances" 
+		String uri = "/Users/hina/DistanceData/protein_ligand_distances(version2)" 
 				+ "_"
 				+ timeStamp 
 				+ ".seq";
 
 		Set<String> pdbIds = getAll();
-		/*List <String> subset= new ArrayList <>(pdbIds);
+		List <String> subset= new ArrayList <>(pdbIds);
 		subset = subset.subList(1, 50);
 		subset.clear();
-		subset.add("1T3R");*/
+		subset.add("2R8P");
+		subset.add("2R80");
+		subset.add("3D7K");
+		subset.add("3FZN");
+		/*	subset.add("4I73");
+		subset.add("4EHC");
+		subset.add("3N95");
+		subset.add("3SH1");
+		subset.add("3N96");*/
 		StructureIO.setAtomCache(cache);
 		cache.setPath("/Users/hina/DistanceData/");
 
@@ -71,7 +80,7 @@ public class WriteSeqFile {
 					SequenceFile.Writer.valueClass(Text.class),
 					SequenceFile.Writer.compression(SequenceFile.CompressionType.BLOCK, new BZip2Codec()));	
 
-			for (String pdbId: pdbIds) {
+			for (String pdbId: subset) {
 				Set<String> mySet =new HashSet<String>();
 				System.out.println(pdbId);
 				Structure s = null;
@@ -112,7 +121,8 @@ public class WriteSeqFile {
 					}
 					chains++;
 				}
-
+				Character inscode = null;
+				Character inscode2= null;
 				for (Group g1: proteingroups){
 					for (Atom atom1: g1.getAtoms()) {
 						if (!(atom1.getElement().equals(Element.C) ||  atom1.getElement().equals(Element.H)) ){
@@ -126,9 +136,31 @@ public class WriteSeqFile {
 										double d=p1.distance(p2);
 										int idist= (int) Math.round(d*10);
 										if (idist<=50){
-											String label=g1.getChemComp().getId()+"-"+ g2.getChemComp().getId()+"-"+ atom1.getName()+ "-"+ atom2.getName()+"-"
-													+atom1.getElement()+ "-" +atom2.getElement()+ "-"+ idist;
-											//System.out.println(label);   		
+											ResidueNumber r = g1.getResidueNumber();
+											//System.out.println(r.getChainId() + "-" + r.getSeqNum() + "-" + r.getInsCode());
+											ResidueNumber r2 = g2.getResidueNumber();
+											//System.out.println(r.getChainId() + "-" + r.getSeqNum() + "-" + r.getInsCode());
+											if(r.getInsCode() == null) {
+												inscode=' ';
+											}
+											else{
+												inscode=r.getInsCode();
+											}
+											if(r2.getInsCode() == null) {
+												inscode2=' ';
+											}
+											else{
+												inscode2=r.getInsCode();
+											}
+											String label=r.getChainId() + "," + r2.getChainId() + "," + r.getSeqNum() + "," + 
+											r2.getSeqNum() + "," + inscode+ "," + inscode2+ ","+g1.getChemComp().getId()+ "," +
+											g2.getChemComp().getId()+ "," + atom1.getName()+ "," + atom2.getName()+ ","
+											+ atom1.getElement()+ "," + atom2.getElement()+ ","+ idist;
+											System.out.println(label);   
+											//System.out.println("Seq #1 :"+r.getSeqNum());
+											//System.out.println("Seq #2 :"+r2.getSeqNum());
+											System.out.println("Atom2 name :"+atom2.getName());
+											System.out.println("Element1 name :"+atom1.getElement());
 											mySet.add(label);
 										}
 
