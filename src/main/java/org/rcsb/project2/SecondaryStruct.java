@@ -1,6 +1,8 @@
 package org.rcsb.project2;
 
+import java.util.ArrayList;
 import java.util.Arrays;
+import java.util.List;
 
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
@@ -27,10 +29,15 @@ public class SecondaryStruct {
 	Point3d normC;
 
 	public SecondaryStruct(Point3d[] pts) {
-		this.pts = pts;
-		dists = SecondaryStructTools.dists(pts);
-		alphaHelices = SecondaryStructTools.alphaHelices(dists, pts, ALPHA_FILTER);
-		betaStrands = SecondaryStructTools.betaStrands(dists, pts, BETA_FILTER);
+		List<Point3d> p = new ArrayList<>();
+		for (Point3d pt : pts)
+			if (pt != null)
+				p.add(pt);
+		this.pts = new Point3d[p.size()];
+		p.toArray(this.pts);
+		dists = SecondaryStructTools.dists(this.pts);
+		alphaHelices = SecondaryStructTools.alphaHelices(dists, this.pts, ALPHA_FILTER);
+		betaStrands = SecondaryStructTools.betaStrands(dists, this.pts, BETA_FILTER);
 		alphaProjections = new SecondaryStructProjection[getAlphaLength()];
 		betaProjections = new SecondaryStructProjection[getBetaLength()];
 		initNormProjections();
@@ -189,7 +196,8 @@ public class SecondaryStruct {
 	public void printHelices() {
 		Tuple2<int[], int[]> helices = getHelices();
 		for (int i = 0; i < helices._1.length; i++) {
-			System.out.printf("%d-%d" + System.lineSeparator(), helices._1[i] + 1, helices._2[i] + 1);
+			System.out.printf("%d-%d, %.5f" + System.lineSeparator(), helices._1[i] + 1, helices._2[i] + 1,
+					pts[helices._1[i]].distance(pts[helices._2[i]]));
 		}
 	}
 
@@ -199,7 +207,8 @@ public class SecondaryStruct {
 	public void printStrands() {
 		Tuple2<int[], int[]> strand = getStrands();
 		for (int i = 0; i < strand._1.length; i++) {
-			System.out.printf("%d-%d" + System.lineSeparator(), strand._1[i] + 1, strand._2[i] + 1);
+			System.out.printf("%d-%d, %.5f" + System.lineSeparator(), strand._1[i] + 1, strand._2[i] + 1,
+					pts[strand._1[i]].distance(pts[strand._2[i]]));
 		}
 	}
 

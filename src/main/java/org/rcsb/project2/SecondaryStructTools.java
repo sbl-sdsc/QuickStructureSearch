@@ -25,8 +25,14 @@ import scala.Tuple3;
 public class SecondaryStructTools {
 
 	private static final int MERGE = 10;
-	private static final double ANGLE_DIFF = 2.2;
+	private static final double ANGLE_DIFF = 2.4;
 	private static final double MIN_REDUCE = 0.25;
+
+	public static double calculateScore(Point3d[] p1, Point3d[] p2) {
+		SecondaryStruct s1 = new SecondaryStruct(p1);
+		SecondaryStruct s2 = new SecondaryStruct(p2);
+		return align(s1, s2);
+	}
 
 	public static double align(SecondaryStruct s1, SecondaryStruct s2) {
 		if (s1.getAlphaLength() + s1.getBetaLength() < MERGE && s2.getAlphaLength() + s2.getBetaLength() < MERGE) {
@@ -39,6 +45,8 @@ public class SecondaryStructTools {
 		// System.out.println("B: " + b);
 		int al = s1.getAlphaLength() + s2.getAlphaLength();
 		int bl = s1.getBetaLength() + s2.getBetaLength();
+		if (al + bl <= 4)
+			return -1;
 		// System.out.println("Alen: " + al);
 		// System.out.println("Blen: " + bl);
 		double c = (a * (al) + b * (bl)) / (al + bl);
@@ -57,7 +65,7 @@ public class SecondaryStructTools {
 			Tuple2<Double, int[]> t = rmsd(
 					alpha ? s1.getAlphaNormProjection((byte) (b % 4)) : s1.getBetaNormProjection((byte) (b % 4)),
 					alpha ? s2.getAlphaNormProjection((byte) (b >> 2)) : s2.getBetaNormProjection((byte) (b >> 2)));
-			System.out.println(b + " : " + t._1);
+			// System.out.println(b + " : " + t._1);
 			minRMSD = Math.min(minRMSD, t._1);
 			if (minRMSD < MIN_PERFECT_RMSD) {
 				perfectMatch = t._2;
@@ -81,7 +89,7 @@ public class SecondaryStructTools {
 									alpha ? s1.getAlphaProjection(i) : s1.getBetaProjection(i),
 									alpha ? s2.getAlphaProjection(perfectMatch[i]) : s2
 											.getBetaProjection(perfectMatch[i]))._1;
-							System.out.println("Perfect Match minRMSD " + i + ", " + perfectMatch[i] + ": " + test);
+							// System.out.println("Perfect Match minRMSD " + i + ", " + perfectMatch[i] + ": " + test);
 							if (test < minRMSD) {
 								minRMSD = test;
 							}
@@ -96,8 +104,8 @@ public class SecondaryStructTools {
 				if (tes < minRMSD) {
 					minRMSD = tes;
 					perfectMatch = t._2;
-					System.out.println("ALN: " + Arrays.toString(t._2));
-					System.out.println("minRMSD " + i1 + ", " + i2 + ": " + tes);
+					// System.out.println("ALN: " + Arrays.toString(t._2));
+					// System.out.println("minRMSD " + i1 + ", " + i2 + ": " + tes);
 				}
 				// System.out.println("RMSD " + i1 + ", " + i2 + ": " + tes);
 			}
@@ -481,6 +489,12 @@ public class SecondaryStructTools {
 					.printStackTrace();
 		// System.out.println("S: " + s);
 		// System.out.println("E: " + e);
+		for (int i = 0; i < size; i++) {
+			while (i < e.size() && i < s.size() && e.get(i) - s.get(i) <= filter) {
+				s.remove(i);
+				e.remove(i);
+			}
+		}
 		int maxSeparate = 2;
 		for (int i = 1; i < s.size(); i++) {
 			while (i < s.size() && s.get(i) - e.get(i - 1) <= maxSeparate) {
@@ -501,12 +515,6 @@ public class SecondaryStructTools {
 			}
 		}
 		size = s.size();
-		for (int i = 0; i < size; i++) {
-			while (i < e.size() && i < s.size() && e.get(i) - s.get(i) <= filter) {
-				s.remove(i);
-				e.remove(i);
-			}
-		}
 		size = Math.min(e.size(), s.size());
 		int[] so = new int[size];
 		int[] eo = new int[size];
@@ -581,9 +589,9 @@ public class SecondaryStructTools {
 
 	static final Feature ALPHA_HELIX = new Feature() {
 		private static final double a2l = 4.7;
-		private static final double a2h = 6.0;
+		private static final double a2h = 6.21;
 		private static final double a3l = 4.0;
-		private static final double a3h = 6.1;
+		private static final double a3h = 6.21;
 		private static final double a4l = 5.0;
 		private static final double a4h = 7.3;
 		private static final double bDiffThreshold = 0.21;
