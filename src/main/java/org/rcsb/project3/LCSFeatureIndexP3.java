@@ -2,6 +2,8 @@ package org.rcsb.project3;
 
 import java.util.List;
 
+import javax.vecmath.Point3d;
+
 import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
@@ -182,5 +184,8 @@ public class LCSFeatureIndexP3 implements AlignmentAlgorithmInterface {
 	@Override
 	public void setSequence(Broadcast<List<Tuple2<String, SequenceFeatureInterface<?>>>> data) {
 		this.data = data;		
+	}
+	@Override
+	public void setCoords(Broadcast<List<Tuple2<String, Point3d[]>>> sequence) {
 	}
 }

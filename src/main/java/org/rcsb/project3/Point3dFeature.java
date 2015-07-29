@@ -12,7 +12,7 @@ public class Point3dFeature implements SequenceFeatureInterface<Point3d>, Serial
 	private double match = 1;
 	private double mismatch = -1;
 	private double gap = -1;
-	private double diff = 3;
+	private double diff = 4;
 	
 	public Point3dFeature(Point3d[] coords) {
 		this.coords = coords;
@@ -28,7 +28,7 @@ public class Point3dFeature implements SequenceFeatureInterface<Point3d>, Serial
 			if (dist < diff)
 				return match;
 			else {
-				double score = 1 - dist/(diff*2);
+				double score = 1 - dist/(diff*2.5);
 				if (score > 0)
 					return score;
 				else

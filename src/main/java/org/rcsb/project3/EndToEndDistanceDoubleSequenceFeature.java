@@ -62,7 +62,7 @@ public class EndToEndDistanceDoubleSequenceFeature implements SequenceFeatureInt
 			if (difference < diff)
 				return match;
 			else {
-				double similarity = 1 - difference/3.6;
+				double similarity = 1 - difference/6;
 				if (similarity > 0)
 					return similarity;
 				else

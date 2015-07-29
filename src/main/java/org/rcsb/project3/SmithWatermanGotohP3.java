@@ -2,6 +2,8 @@ package org.rcsb.project3;
 
 import java.util.List;
 
+import javax.vecmath.Point3d;
+
 import org.apache.spark.broadcast.Broadcast;
 
 import scala.Tuple2;
@@ -132,5 +134,9 @@ public class SmithWatermanGotohP3 implements AlignmentAlgorithmInterface {
 		System.out.println(commonV1);
 		System.out.println(commonV2);
 		System.out.println();
+	}
+
+	@Override
+	public void setCoords(Broadcast<List<Tuple2<String, Point3d[]>>> sequence) {
 	}
 }
