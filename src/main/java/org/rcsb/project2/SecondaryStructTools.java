@@ -1,6 +1,7 @@
 package org.rcsb.project2;
 
 import java.io.BufferedReader;
+import java.io.File;
 import java.io.FileReader;
 import java.io.FileWriter;
 import java.io.IOException;
@@ -24,92 +25,102 @@ import scala.Tuple3;
 
 public class SecondaryStructTools {
 
-	private static final int MERGE = 10;
+	// private static final int MERGE = 5;
 	private static final double ANGLE_DIFF = 2.4;
 	private static final double MIN_REDUCE = 0.25;
 
-	public static double calculateScore(Point3d[] p1, Point3d[] p2) {
-		SecondaryStruct s1 = new SecondaryStruct(p1);
-		SecondaryStruct s2 = new SecondaryStruct(p2);
+	/**
+	 * Calculates the similarity score between 2 protein chains, lower is more similar
+	 * 
+	 * @param p1
+	 *            Array of {@link Point3d} for the first protein chain
+	 * @param p2
+	 *            Array of {@link Point3d} for the second protein chain
+	 * @param smooth
+	 *            whether the points were smoothed or not
+	 * @return similarity score between 2 protein chains
+	 */
+	public static double calculateScore(Point3d[] p1, Point3d[] p2, boolean smooth) {
+		SecondaryStruct s1 = new SecondaryStruct(p1, smooth);
+		SecondaryStruct s2 = new SecondaryStruct(p2, smooth);
 		return align(s1, s2);
 	}
 
 	public static double align(SecondaryStruct s1, SecondaryStruct s2) {
-		if (s1.getAlphaLength() + s1.getBetaLength() < MERGE && s2.getAlphaLength() + s2.getBetaLength() < MERGE) {
-
-		}
-		double a = SecondaryStructTools.align(s1, s2, true);
-		double b = SecondaryStructTools.align(s1, s2, false);
+		// if (s1.getAlphaLength() < MERGE && s2.getAlphaLength() < MERGE || s1.getBetaLength() < MERGE
+		// && s2.getBetaLength() < MERGE) {
+		// System.out.println("MERGED");
+		// return align(new MergeStruct(s1), new MergeStruct(s2));
+		// }
+		double a = align(s1.getAlpha(), s2.getAlpha());
+		double b = align(s1.getBeta(), s2.getBeta());
 		// System.out.println("TM: " + TmScorer.getFatCatTmScore(s1.getPoints(), s2.getPoints())[0]);
 		// System.out.println("A: " + a);
 		// System.out.println("B: " + b);
+		// if (s1.getAlphaLength() == 1 || s2.getAlphaLength() == 1 || s1.getBetaLength() == 1 || s2.getBetaLength() ==
+		// 1)
+		// return -1;
 		int al = s1.getAlphaLength() + s2.getAlphaLength();
 		int bl = s1.getBetaLength() + s2.getBetaLength();
-		if (al + bl <= 4)
-			return -1;
 		// System.out.println("Alen: " + al);
 		// System.out.println("Blen: " + bl);
 		double c = (a * (al) + b * (bl)) / (al + bl);
 		return c;
 	}
 
-	public static double align(SecondaryStruct s1, SecondaryStruct s2, boolean alpha) {
+	public static double align(StructureCompare f1, StructureCompare f2) {
+		final boolean print = false;
 		final double MIN_PERFECT_RMSD = 2.0;
-		// System.out.println(alpha ? "Alpha Helices" : "Beta Strands");
-
 		int[] perfectMatch = new int[0];
 		double minRMSD = Double.MAX_VALUE;
-		for (byte b = 0; b < 4; b++) {
+		for (byte b = 0; b < 16; b++) {
 			// System.out.printf("%d, %d, %d, %d" + System.lineSeparator(), (((b % 4) % 2) << 1) - 1,
 			// (((b % 4) >> 1) << 1) - 1, (((b >> 2) % 2) << 1) - 1, (((b >> 2) >> 1) << 1) - 1);
-			Tuple2<Double, int[]> t = rmsd(
-					alpha ? s1.getAlphaNormProjection((byte) (b % 4)) : s1.getBetaNormProjection((byte) (b % 4)),
-					alpha ? s2.getAlphaNormProjection((byte) (b >> 2)) : s2.getBetaNormProjection((byte) (b >> 2)));
-			// System.out.println(b + " : " + t._1);
+			Tuple2<Double, int[]> t = rmsd(f1.getNormProjection((byte) (b % 4)), f2.getNormProjection((byte) (b >> 2)));
+			if (print)
+				System.out.println(b + " : " + t._1);
 			minRMSD = Math.min(minRMSD, t._1);
 			if (minRMSD < MIN_PERFECT_RMSD) {
 				perfectMatch = t._2;
 				break;
 			}
 		}
-		// System.out.println("NormP: " + minRMSD);
-		// System.out.println("Perfect: " + Arrays.toString(perfectMatch));
+		if (print) {
+			System.out.println("NormP: " + minRMSD);
+			System.out.println("Perfect: " + Arrays.toString(perfectMatch));
+		}
 		int n1, n2;
-		n1 = alpha ? s1.getAlphaLength() : s1.getBetaLength();
-		n2 = alpha ? s2.getAlphaLength() : s2.getBetaLength();
+		n1 = f1.length();
+		n2 = f2.length();
 		// System.out.println("n1 : " + n1 + ", n2: " + n2);
 		if (n1 == 0 || n2 == 0)
 			return 10;
-		outer: for (int i1 = 0; i1 < n1; i1++) {
+		outer: for (int i1 = 0; i1 < n1; i1++)
 			for (int i2 = 0; i2 < n2; i2++) {
 				if (minRMSD < MIN_PERFECT_RMSD) {
-					for (int i = i1; i < perfectMatch.length; i++) {
+					for (int i = i1; i < perfectMatch.length; i++)
 						if (perfectMatch[i] != -1) {
-							double test = rmsd(
-									alpha ? s1.getAlphaProjection(i) : s1.getBetaProjection(i),
-									alpha ? s2.getAlphaProjection(perfectMatch[i]) : s2
-											.getBetaProjection(perfectMatch[i]))._1;
-							// System.out.println("Perfect Match minRMSD " + i + ", " + perfectMatch[i] + ": " + test);
-							if (test < minRMSD) {
+							double test = rmsd(f1.getProjection(i), f2.getProjection(perfectMatch[i]))._1;
+							if (print)
+								System.out.println("Perfect Match minRMSD " + i + ", " + perfectMatch[i] + ": " + test);
+							if (test < minRMSD)
 								minRMSD = test;
-							}
 						}
-					}
 					break outer;
 				}
-				Tuple2<Double, int[]> t = rmsd(alpha ? s1.getAlphaProjection(i1) : s1.getBetaProjection(i1),
-						alpha ? s2.getAlphaProjection(i2) : s2.getBetaProjection(i2));
+				Tuple2<Double, int[]> t = rmsd(f1.getProjection(i1), f2.getProjection(i2));
 				double tes = t._1;
-
 				if (tes < minRMSD) {
 					minRMSD = tes;
 					perfectMatch = t._2;
-					// System.out.println("ALN: " + Arrays.toString(t._2));
-					// System.out.println("minRMSD " + i1 + ", " + i2 + ": " + tes);
+					if (print) {
+						System.out.println("ALN: " + Arrays.toString(t._2));
+						System.out.println("minRMSD " + i1 + ", " + i2 + ": " + tes);
+					}
 				}
-				// System.out.println("RMSD " + i1 + ", " + i2 + ": " + tes);
+				if (print)
+					System.out.println("RMSD " + i1 + ", " + i2 + ": " + tes);
 			}
-		}
 		return minRMSD;
 	}
 
@@ -191,6 +202,21 @@ public class SecondaryStructTools {
 		}
 	}
 
+	public static Point3d[] obtain(String chain) {
+		File f = new File("data/" + chain + ".txt");
+		if (f.exists())
+			return read(chain);
+		Point3d[] pts = null;
+		try {
+			pts = SecondaryStructTools.pull(chain);
+		}
+		catch (IOException | StructureException e) {
+			e.printStackTrace();
+		}
+		SecondaryStructTools.write(pts, chain);
+		return pts;
+	}
+
 	public static Tuple3<int[], int[], int[]> align(SecondaryStructProjection p1, SecondaryStructProjection p2) {
 		final double MIN_SIM = 3.0;
 		int n1 = p1.length();
@@ -198,25 +224,31 @@ public class SecondaryStructTools {
 		int[] m1 = new int[n1];
 		int[] m2 = new int[n2];
 		int[] perf = new int[n1];
+		for (int i = 0; i < n1; i++)
+			m1[i] = perf[i] = -1;
+		for (int i = 0; i < n2; i++)
+			m2[i] = -1;
 		// int yay = 0;
 		for (int i = 0; i < n1; i++) {
 			// System.out.print(i + " + ");
 			Tuple2<Integer, Double> t = p2.getCloseTo(p1.get(i));
-			m1[i] = t._1;
+			if (t._1 != -1 && p1.getCloseTo(p2.get(t._1))._1 == i) {
+				m1[i] = t._1;
+				m2[m1[i]] = i;
+			}
 			if (t._2 != -1 && t._2 < MIN_SIM) {
 				// System.out.println("yay " + ++yay);
 				perf[i] = m1[i];
-				m2[m1[i]] = i;
 			}
 		}
 		// System.out.println(Arrays.toString(m2));
 		// int test = 0;
-		for (int i = 0; i < n2; i++) {
-			if (m2[i] == 0) {
-				// System.out.println("hi " + ++test);
-				m2[i] = p1.getCloseTo(p2.get(i))._1;
-			}
-		}
+		// for (int i = 0; i < n2; i++) {
+		// if (m2[i] == 0) {
+		// // System.out.println("hi " + ++test);
+		// m2[i] = p1.getCloseTo(p2.get(i))._1;
+		// }
+		// }
 		return new Tuple3<>(m1, m2, perf);
 	}
 
@@ -291,6 +323,7 @@ public class SecondaryStructTools {
 		if (print) {
 			System.out.println("o1: " + o1);
 			System.out.println("o2: " + o2);
+			System.out.println();
 		}
 		double o = (o1 * n1 + o2 * n2) / (n1 + n2);
 		return new Tuple2<>(o, perf);
@@ -373,15 +406,52 @@ public class SecondaryStructTools {
 		Vector2d[] vecs = new Vector2d[N];
 		Vector2d[] vece = new Vector2d[N];
 		for (int i = 0; i < N; i++) {
-			Vector3d vs = new Vector3d(pts[s[i]]);
+			Tuple2<Vector3d, Vector3d> t = getFeatureStartEnd(s[i], e[i], pts);
+			Vector3d vs = t._1;
+			Vector3d ve = t._2;
+			// Vector3d vs = new Vector3d(pts[s[i]]);
 			vs.sub(end);
 			vecs[i] = projectPlane(vs, planeVec, xN, yN);
 
-			Vector3d ve = new Vector3d(pts[e[i]]);
+			// Vector3d ve = new Vector3d(pts[e[i]]);
 			ve.sub(end);
 			vece[i] = projectPlane(ve, planeVec, xN, yN);
 		}
 		return new SecondaryStructProjection(vecs, vece);
+	}
+
+	public static Tuple2<Vector3d, Vector3d> getFeatureStartEnd(int start, int end, Point3d[] pts) {
+		int mid = (start + end) / 2;
+		Vector3d s = new Vector3d();
+		Vector3d e = new Vector3d();
+		for (int i = start; i <= mid; i++)
+			s.add(pts[i]);
+		for (int i = mid; i <= end; i++)
+			e.add(pts[i]);
+		s.scale(1 / (double) (mid - start + 1));
+		e.scale(1 / (double) (end - mid + 1));
+		Vector3d eDiff = new Vector3d(e);
+		eDiff.sub(s);
+		Vector3d relE = new Vector3d(pts[end]);
+		relE.sub(s);
+		Vector3d relS = new Vector3d(pts[start]);
+		relS.sub(s);
+		relS = project(relS, eDiff);
+		relE = project(relE, eDiff);
+		relS.add(s);
+		relE.add(s);
+		// System.out.println(pts[start]);
+		// System.out.println(pts[end]);
+		// System.out.println();
+		// System.out.println(s);
+		// System.out.println(e);
+		// System.out.println();
+		// System.out.println(relS);
+		// System.out.println(relE);
+		// System.out.println();
+		// System.out.println();
+		// System.out.println();
+		return new Tuple2<>(relS, relE);
 	}
 
 	/**
@@ -534,10 +604,11 @@ public class SecondaryStructTools {
 	 *            Array of points.
 	 * @param filter
 	 *            Any sequence of points that matches to the feature with less than this many points is filtered out.
+	 * @param smooth
 	 * @return @{link Tuple2} of 2 arrays, 1 is starting indeces, 2 is ending indeces. Some may overlap.
 	 */
-	public static Tuple2<int[], int[]> alphaHelices(double[][] dists, Point3d[] pts, int filter) {
-		return match(SecondaryStructTools.ALPHA_HELIX, dists, pts, filter);
+	public static Tuple2<int[], int[]> alphaHelices(double[][] dists, Point3d[] pts, int filter, boolean smooth) {
+		return match(smooth ? SMOOTH_ALPHA_HELIX : ALPHA_HELIX, dists, pts, filter);
 	}
 
 	/**
@@ -549,10 +620,11 @@ public class SecondaryStructTools {
 	 *            Array of points.
 	 * @param filter
 	 *            Any sequence of points that matches to the feature with less than this many points is filtered out.
+	 * @param smooth
 	 * @return @{link Tuple2} of 2 arrays, 1 is starting indeces, 2 is ending indeces. Some may overlap.
 	 */
-	public static Tuple2<int[], int[]> betaStrands(double[][] dists, Point3d[] pts, int filter) {
-		return match(SecondaryStructTools.BETA_STRAND, dists, pts, filter);
+	public static Tuple2<int[], int[]> betaStrands(double[][] dists, Point3d[] pts, int filter, boolean smooth) {
+		return match(smooth ? SMOOTH_BETA_STRAND : BETA_STRAND, dists, pts, filter);
 	}
 
 	static final int NO_MATCH_PENALTY = 200;
@@ -629,4 +701,75 @@ public class SecondaryStructTools {
 
 	};
 
+	static final Feature SMOOTH_ALPHA_HELIX = new Feature() {
+		private static final double a2l = 0;
+		private static final double a2h = 3.5;
+		private static final double a3l = 0;
+		private static final double a3h = 5.0;
+		private static final double a4l = 0;
+		private static final double a4h = 6.5;
+		private static final double bDiffThreshold = 0.0;
+
+		@Override
+		public boolean match(int i, double d) {
+			if (i < 2)
+				return true;
+
+			if (i == 2)
+				return a2l < d && d < a2h;
+			if (i == 3)
+				return a3l < d && d < a3h;
+			if (i == 4)
+				return a4l < d && d < a4h;
+			return false;
+		}
+
+		@Override
+		public boolean match(double[] d) {
+			double er = 0;
+			if (d[1] > a2h)
+				er += d[1] - a2h;
+			else if (d[1] < a2l)
+				er += a2l - d[1];
+			if (d[2] > a3h)
+				er += d[2] - a3h;
+			else if (d[2] < a3l)
+				er += a3l - d[2];
+			if (d[3] > a4h)
+				er += d[3] - a4h;
+			else if (d[3] < a4l)
+				er += a4l - d[3];
+			return er <= bDiffThreshold;
+		}
+
+	};
+
+	static final Feature SMOOTH_BETA_STRAND = new Feature() {
+		private static final double b2 = 6; // distance of points 2 apart
+		private static final double b3 = 9; // distance of points 3 apart
+		private static final double b4 = 12; // distance of points 4 apart
+		private static final double bDiffThreshold = 0.0;
+
+		@Override
+		public boolean match(int i, double d) {
+			if (i < 2)
+				return true;
+			if (i == 2)
+				return d > b2;
+			if (i == 3)
+				return d > b3;
+			if (i == 4)
+				return d > b4;
+			return false;
+		}
+
+		@Override
+		public boolean match(double[] d) {
+			double diff = 0;
+			diff += Math.max((b2 - d[1]), 0);
+			diff += Math.max((b3 - d[2]), 0);
+			diff += Math.max((b4 - d[3]), 0);
+			return diff <= bDiffThreshold;
+		}
+	};
 }

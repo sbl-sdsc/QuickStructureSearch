@@ -20,15 +20,17 @@ public class SecondaryStruct {
 	static final int NUM = 4;
 
 	private Point3d[] pts;
+	private boolean smooth;
 	private double[][] dists;
-	private Tuple2<int[], int[]> alphaHelices = null;
-	private Tuple2<int[], int[]> betaStrands = null;
-	SecondaryStructProjection[] alphaProjections = null;
-	SecondaryStructProjection[] betaProjections = null;
 	Vector3d normP, normX;
 	Point3d normC;
+	SecondaryStructFeature alphaHelices, betaStrands;
 
-	public SecondaryStruct(Point3d[] pts) {
+	protected SecondaryStruct() {
+	}
+
+	public SecondaryStruct(Point3d[] pts, boolean smooth) {
+		this.smooth = smooth;
 		List<Point3d> p = new ArrayList<>();
 		for (Point3d pt : pts)
 			if (pt != null)
@@ -36,11 +38,13 @@ public class SecondaryStruct {
 		this.pts = new Point3d[p.size()];
 		p.toArray(this.pts);
 		dists = SecondaryStructTools.dists(this.pts);
-		alphaHelices = SecondaryStructTools.alphaHelices(dists, this.pts, ALPHA_FILTER);
-		betaStrands = SecondaryStructTools.betaStrands(dists, this.pts, BETA_FILTER);
-		alphaProjections = new SecondaryStructProjection[getAlphaLength()];
-		betaProjections = new SecondaryStructProjection[getBetaLength()];
 		initNormProjections();
+		// System.out.println("alpha");
+		alphaHelices = new AlphaBetaStruct(SecondaryStructTools.alphaHelices(dists, this.pts, ALPHA_FILTER, smooth),
+				normP, normX, normC, pts);
+		// System.out.println("beta");
+		betaStrands = new AlphaBetaStruct(SecondaryStructTools.betaStrands(dists, this.pts, BETA_FILTER, smooth),
+				normP, normX, normC, pts);
 	}
 
 	/**
@@ -53,11 +57,11 @@ public class SecondaryStruct {
 	}
 
 	public int getAlphaLength() {
-		return alphaHelices._1.length;
+		return alphaHelices.length();
 	}
 
 	public int getBetaLength() {
-		return betaStrands._1.length;
+		return betaStrands.length();
 	}
 
 	/**
@@ -91,11 +95,11 @@ public class SecondaryStruct {
 		return pts;
 	}
 
-	public Tuple2<int[], int[]> getHelices() {
+	public SecondaryStructFeature getAlpha() {
 		return alphaHelices;
 	}
 
-	public Tuple2<int[], int[]> getStrands() {
+	public SecondaryStructFeature getBeta() {
 		return betaStrands;
 	}
 
@@ -109,13 +113,11 @@ public class SecondaryStruct {
 	 *         helix plane
 	 */
 	public SecondaryStructProjection getAlphaProjection(int i) {
-		return alphaProjections[i] == null ? alphaProjections[i] = SecondaryStructTools.project(pts, getHelices(), i)
-				: alphaProjections[i];
+		return alphaHelices.getProjection(i);
 	}
 
 	public SecondaryStructProjection getBetaProjection(int i) {
-		return betaProjections[i] == null ? betaProjections[i] = SecondaryStructTools.project(pts, getStrands(), i)
-				: betaProjections[i];
+		return betaStrands.getProjection(i);
 	}
 
 	private void initNormProjections() {
@@ -138,24 +140,16 @@ public class SecondaryStruct {
 		// System.out.println("hi: " + hi);
 		// System.out.println("lo: " + lo);
 		normC = new Point3d(c);
-		normP = new Vector3d(v[hi]);
-		normX = new Vector3d(v[lo]);
+		normP = new Vector3d(v[lo]);
+		normX = new Vector3d(v[hi]);
 	}
 
 	public SecondaryStructProjection getAlphaNormProjection(byte b) {
-		Vector3d x = new Vector3d(normX);
-		Vector3d p = new Vector3d(normP);
-		x.scale(((b % 2) << 1) - 1);
-		p.scale(((b >> 1) << 1) - 1);
-		return SecondaryStructTools.projectOnto(pts, getHelices(), p, new Point3d(normC), x);
+		return alphaHelices.getNormProjection(b);
 	}
 
 	public SecondaryStructProjection getBetaNormProjection(byte b) {
-		Vector3d x = new Vector3d(normX);
-		Vector3d p = new Vector3d(normP);
-		x.scale(((b % 2) << 1) - 1);
-		p.scale(((b >> 1) << 1) - 1);
-		return SecondaryStructTools.projectOnto(pts, getStrands(), p, new Point3d(normC), x);
+		return betaStrands.getNormProjection(b);
 	}
 
 	public static void printProjection(SecondaryStructProjection p) {
@@ -194,7 +188,7 @@ public class SecondaryStruct {
 	 * shows the alpha helices
 	 */
 	public void printHelices() {
-		Tuple2<int[], int[]> helices = getHelices();
+		Tuple2<int[], int[]> helices = alphaHelices.getFeatures();
 		for (int i = 0; i < helices._1.length; i++) {
 			System.out.printf("%d-%d, %.5f" + System.lineSeparator(), helices._1[i] + 1, helices._2[i] + 1,
 					pts[helices._1[i]].distance(pts[helices._2[i]]));
@@ -205,7 +199,7 @@ public class SecondaryStruct {
 	 * shows the beta strands
 	 */
 	public void printStrands() {
-		Tuple2<int[], int[]> strand = getStrands();
+		Tuple2<int[], int[]> strand = betaStrands.getFeatures();
 		for (int i = 0; i < strand._1.length; i++) {
 			System.out.printf("%d-%d, %.5f" + System.lineSeparator(), strand._1[i] + 1, strand._2[i] + 1,
 					pts[strand._1[i]].distance(pts[strand._2[i]]));
@@ -233,8 +227,8 @@ public class SecondaryStruct {
 	 */
 	public SecondaryStructureSequenceFeature getSequenceFeature() {
 		Tuple2<int[], int[]> a, b;
-		a = SecondaryStructTools.alphaHelices(dists, pts, ALPHA_FILTER);
-		b = SecondaryStructTools.betaStrands(dists, pts, BETA_FILTER);
+		a = SecondaryStructTools.alphaHelices(dists, pts, ALPHA_FILTER, smooth);
+		b = SecondaryStructTools.betaStrands(dists, pts, BETA_FILTER, smooth);
 		return new SecondaryStructureSequenceFeature(dists.length, a, b);
 	}
 }
