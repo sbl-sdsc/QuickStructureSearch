@@ -7,8 +7,6 @@ import javax.vecmath.Matrix4d;
 import javax.vecmath.Point3d;
 
 import org.apache.spark.broadcast.Broadcast;
-import org.biojava.nbio.structure.Atom;
-import org.biojava.nbio.structure.Calc;
 import org.rcsb.structuralAlignment.SuperPositionQCP;
 
 import scala.Tuple2;
@@ -25,7 +23,6 @@ public class SmithWatermanWithGeoComp implements AlignmentAlgorithmInterface {
 	private Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> data = null;
 	private Broadcast<List<Tuple2<String,Point3d[]>>> coords = null;
     // print traceback if it is greater than 0
-    private int traceback = 0;
     /* With different open and extend penalty, this class could function the same as LCS or SmithWaterman
      * LCS: open = extend = 0;
      * SmithWaterman = open = extend = 1;
@@ -34,7 +31,7 @@ public class SmithWatermanWithGeoComp implements AlignmentAlgorithmInterface {
     private double open = 5;
     // extend gap penalty
     private double extend = 0.5;
-    private int rotateTime = 18;
+    private int rotateTime = 4;
 
     public SmithWatermanWithGeoComp() {
 	}
@@ -55,16 +52,6 @@ public class SmithWatermanWithGeoComp implements AlignmentAlgorithmInterface {
 		this.extend = extend;
 	}
     
-    /**
-     * Constructor with traceback option
-     * @param data
-     * @param traceback
-     */
-	public SmithWatermanWithGeoComp(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> data, int traceback) {
-		this.data = data;
-		this.traceback = traceback;
-	}
-	
 	@Override
 	public void setSequence(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> data) {
 		this.data = data;
@@ -87,7 +74,11 @@ public class SmithWatermanWithGeoComp implements AlignmentAlgorithmInterface {
 		
 		// TODO for OneAgainstAll
 		Point3d[] c1 = this.coords.getValue().get(tuple._1)._2;
-		Point3d[] c2 = this.coords.getValue().get(tuple._2)._2;
+		Point3d[] c2p = this.coords.getValue().get(tuple._2)._2;
+		Point3d[] c2 = new Point3d[c2p.length];
+		for (int i = 0; i < c2.length; i++) {
+			c2[i] = new Point3d(c2p[i]);
+		}
 //		Point3d[] c1 = v1.getCoords();
 //		Point3d[] c2 = v2.getCoords();
 		
@@ -185,38 +176,6 @@ public class SmithWatermanWithGeoComp implements AlignmentAlgorithmInterface {
 			return null;
 	}
 	
-	/**
-	 * Print the SmithWatermanGotoh traceback
-	 * @param v1
-	 * @param v2
-	 * @param b
-	 */
-	private void printTraceback(SequenceFeatureInterface<?> v1,SequenceFeatureInterface<?> v2,Integer[] v1Order,Integer[] v2Order) {
-		Integer c1 = v1Order[0];
-		Integer c2 = v2Order[0];
-		String commonV1 = "start from " + c1 + "\t";
-		String commonV2 = "start from " + c2 + "\t";
-		for (int i = 0; i < v1Order.length; i++) {
-			c1 = v1Order[i];
-			c2 = v2Order[i];
-			if (c1 == null) {
-				commonV1 += "--- \t";
-				commonV2 += "xxx \t";
-			} else if (c2 == null) {
-				commonV1 += "xxx \t";
-				commonV2 += "--- \t";
-			} else {
-				commonV1 += v1.toString(c1) + " \t";
-				commonV2 += v2.toString(c2) + " \t";
-			}
-		}
-		commonV1 += " end at " + c1;
-		commonV2 += " end at " + c2;
-		System.out.println(commonV1);
-		System.out.println(commonV2);
-		System.out.println();
-	}
-
 	@Override
 	public void setCoords(Broadcast<List<Tuple2<String, Point3d[]>>> coords) {
 		this.coords = coords;

@@ -51,7 +51,7 @@ public class FingerPrintTesterForGeoComp {
 	private static int NUM_THREADS = 8;
 	private static int NUM_TASKS_PER_THREAD = 3; // Spark recommends 2-3 tasks per thread
 	private static String fingerPrintName = "EndToEndDistanceDouble";
-	private static String alignmentAlgorithm = "SmithWatermanWithGeoComp21";
+	private static String alignmentAlgorithm = "SmithWatermanWithGeoComp37";
 
 	public static void main(String[] args ) throws FileNotFoundException
 	{
@@ -159,9 +159,7 @@ public class FingerPrintTesterForGeoComp {
 	        		.collect();
 	        
 	        final Broadcast<Set<String>> chainIdsBc = sc.broadcast(new HashSet<String>(chainIds));
-	        
-	        long st = System.nanoTime();
-	        
+          
 	     // calculate <chainId, feature vector> pairs
 	        JavaPairRDD<String, SequenceFeatureInterface<?>> features = proteinChains
 					.filter(new ChainIdFilter<Point3d[]>(chainIdsBc)) // calculate feature vectors for chains in the training set only
@@ -189,7 +187,7 @@ public class FingerPrintTesterForGeoComp {
 					.mapToPair(new ChainIdToIndexMapper(availableChainIdsBc)) // map chain ids to indices into feature vector
 //					.mapToPair(new LCSFeatureIndexP3(featureVectorsBc,0))
 //					.mapToPair(new SmithWatermanP3(featureVectorsBc,0))
-					.mapToPair(new SmithWatermanWithGeoComp(featureVectorsBc,0))
+					.mapToPair(new SmithWatermanWithGeoComp(featureVectorsBc))
 //					.mapToPair(new JaccardScoreMapperP3(featureVectorsBc))
 //					.mapToPair(new LevenshteinMapperP3(featureVectorsBc))
 					.join(trainingData) // join with TM metrics from the input file
@@ -216,7 +214,7 @@ public class FingerPrintTesterForGeoComp {
 	
 	private void writeToCsv(PrintWriter writer, String fingerPrint,
 			String alignment, String inputFileName, List<Tuple2<String, Tuple2<Float, String>>> results) {
-		float tmThreshold = 0.5f;
+		float tmThreshold = 0.6f;
 		for (float f = 0.1f; f < 0.8f; f+= 0.05f) {
 			writer.print(fingerPrint);
 			writer.print(",");
