@@ -149,17 +149,18 @@ public class Library
 							
 							
 							 for (int a = 0; a < u; a++) {
+								 u--; // comparisons.size() is 1 less than lib.size() (theoretically)
 //								System.out.println("comparisons: " + comparisons.size());
 //								System.out.println("comparisons[a]: " + comparisons.get(a).size());
-//								System.out.println("(int) ((u-1-a)/2): " + ((int) ((u-1-a)/2)));
-//								System.out.println("comparisons[half]: " + comparisons.get((int) ((u-1-a)/2)).size());
+//								System.out.println("(int) ((u-1-a)/2): " + ((int) ((u-a)/2)));
+//								System.out.println("comparisons[half]: " + comparisons.get((int) ((u-a)/2)).size());
 //								System.out.println("u: " + u);
 //								System.out.println("a: " + a);
 //								System.out.println("i: " + i);
-								if (comparisons.get(a).get(i) != null && comparisons.get((int) ((u-1-a)/2)).get(i) != null){
+								if (comparisons.get(a).get(i) != null && comparisons.get((int) ((u-a)/2)).get(i) != null){
 									System.out.println("difference (q - comparisons): " + (q-comparisons.get(a).get(i)._1));
 									double difference = q - comparisons.get(a).get(i)._1;
-									double halfdiff = q - comparisons.get((int) ((u-1-a)/2)).get(i)._1;
+									double halfdiff = q - comparisons.get((int) ((u-a)/2)).get(i)._1;
 									if (go) {
 										System.out.println("we are go");
 										if (-difference > threshold) {
@@ -183,15 +184,15 @@ public class Library
 										}
 										if (halfdiff > threshold) {
 											System.out.println("1");
-											a = (int) ((u-1-a)/2);
+											a = (int) ((u-a)/2);
 										}
 										else if (-halfdiff > threshold) {
 											System.out.println("2");
-											u = (int) ((u-1-a)/2);
+											u = (int) ((u-a)/2);
 										}
 										else if (halfdiff == threshold) {
 											System.out.println("3 - start");
-											a = (int) ((u-1-a)/2) - 1;
+											a = (int) ((u-a)/2) - 1;
 											while (difference <= threshold) {
 												a -= 1;
 											}
