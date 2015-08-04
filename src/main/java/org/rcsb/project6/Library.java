@@ -15,7 +15,7 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.rcsb.hadoop.io.Demo;
 import org.rcsb.hadoop.io.HadoopToSimpleChainMapper;
-import org.rcsb.hadoop.io.SimplePolymerChain;
+//import org.rcsb.hadoop.io.SimplePolymerChain;
 import org.rcsb.structuralAlignment.SuperPositionQCP;
 import org.rcsb.structuralSimilarity.GapFilter;
 import org.rcsb.structuralSimilarity.LengthFilter;
@@ -40,8 +40,8 @@ public class Library
 	public static void main(String[] args) throws FileNotFoundException, UnsupportedEncodingException
 	{
 		// arguments
-//		String path = "/Users/grantsummers/Desktop/School/Internship/main/QuickStructureSearch/src/main/java/org/rcsb/project1/protein_chains_All_20150629_002251.seq";
-		String path = "/Users/MellissaSummers/QuickStructureSearch/src/main/java/org/rcsb/project6/protein_chains_All_20150629_002251.seq";
+		String path = "/Users/grantsummers/Desktop/School/Internship/main/QuickStructureSearch/src/main/java/org/rcsb/project1/protein_chains_All_20150629_002251.seq";
+//		String path = "/Users/MellissaSummers/QuickStructureSearch/src/main/java/org/rcsb/project6/protein_chains_All_20150629_002251.seq";
 //		String path = "~/QuickStructureSearch/src/main/java/org/rcsb/project6/protein_chains_All_20150629_00251.seq";
 		
 //		String outputfilename = "output.txt";
@@ -67,24 +67,28 @@ public class Library
 				.collect();		
 		
 		// instantiations
+		// lib is the library (a list) of unique fragments
 		ArrayList<Tuple3<String, String, Point3d[]>> lib = new ArrayList<>();
+		// 2d arraylist of tuple2's that contains RMSDs between fragments in lib
+		// the second value in the tuple2 contains the horizontal index so that order can be
+		// found even after they are horizontally sorted (each row individually sorted)
 		ArrayList<ArrayList<Tuple2<Double, Integer>>> comparisons = new ArrayList<>();
 		ArrayList<Tuple2<Double, Integer>> templist = new ArrayList<>();
 		SuperPositionQCP qcp = new SuperPositionQCP(true);
+		// skiplist is a list of fragments in library to skip comparisons of
 		ArrayList<Integer> skiplist = new ArrayList<>();
+		// numnulls is a list of integers, where each integer represents the number
+		// of null values in comparisons in the corresponding column
 		ArrayList<Integer> numnulls = new ArrayList<Integer>();
-		// int numnulls = 0;
 		// int length = 8;
 		int threshold = 1;
-		
 		// integer for comparison's index
-		int ind = 0;
-		
+		int ind;
 		// boolean for when to start adding to skiplist
 		boolean go = false;
-		
 		// boolean for whether or not to add a fragment to the library
 		boolean bool = true;
+		int u;
 		
 
 
@@ -93,11 +97,16 @@ public class Library
 
 		for (Tuple2<String, Point3d[]> t: chains){
 			for (int star = 0; star < t._2.length-length; star++){								// for each fragment
+				
+				// code applied to (each) fragment with length 8 and start position star on chain t.
+				
 				Point3d[] fragment = new Point3d[length];
 				for (int i = 0; i < length; i++) {
 					fragment[i] = new Point3d(t._2[star+i]);
 				}
-				SuperPositionQCP.center(fragment);			
+				SuperPositionQCP.center(fragment);
+				
+				// fragment now has point3d[] = fragment, which is centered about centroid.
 				
 				Tuple3<String, String, Point3d[]> tup = 
 						new Tuple3<String, String, Point3d[]>
@@ -105,116 +114,149 @@ public class Library
 							lengthy(fragment),
 							fragment);
 				
-				int u = lib.size();
-//				System.out.println("lib.size: " + lib.size());
-//				System.out.println("u: " + u);
 				
-				ind = 0;
-				
-				for (int i = 0; i < lib.size(); i++) {											// for each new fragment, loop once through the library
-					if (!lib.isEmpty()) {
-						if (lib.get(i)._2() == tup._2() && !skiplist.contains(i)) {
-							// get (c)RMSD
+				if (lib.size() > 0) {
+					u = lib.size();
+					ind = lib.size() - 1;
+					
+					// loops through lib to check if tup is unique relative to lib's fragments
+					libloop: for (int i = 0; i < lib.size(); i++) {
+						if (lib.get(i)._2().equals(tup._2()) && !skiplist.contains(i)) {
 							qcp.set(lib.get(i)._3(), tup._3());
 							double q = qcp.getRmsd();
-//							System.out.println("q: " + q);
 							
 							Tuple2<Double, Integer> temptup = new Tuple2<Double, Integer>(q, ind);
-							ind++;
-//							System.out.println("ind: " + ind);
-							
+							ind--;
+							System.out.println("temptup - [q, ind]: [" + q + ", " + ind + "]");
+
+
 							
 							if (q < threshold) {
+								System.out.println("skipped due to similarity");
 								bool = false;
-								templist.clear();
-								break;
+								if(!templist.isEmpty()){
+									templist.clear();
+								}
+								break libloop;
 							}
 							templist.add(temptup);
 							
-							u -= numnulls.get(i);
-
-
-
-							for (int a = 0; a < u; a++) {
-								System.out.println("q - comparisons: " + (q-comparisons.get(a).get(i)._1));
-								if (go) {
-									if (comparisons.get(a).get(i)._1 - q > threshold) {
-										go = false;
-										break;
+							if (numnulls.size() >= i && numnulls.get(i) != null) { 
+								u -= numnulls.get(i);
+							}
+							
+							
+							
+							
+							 for (int a = 0; a < u; a++) {
+//								System.out.println("comparisons: " + comparisons.size());
+//								System.out.println("comparisons[a]: " + comparisons.get(a).size());
+//								System.out.println("(int) ((u-1-a)/2): " + ((int) ((u-1-a)/2)));
+//								System.out.println("comparisons[half]: " + comparisons.get((int) ((u-1-a)/2)).size());
+//								System.out.println("u: " + u);
+//								System.out.println("a: " + a);
+//								System.out.println("i: " + i);
+								if (comparisons.get(a).get(i) != null && comparisons.get((int) ((u-1-a)/2)).get(i) != null){
+									System.out.println("difference (q - comparisons): " + (q-comparisons.get(a).get(i)._1));
+									double difference = q - comparisons.get(a).get(i)._1;
+									double halfdiff = q - comparisons.get((int) ((u-1-a)/2)).get(i)._1;
+									if (go) {
+										System.out.println("we are go");
+										if (-difference > threshold) {
+											System.out.println("end go");
+											go = false;
+											break;
+										}
+										else if (!skiplist.contains(a)) {
+											skiplist.add(a);
+											System.out.println("Skiplist: " + a);
+										}
 									}
-									else if (!skiplist.contains(a)) {
-										skiplist.add(a);
-										System.out.println("Skiplist: " + a);
+									else {
+										if (difference <= threshold) {
+											System.out.println("start");
+											a -= 1;
+											while (difference <= threshold) {
+												a -= 1;
+											}
+											go = true;
+										}
+										if (halfdiff > threshold) {
+											System.out.println("1");
+											a = (int) ((u-1-a)/2);
+										}
+										else if (-halfdiff > threshold) {
+											System.out.println("2");
+											u = (int) ((u-1-a)/2);
+										}
+										else if (halfdiff == threshold) {
+											System.out.println("3 - start");
+											a = (int) ((u-1-a)/2) - 1;
+											while (difference <= threshold) {
+												a -= 1;
+											}
+											go = true;
+											
+										}
 									}
 								}
 								else {
-									if (q - comparisons.get(a).get(i)._1 <= threshold) {
-										a -= 1;
-										while (q - comparisons.get(a).get(i)._1 <= threshold) {
-											a -= 1;
-										}
-										go = true;
-									}
-									if (q - comparisons.get((int) ((u-a)/2)).get(i)._1 > threshold) {
-										a = (int) ((u-i)/2); // + 1 should be added automatically by for loop
-									}
-									else if (comparisons.get((int) ((u-a)/2)).get(i)._1 - q < threshold) {
-										u = (int) ((u-a)/2);   															// CHECKCHECKCHECKCHECKCHECK
-									}
+									System.out.println("derp: failed triangle inequality (prolly a sort - insertion - problem)");
 								}
 							}
+							System.out.println("I'm' outta the loop");
 						}
 						else {
 							templist.add(null);
 						}
 					}
-				}
-				skiplist.clear();
+					skiplist.clear();
 
-
-
-
-				if (bool == true) {
-					vert: for (int vert = 0; vert < lib.size(); vert++) {
-						hor: for (int hor = vert; hor < lib.size(); hor++) {
-							if (comparisons != null && comparisons.size() > lib.size()-2) {
-								if (templist.get(vert) != null) {
-									if (templist.get(vert)._1 <= comparisons.get(hor).get(vert)._1) {
-										comparisons.get(hor).add(templist.get(vert));
-										break hor;
+					System.out.println("templist: " + templist.size());
+					if (bool == true) {
+						vert: for (int vert = 0; vert < lib.size(); vert++) {
+							hor: for (int hor = vert; hor < lib.size(); hor++) {
+								if (comparisons != null && !comparisons.isEmpty()) {
+									if (templist.get(vert) != null) {
+										if (templist.get(vert)._1 <= comparisons.get(hor).get(vert)._1 || hor == lib.size() - 1) {
+											comparisons.get(hor).add(templist.get(vert));
+											break hor;
+										}
 									}
-									else if (hor == lib.size()-1) {
-										comparisons.get(hor).add(templist.get(vert));
-										break hor;
+									else {
+										//templist(vert) is null
+										System.out.println("comparisons: " + comparisons.size());
+										System.out.println("lib-1: " + (lib.size()-1));
+										comparisons.get(lib.size()-1).add(vert, null);
+										if (numnulls != null && numnulls.size() > vert) {
+											numnulls.set(vert, numnulls.get(vert) + 1);
+										}
+										else if (numnulls.size() < vert - 1) {
+//											while (numnulls.size() < vert - 2) {
+//												numnulls.add(null);
+//											}
+											numnulls.add(1);
+										}
 									}
 								}
 								else {
-									// templist(vert) is null
-//									System.out.println(comparisons.size());
-//									System.out.println(lib.size()-2);
-									comparisons.get(lib.size()-2).add(vert, null);
-									int numb;
-									if (numnulls != null && numnulls.size() > vert) {
-										numb = numnulls.get(vert);
-										numnulls.set(vert, numb + 1);
-									}
-									else {
-										numnulls.add(1);
-									}
+									//comparisons is completely null
+									comparisons = new ArrayList<ArrayList<Tuple2<Double, Integer>>>();
+									comparisons.add(templist);
+									break vert;
 								}
 							}
-							else {
-								//comparisons is completely null
-								comparisons.add(templist);
-								break vert;
-							}
 						}
+						templist.clear();
+						lib.add(tup);
 					}
-					templist.clear();
-					lib.add(tup);
-					//System.out.println("[" + tup._2() + "] - " + (lib.size()-1) + ": " + Arrays.toString(tup._3()));
+					else {
+						bool = true;
+					}
 				}
-				bool = true;
+				else {
+					lib.add(tup);
+				}
 			}
 		}
 		sc.close();
@@ -236,7 +278,8 @@ public class Library
 			writer.println();
 		}
 		writer.close();
-		System.out.println(lib.size());
+		System.out.println("library size: " + lib.size());
+		
 		//System.out.println("Time: " + (System.nanoTime() - start)/1E9 + " sec.");
 	}
 
