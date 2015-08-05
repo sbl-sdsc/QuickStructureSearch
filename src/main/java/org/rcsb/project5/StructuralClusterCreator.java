@@ -1,7 +1,6 @@
 package org.rcsb.project5;
 
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.vecmath.Point3d;
@@ -43,13 +42,14 @@ public class StructuralClusterCreator {
 				for(Tuple2<String, SimplePolymerChain> chain: cluster) {
 					List<Integer> startEnd = lcs.longestCommonSubstring(tempChain._2.getSequence(), chain._2.getSequence());
 					double cRmsd = getcRmsd(tempChain, chain, startEnd.get(0), startEnd.get(1), startEnd.get(2), startEnd.get(3));
-//					System.out.println("RMSD of " + tempChain._1 + " and " + chain._1 + ": " + cRmsd);
+				//	System.out.println("RMSD of " + tempChain._1 + " and " + chain._1 + ": " + cRmsd);
 					if(cRmsd > maxRmsd)
 						inCluster = false;
 				}
 				if(inCluster == true) {
 					cluster.add(tempChain);
 					unique = false;
+					break;
 				}
 			}
 			if(unique == true) {
