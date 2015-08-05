@@ -1,5 +1,8 @@
 package org.rcsb.project5;
 
+//import java.io.BufferedReader;
+//import java.io.FileReader;
+//import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -27,17 +30,18 @@ import org.biojava.nbio.structure.symmetry.geometry.SuperPositionQCP;
 import org.rcsb.hadoop.io.HadoopToSimpleChainMapper;
 import org.rcsb.hadoop.io.SimplePolymerChain;
 import org.rcsb.hadoop.io.SimplePolymerType;
+import org.rcsb.structuralSimilarity.TmScorer;
 import org.rcsb.utils.BlastClustReader;
 
 import scala.Tuple2;
 import scala.Tuple3;
 
 /**
- * This class clusters protein chains in 100% sequence identity clusters by structural similarity.
+ * This class clusters protein chains in clusters of a chosen sequence identity by structural similarity.
  * 
- * The input to the application consists of ten command line arguments:
+ * The input to the application consists of twelve command line arguments:
  * 
- * <Hadoop sequence file name> <Output file name> <start index of first cluster> <end index for last cluster> <Maximum RMSD for structural clusters> <Interval added onto the maximum RMSD> <Number of intervals added> <Gap penalty> <Hole penalty> <Threshold output File Name>
+ * <Option number> <Hadoop sequence file name> <Output file name> <start index of first cluster> <end index for last cluster> <Maximum RMSD for structural clusters> <Interval added onto the maximum RMSD> <Number of intervals added> <Gap penalty> <Hole penalty> <% sequence identity> <CSV input file name>
  * 
  * To run a small example, use a small range of clusters, i.e. 5000 - 5010.
  * 
@@ -53,6 +57,7 @@ public class SequenceToStructureClusterer {
 	{
 		int option = Integer.parseInt(args[0]); // option 0 = print clusters; option 1 = threshold analysis; 
 		// option 2 = print all clusters; option 3 = all threshold analysis
+		// option 4 = PIC; option 5 = altered sequence identity preparation
 		String hadoopSequenceFileName = args[1];
 		String outputFileName = args[2];
 		int startCluster = Integer.parseInt(args[3]);
@@ -62,6 +67,8 @@ public class SequenceToStructureClusterer {
 		int numInterval = Integer.parseInt(args[7]);
 		double gapPenalty = Double.parseDouble(args[8]);
 		double holePenalty = Double.parseDouble(args[9]);
+		int sequenceIdentity = Integer.parseInt(args[10]);
+		//		String csvFileName = args[11];
 
 		SequenceToStructureClusterer clusterer = new SequenceToStructureClusterer();
 		if(option == 0) 
@@ -72,18 +79,22 @@ public class SequenceToStructureClusterer {
 			clusterer.printAllClusters(hadoopSequenceFileName, outputFileName, maxRmsd, gapPenalty, holePenalty);
 		else if(option == 3)
 			clusterer.allThreshold(hadoopSequenceFileName, outputFileName, maxRmsd, interval, numInterval);
-		else
+		else if(option == 4)
 			clusterer.runPIC(hadoopSequenceFileName, startCluster, endCluster, outputFileName, 2, gapPenalty, holePenalty);
+		else
+			clusterer.alteredSeqIdentity(hadoopSequenceFileName, outputFileName, startCluster, endCluster, maxRmsd, gapPenalty, holePenalty, sequenceIdentity);
 	}
 
 	/**
-	 * Performs structural clustering for the sequence clusters within a specified cluster index range.
+	 * Performs structural clustering for the 100% sequence clusters within a specified cluster index range.
 	 * 
-	 * @param hadoopSequenceFileName
-	 * @param outputFileName
+	 * @param hadoopSequenceFileName the location of the hadoop sequence file
+	 * @param outputFileName the desired location of the csv file that will be created
 	 * @param startCluster index of first cluster
 	 * @param endCluster index of last cluster
-	 * @param maxRmsd
+	 * @param maxRmsd the maximum RMSD value between any two chains of the same structural cluster (default: 1.0)
+	 * @param gapPenalty the penalty given to each gap when calculating for the representative chain (default: 1.0)
+	 * @param holePenalty the penalty given to each hole when calculating for the representative chain (default: 0.1)
 	 */
 	private void printClusters(String hadoopSequenceFileName, int startCluster, int endCluster, String outputFileName, double maxRmsd, double gapPenalty, double holePenalty) throws FileNotFoundException{
 		// initialize Spark		
@@ -91,8 +102,9 @@ public class SequenceToStructureClusterer {
 
 		long start = System.nanoTime();
 
+		JavaPairRDD<Integer, String> clusterPairs;
 		//read <sequence cluster id, PdbId.chainId> pairs
-		JavaPairRDD<Integer,String> clusterPairs = getSequenceClusters(sc)
+		clusterPairs = getSequenceClusters(sc)
 				.filter(c -> (c._1 >= startCluster && c._1 <= endCluster)).cache();
 		//		System.out.println("Cluster pairs: " + clusterPairs.count());
 
@@ -131,14 +143,35 @@ public class SequenceToStructureClusterer {
 
 			if (list.get(0)._2[1] != null) {
 				strClusterList.add(new Cluster(list.get(0)._2[0].intValue(), list.get(0)._2[1].intValue(), SPCList, null, gapPenalty, holePenalty));
-			} else {
-				strClusterList.add(new Cluster(list.get(0)._2[0].intValue(), 0, SPCList, null, gapPenalty, holePenalty));
-			}
+			} 
+			//			else {
+			//				strClusterList.add(new Cluster(list.get(0)._2[0].intValue(), 0, SPCList, null, gapPenalty, holePenalty));
+			//			}
 		}
 
 		for(Cluster c: strClusterList) {
 			c.findRepChain();
 		}
+
+		quickSort(strClusterList, 0, strClusterList.size() - 1);
+
+//		int prevSeqId = 0;
+//		int seqClusterId;
+//		int startIndex = 0;
+//		for(int n = 0; n < strClusterList.size(); n ++) {
+//			seqClusterId = strClusterList.get(n).getSeqClusterId();
+//			if(seqClusterId != prevSeqId) {
+//				if(n - 1 - startIndex > 1) {
+//					quickSortByStrId(strClusterList, startIndex, n-1);
+//				}
+//				startIndex = n;
+//				prevSeqId = strClusterList.get(n).getSeqClusterId();
+//			}
+//			else if(n == strClusterList.size()-1) {
+//				if(n - startIndex > 1)
+//					quickSortByStrId(strClusterList, startIndex, n);
+//			}
+//		}
 
 		/*		for(Cluster c: strClusterList) {
 			System.out.println(c);
@@ -154,6 +187,18 @@ public class SequenceToStructureClusterer {
 		System.out.println("Time: " + (System.nanoTime() - start)/1E9 + " sec.");
 	}
 
+	/**
+	 * Analyzes the effect that the maximum RMSD threshold has on the number of structural clusters created for a given range of 100% sequence clusters
+	 * Note: the range of the thresholds which will be analyzed will range from maxRmsd to maxRmsd + (interval)*(numInterval), inclusive
+	 * @param hadoopSequenceFileName the location of the hadoop sequence file
+	 * @param startCluster the index of the first sequence cluster which will be analyzed
+	 * @param endCluster the index of the last sequence cluster which will be analyzed
+	 * @param outputFileName the desired location of the csv file that will be created
+	 * @param maxRmsd the lowest maximum RMSD threshold value which will be analyzed
+	 * @param interval the length of each interval
+	 * @param numInterval the number of intervals
+	 * @throws FileNotFoundException
+	 */
 	private void threshold(String hadoopSequenceFileName, int startCluster, int endCluster, String outputFileName, double maxRmsd, double interval, int numInterval) throws FileNotFoundException{
 		// initialize Spark		
 		JavaSparkContext sc = getSparkContext();
@@ -245,20 +290,30 @@ public class SequenceToStructureClusterer {
 		System.out.println("Time: " + (System.nanoTime() - start)/1E9 + " sec.");
 	}
 
+	/**
+	 * Performs structural clustering for all 100% sequence clusters
+	 * @param hadoopSequenceFileName the location of the hadoop sequence file
+	 * @param outputFileName the desired location of the csv file that will be created
+	 * @param maxRmsd the maximum RMSD value between any two chains of the same structural cluster (default: 1.0)
+	 * @param gapPenalty the penalty given to each gap when calculating for the representative chain (default: 1.0)
+	 * @param holePenalty the penalty given to each hole when calculating for the representative chain (default: 0.1)
+	 * @throws FileNotFoundException
+	 */
 	private void printAllClusters(String hadoopSequenceFileName, String outputFileName, double maxRmsd, double gapPenalty, double holePenalty) throws FileNotFoundException{
 		// initialize Spark		
 		JavaSparkContext sc = getSparkContext();
 
 		long start = System.nanoTime();
-		int numSeqClusters = getNumSeqClusters();
+		//	int numSeqClusters = getNumSeqClusters();
 		PrintWriter writer = new PrintWriter(outputFileName);
 		writer.println("SequenceClusterNumber, StructureClusterNumber, StructuralClusterSize, RepresentativeChain, OtherChains");
 
-		int count = 0;
+		//	int ends[] = {-1, 0, 100, 1000, 5000, 10000, 20000, 30000, 45000, numSeqClusters};
+		int ends[] = {999, 1500, 2000, 2500, 3000, 3500, 4000, 4500, 5000};
 
-		for(int n = 0; n < numSeqClusters; n++) {
-			int startCluster = n;
-			int endCluster = n + count;
+		for(int count = 0; count < ends.length - 1; count ++) {
+			int startCluster = ends[count] + 1;
+			int endCluster = ends[count + 1];
 			//read <sequence cluster id, PdbId.chainId> pairs
 			JavaPairRDD<Integer,String> clusterPairs = getSequenceClusters(sc)
 					.filter(c -> ((c._1 >= startCluster) && (c._1 <= endCluster)))
@@ -298,9 +353,10 @@ public class SequenceToStructureClusterer {
 
 				if (list.get(0)._2[1] != null) {
 					strClusterList.add(new Cluster(list.get(0)._2[0].intValue(), list.get(0)._2[1].intValue(), SPCList, null, gapPenalty, holePenalty));
-				} else {
-					strClusterList.add(new Cluster(list.get(0)._2[0].intValue(), 0, SPCList, null, gapPenalty, holePenalty));
-				}
+				} 
+				//				else {
+				//					strClusterList.add(new Cluster(list.get(0)._2[0].intValue(), 0, SPCList, null, gapPenalty, holePenalty));
+				//				}
 			}
 
 			for(Cluster c: strClusterList) {
@@ -314,8 +370,6 @@ public class SequenceToStructureClusterer {
 			for(Cluster c: strClusterList) {
 				writeToCsv(writer, c);
 			}
-			n += count;
-			count ++;
 		}
 		writer.close();
 		sc.close();
@@ -323,6 +377,16 @@ public class SequenceToStructureClusterer {
 		System.out.println("Time: " + (System.nanoTime() - start)/1E9 + " sec.");
 	}
 
+	/**
+	 * Analyzes the effect that the maximum RMSD threshold has on the number of structural clusters created all 100% sequence clusters
+	 * Note: the range of the thresholds which will be analyzed will range from maxRmsd to maxRmsd + (interval)*(numInterval), inclusive
+	 * @param hadoopSequenceFileName the location of the hadoop sequence file
+	 * @param outputFileName the desired location of the csv file that will be created
+	 * @param maxRmsd the lowest maximum RMSD threshold value which will be analyzed
+	 * @param interval the length of each interval
+	 * @param numInterval the number of intervals
+	 * @throws FileNotFoundException
+	 */
 	private void allThreshold(String hadoopSequenceFileName, String outputFileName, double maxRmsd, double interval, int numInterval) throws FileNotFoundException{
 		// initialize Spark		
 		JavaSparkContext sc = getSparkContext();
@@ -440,7 +504,7 @@ public class SequenceToStructureClusterer {
 
 		System.out.println("Time: " + (System.nanoTime() - start)/1E9 + " sec.");
 	}
-	
+
 	private void runPIC(String hadoopSequenceFileName, int startCluster, int endCluster, String outputFileName, int groupNumber, double gapPenalty, double holePenalty) throws FileNotFoundException{
 		// initialize Spark		
 		JavaSparkContext sc = getSparkContext();
@@ -460,7 +524,7 @@ public class SequenceToStructureClusterer {
 		JavaPairRDD<String, SimplePolymerChain> chains = getPolymerChains(hadoopSequenceFileName, sc)
 				//		.filter(new GapFilterSPC(0, 0)) // keep protein chains with gap size <= 0 and 0 gaps
 				.filter(t -> (chainIds.contains(t._1)));
-//		System.out.println("chain count: " + chains.count());
+		//		System.out.println("chain count: " + chains.count());
 
 		// broadcast <PdbId.chainId, SimplePolymerChain> pairs
 		final Broadcast<Map<String, SimplePolymerChain>> chainMap = sc.broadcast(collectAsMap(chains));
@@ -477,7 +541,7 @@ public class SequenceToStructureClusterer {
 		List<Tuple2<Integer, List<Tuple2<String, SimplePolymerChain>>>> sequenceClusterList = clusters.map(t -> new StructureClusterer(chainMap).getSequenceCluster(t)).collect();
 		for(Tuple2<Integer, List<Tuple2<String, SimplePolymerChain>>> sequenceCluster: sequenceClusterList) {
 			int group = groupNumber;
-			
+
 			List<Tuple2<String, Integer[]>> nullCluster = new ArrayList<Tuple2<String, Integer[]>>();
 			for(int i = sequenceCluster._2.size() - 1; i >= 0; i--) {
 				if(sequenceCluster._2.get(i)._2 == null) {
@@ -504,7 +568,7 @@ public class SequenceToStructureClusterer {
 				for(int i = 0; i < group; i++) {
 					newStructuralClusters.add(new ArrayList<Tuple2<String, Integer[]>>());
 				}
-				
+
 				for (PowerIterationClustering.Assignment a: model.assignments().toJavaRDD().collect()) {
 					newStructuralClusters.get(a.cluster()).add(new Tuple2<String, Integer[]>(sequenceCluster._2.get((int) a.id())._1, new Integer[]{sequenceCluster._1, a.cluster() + 1}));
 					//System.out.println(a.id() + " -> " + a.cluster());
@@ -518,7 +582,7 @@ public class SequenceToStructureClusterer {
 
 		// loop through sequence clusters
 		//		List<List<Tuple2<String, Integer[]>>> structuralClusterList = clusters.map(t -> new StructureClusterer(chainMap, maxRmsd).getStructuralClusters(t)).collect();
-//		structuralClusterList = splitStrCluster(structuralClusterList);
+		//		structuralClusterList = splitStrCluster(structuralClusterList);
 		List<Cluster> strClusterList = new ArrayList<Cluster>();
 		Map<String, SimplePolymerChain> map = chainMap.getValue();
 		for(List<Tuple2<String, Integer[]>> list: structuralClusterList) {
@@ -550,6 +614,277 @@ public class SequenceToStructureClusterer {
 		writer.close();
 		sc.close();
 
+		System.out.println("Time: " + (System.nanoTime() - start)/1E9 + " sec.");
+	}
+
+	/**
+	 * Prints sequence clusters of a given sequence identity of a certain range, further broken 
+	 * down into structural clusters, into a csv file
+	 * 
+	 * @param hadoopSequenceFileName the location of the hadoop sequence file
+	 * @param outputFileName the desired location of the csv file that will be created
+	 * @param startCluster the index of the first sequence cluster to be printed
+	 * @param endCluster the index of the last sequence cluster to be printed
+	 * @param maxRmsd the maximum RMSD value between chains belonging to the same structural cluster (default: 1.0)
+	 * @param gapPenalty the penalty given to each gap when calculating for the representative chain (default: 1.0)
+	 * @param holePenalty the penalty given to each hole when calculating for the representative chain (default: 0.1)
+	 * @param sequenceIdentity the percent sequence similarity between members of the same sequence cluster
+	 * @throws FileNotFoundException 
+	 */
+	private void alteredSeqIdentity(String hadoopSequenceFileName, String outputFileName, int startCluster, int endCluster, double maxRmsd, double gapPenalty, double holePenalty, int sequenceIdentity) throws FileNotFoundException {
+		// initialize Spark		
+		JavaSparkContext sc = getSparkContext();
+
+		long start = System.nanoTime();
+		List<Integer> seq100Clusters = SequenceClusterIdComparison.getSeq100Clusters(sequenceIdentity, sc, startCluster, endCluster);
+		for(int n = 0; n < seq100Clusters.size(); n ++) {
+			System.out.println(seq100Clusters.get(n));
+		}
+		//read <sequence cluster id, PdbId.chainId> pairs
+		JavaPairRDD<Integer, String> clusterPairs = getSequenceClusters(sc, 100)
+				.filter(c -> seq100Clusters.contains(c._1))
+				.cache();
+		//		System.out.println("Cluster pairs: " + clusterPairs.count());
+
+
+		// create a list of chain ids needed for calculation
+		List<String> chainIds = clusterPairs.values().collect();
+		//		System.out.println("Chains: " + chainIds.size());
+
+		// read <PdbId.chainId, SimplePolymerChain> pairs;
+		JavaPairRDD<String, SimplePolymerChain> chains = getPolymerChains(hadoopSequenceFileName, sc)
+				//		.filter(new GapFilterSPC(0, 0)) // keep protein chains with gap size <= 0 and 0 gaps
+				.filter(t -> (chainIds.contains(t._1)));
+		//		System.out.println("chain count: " + chains.count());
+		//		System.exit(-1);
+
+		// broadcast <PdbId.chainId, SimplePolymerChain> pairs
+		final Broadcast<Map<String, SimplePolymerChain>> chainMap = sc.broadcast(collectAsMap(chains));
+		chains.unpersist();
+
+		// group by cluster id
+		JavaPairRDD<Integer, Iterable<String>> clusters = clusterPairs.groupByKey();
+		//		System.out.println("Clusters: " + clusters.count());
+
+		// loop through sequence clusters
+		List<List<Tuple2<String, Integer[]>>> structuralClusterList = clusters.map(t -> new StructureClusterer(chainMap, maxRmsd).getStructuralClusters(t)).collect();
+		structuralClusterList = splitStrCluster(structuralClusterList);
+		List<Cluster> strClusterList = new ArrayList<Cluster>();
+		Map<String, SimplePolymerChain> map = chainMap.getValue();
+		for(List<Tuple2<String, Integer[]>> list: structuralClusterList) {
+			List<Tuple2<String, SimplePolymerChain>> SPCList = new ArrayList<Tuple2<String, SimplePolymerChain>>();
+			for(Tuple2<String, Integer[]> tuple: list) {
+				SPCList.add(new Tuple2<String, SimplePolymerChain>(tuple._1, map.get(tuple._1)));
+			}
+
+			if (list.get(0)._2[1] != null) {
+				strClusterList.add(new Cluster(list.get(0)._2[0].intValue(), list.get(0)._2[1].intValue(), SPCList, null, gapPenalty, holePenalty));
+			} 
+			//			else {
+			//				strClusterList.add(new Cluster(list.get(0)._2[0].intValue(), 0, SPCList, null, gapPenalty, holePenalty));
+			//			}
+		}
+
+		for(Cluster c: strClusterList) {
+			c.findRepChain();
+		}
+
+		quickSort(strClusterList, 0, strClusterList.size() - 1);
+
+		List<List<Cluster>> clusterList = new ArrayList<List<Cluster>>();
+
+		int prevSeqId = -1;
+		int seqClusterId;
+		int count = -1;
+
+		for(int a = 0; a < strClusterList.size(); a ++) {
+			seqClusterId = strClusterList.get(a).getSeqClusterId();
+			if(seqClusterId != prevSeqId) {
+				clusterList.add(new ArrayList<Cluster>());
+				count ++;
+				clusterList.get(count).add(strClusterList.get(a));
+				prevSeqId = seqClusterId;
+			}
+			else {
+				clusterList.get(count).add(strClusterList.get(a));
+			}
+		}
+
+		for(int x = 0; x < clusterList.size(); x ++) {
+			quickSort(clusterList.get(x), 0, clusterList.get(x).size() - 1);
+		}
+
+		//		BufferedReader reader = null;
+		//		List<Integer> seq100Clusters = SequenceClusterIdComparison.getSeq100Clusters(sequenceIdentity, sc, startCluster, endCluster);
+		//
+		//		//read <sequence cluster id, PdbId.chainId> pairs
+		//		JavaPairRDD<Integer,String> clusterPairs = getSequenceClusters(sc, 100)
+		//				.filter(c -> seq100Clusters.contains(c._1))
+		//				.cache();
+		//		//		System.out.println("Cluster pairs: " + clusterPairs.count());
+		//
+		//		// create a list of chain ids needed for calculation
+		//		List<String> chainIds = clusterPairs.values().collect();
+		//		//		System.out.println("Chains: " + chainIds.size());
+		//
+		//		// read <PdbId.chainId, SimplePolymerChain> pairs;
+		//		JavaPairRDD<String, SimplePolymerChain> chains = getPolymerChains(hadoopSequenceFileName, sc)
+		//				//		.filter(new GapFilterSPC(0, 0)) // keep protein chains with gap size <= 0 and 0 gaps
+		//				.filter(t -> (chainIds.contains(t._1)));
+		//		//		System.out.println("chain count: " + chains.count());
+		//		//		System.exit(-1);
+		//
+		//		// broadcast <PdbId.chainId, SimplePolymerChain> pairs
+		//		final Broadcast<Map<String, SimplePolymerChain>> chainMap = sc.broadcast(collectAsMap(chains));
+		//		chains.unpersist();
+		//
+		//		Map<String, SimplePolymerChain> map = chainMap.getValue();
+		//
+		//		List<List<Cluster>> clusterList = new ArrayList<List<Cluster>> (); 
+		//
+		//		int prevSeqClusterId = -1;
+		//		int seqClusterId;
+		//		int strClusterId;
+		//		int clusterSize;
+		//		int count = -1;
+		//
+		//		try {
+		//			reader = new BufferedReader(new FileReader(csvFileName));
+		//			String line = "";
+		//
+		//			while((line = reader.readLine()) != null) {
+		//				String[] tokens = line.split(",");
+		//				seqClusterId = Integer.parseInt(tokens[0]);
+		//				if(seqClusterId != prevSeqClusterId) {
+		//					count ++;
+		//					clusterList.add(new ArrayList<Cluster> ());
+		//					strClusterId = Integer.parseInt(tokens[1]);
+		//					clusterSize = Integer.parseInt(tokens[2]);
+		//					List<Tuple2<String, SimplePolymerChain>> strCluster = new ArrayList<Tuple2<String, SimplePolymerChain>> ();
+		//					for(int n = 0; n < clusterSize; n ++) {
+		//						String chainId = tokens[n + 3];
+		//						strCluster.add(new Tuple2<String, SimplePolymerChain> (chainId, map.get(chainId)));
+		//					}
+		//					clusterList.get(count).add(new Cluster(seqClusterId, strClusterId, strCluster, null, gapPenalty, holePenalty));
+		//					prevSeqClusterId = seqClusterId;
+		//				}
+		//				else {
+		//					strClusterId = Integer.parseInt(tokens[1]);
+		//					clusterSize = Integer.parseInt(tokens[2]);
+		//					List<Tuple2<String, SimplePolymerChain>> strCluster = new ArrayList<Tuple2<String, SimplePolymerChain>> ();
+		//					for(int n = 0; n < clusterSize; n ++) {
+		//						String chainId = tokens[n + 3];
+		//						strCluster.add(new Tuple2<String, SimplePolymerChain> (chainId, map.get(chainId)));
+		//					}
+		//					clusterList.get(count).add(new Cluster(seqClusterId, strClusterId, strCluster, null, gapPenalty, holePenalty));
+		//				}
+		//			}
+		//		}
+		//		catch (Exception e) {
+		//			e.printStackTrace();
+		//		}
+		//		finally {
+		//			try {
+		//				reader.close();
+		//			}
+		//			catch (IOException e) {
+		//				e.printStackTrace();
+		//			}
+		//		}
+		//		for(int a = 0; a < clusterList.size(); a ++) {
+		//			for(int b = 0; b < clusterList.get(a).size(); b ++) {
+		//				System.out.print(clusterList.get(a).get(b).getSeqClusterId() + "   " + clusterList.get(a).get(b).getStrClusterId() + "   ");
+		//				for(int c = 0; c < clusterList.get(a).get(b).getStrCluster().size(); c ++) {
+		//					System.out.print(clusterList.get(a).get(b).getStrCluster().get(c)._1 + "   ");
+		//				}
+		//				System.out.println();
+		//			}
+		//		} 
+
+		List<Tuple2<Integer, List<Integer>>> alteredSeqId = SequenceClusterIdComparison.getSeqIdClustering(sequenceIdentity, sc, startCluster, endCluster);
+		List<Tuple2<Integer, List<Cluster>>> altSeqIdClusters = new ArrayList<Tuple2<Integer, List<Cluster>>>();
+		for(int a = 0; a < alteredSeqId.size(); a ++) {
+			altSeqIdClusters.add(new Tuple2<Integer, List<Cluster>> (alteredSeqId.get(a)._1, new ArrayList<Cluster>()));
+			for(int b = 0; b < alteredSeqId.get(a)._2.size(); b++) {
+				for(int c = 0; c < clusterList.size(); c++) {
+					//					System.out.println(clusterList.get(c).get(0).getSeqClusterId() + ", " + alteredSeqId.get(a)._2.get(b));
+					if(clusterList.get(c).get(0).getSeqClusterId() == alteredSeqId.get(a)._2.get(b).intValue()) {
+						//						System.out.println(clusterList.get(c).get(0).getSeqClusterId() + ",,,,,, " + alteredSeqId.get(a)._2.get(b));
+						altSeqIdClusters.get(a)._2.addAll(clusterList.get(c));
+						break;
+					}
+				}
+			}
+		}
+
+		for(int p = 0; p < altSeqIdClusters.size(); p ++) {
+			for(int q = 0; q < altSeqIdClusters.get(p)._2.size(); q ++) {
+				altSeqIdClusters.get(p)._2.get(q).findRepChain();
+				altSeqIdClusters.get(p)._2.get(q).findStrRepChain();
+			}
+		}
+
+		for(int x = 0; x < altSeqIdClusters.size(); x ++) {
+			for(int y = 0; y < altSeqIdClusters.get(x)._2.size() - 1; y ++) {
+				List<Tuple3<String, SimplePolymerChain, Double>> strRepChain1 = altSeqIdClusters.get(x)._2.get(y).getStrRepChain();
+				for(int z = y +1; z < altSeqIdClusters.get(x)._2.size(); z ++) {
+					List<Tuple3<String, SimplePolymerChain, Double>> strRepChain2 = altSeqIdClusters.get(x)._2.get(z).getStrRepChain();
+					boolean canMerge = true;
+					for(int alpha = 0; alpha < strRepChain1.size(); alpha ++) {
+						for(int beta = 0; beta < strRepChain2.size(); beta ++) {
+							double rmsd = TmScorer.getFatCatTmScore(strRepChain1.get(alpha)._2().getCoordinates(), strRepChain2.get(beta)._2().getCoordinates())[1];
+							if(strRepChain1.get(alpha)._3() + strRepChain2.get(beta)._3() + rmsd > maxRmsd) {
+								//	System.out.println(strRepChain1.get(alpha)._3() + "  " + strRepChain2.get(beta)._3() + "  " + rmsd);
+								canMerge = false;
+							}
+							else {
+								//	System.out.println(strRepChain1.get(alpha)._3() + "  " + strRepChain2.get(beta)._3() + "  " + rmsd);
+							}
+						}
+					}
+					if(canMerge == true) {
+						Cluster mergedCluster = altSeqIdClusters.get(x)._2.get(y).merge(altSeqIdClusters.get(x)._2.get(z), 0, 0);
+						altSeqIdClusters.get(x)._2.set(y, mergedCluster);
+						altSeqIdClusters.get(x)._2.remove(z);
+					}
+				}
+			}
+		}
+
+		for(int j = 0; j < altSeqIdClusters.size(); j ++) {
+			int tempSeqClusterId = altSeqIdClusters.get(j)._1;
+			for(int k = 0; k < altSeqIdClusters.get(j)._2.size(); k ++) {
+				altSeqIdClusters.get(j)._2.get(k).setSeqClusterId(tempSeqClusterId);
+				altSeqIdClusters.get(j)._2.get(k).setStrClusterId(k + 1);
+			}
+		}
+
+		quickSortAlt(altSeqIdClusters, 0, altSeqIdClusters.size() - 1);
+
+		PrintWriter writer = new PrintWriter(outputFileName);
+		writer.println("SequenceCluster,StructuralCluster,StructuralClusterSize,RepresentativeChain,OtherChains");
+		for(int m = 0; m < altSeqIdClusters.size(); m ++) {
+			for(int n = 0; n < altSeqIdClusters.get(m)._2.size(); n ++) {
+				writer.print(altSeqIdClusters.get(m)._2.get(n).getSeqClusterId());
+				writer.print(",");
+				writer.print(altSeqIdClusters.get(m)._2.get(n).getStrClusterId());
+				writer.print(",");
+				int currentClusterSize = altSeqIdClusters.get(m)._2.get(n).size();
+				writer.print(currentClusterSize);
+				writer.print(",");
+				String repChainName = altSeqIdClusters.get(m)._2.get(n).getRepChain()._1;
+				writer.print(repChainName);
+				List<Tuple2<String, SimplePolymerChain>> tempCluster = altSeqIdClusters.get(m)._2.get(n).getStrCluster(); 
+				for(int x = 0; x < currentClusterSize; x ++) {
+					Tuple2<String, SimplePolymerChain> tempChain = tempCluster.get(x);
+					if(!tempChain._1.equals(repChainName)) {
+						writer.print("," + tempCluster.get(x)._1);
+					}
+				}
+				writer.println();
+			}
+		}
+		writer.close();
 		System.out.println("Time: " + (System.nanoTime() - start)/1E9 + " sec.");
 	}
 
@@ -591,13 +926,50 @@ public class SequenceToStructureClusterer {
 		return clusterPairs;
 	}
 
+	/**
+	 * Gets pairs of sequence cluster identifier, chain id.
+	 * 
+	 * @param sc
+	 * @return pairs of sequence cluster identifier, chain id
+	 */
+	private static JavaPairRDD<Integer, String> getSequenceClusters(JavaSparkContext sc, int seqId) {
+		int sequenceIdentity = seqId;
+		BlastClustReader reader = new BlastClustReader(sequenceIdentity);
+
+		Map<String, Integer> clusterMap = reader.getPdbChainIdClusterMap();
+		List<Tuple2<Integer, String>> list = new ArrayList<>(clusterMap.size());
+		for (Entry<String, Integer> entity: clusterMap.entrySet()) {
+			list.add(new Tuple2<Integer,String>(entity.getValue(), entity.getKey()));
+		}
+		JavaPairRDD<Integer, String> clusterPairs = sc.parallelizePairs(list, NUM_THREADS*NUM_TASKS_PER_THREAD).cache();
+
+		return clusterPairs;
+	}
+
+	/**
+	 * returns the total number of 100% sequence clusters in the PDB
+	 * @return the number of sequence clusters
+	 */
 	private static int getNumSeqClusters() {
 		int sequenceIdentity = 100;
 		BlastClustReader reader = new BlastClustReader(sequenceIdentity);
 
-		Map<String, Integer> clusterMap = reader.getPdbChainIdClusterMap();
-		return clusterMap.size();
+		List<List<String>> clusters = reader.getPdbChainIdClusters();
+		return clusters.size();
 	}
+
+	//	/**
+	//	 * returns the total number of sequence clusters with seqId identity in the PDB
+	//	 * @param seqId the sequence identity 
+	//	 * @return the number of sequence clusters
+	//	 */
+	//	private static int getNumSeqClusters(int seqId) {
+	//		int sequenceIdentity = seqId;
+	//		BlastClustReader reader = new BlastClustReader(sequenceIdentity);
+	//
+	//		List<List<String>> clusters = reader.getPdbChainIdClusters();
+	//		return clusters.size();
+	//	}
 
 	/**
 	 * Collects a JavaPairRDD<K, V> to a Map<K,V>
@@ -658,7 +1030,7 @@ public class SequenceToStructureClusterer {
 		}
 		return strList;
 	}
-	
+
 	public List<Tuple3<Long, Long, Double>> getAffinityMatrix(List<Tuple2<String, SimplePolymerChain>> seqCluster) {
 		LongestCommonSubstring lcs = new LongestCommonSubstring();
 
@@ -736,4 +1108,83 @@ public class SequenceToStructureClusterer {
 		writer.println();
 		writer.flush();
 	}
+
+	/**
+	 * Uses quickSort algorithm to sort a list of clusters based on their sequence cluster Ids
+	 * @param strClusters the list of clusters to be sorted
+	 * @param first the index of the first cluster in the list of clusters to be sorted
+	 * @param last the index of the last cluster in the list of clusters to be sorted
+	 */
+	public void quickSort(List<Cluster> strClusters, int first, int last) {
+		int g = first, h = last;
+		int midIndex = (first + last) / 2;
+		int dividingValue = strClusters.get(midIndex).getSeqClusterId();
+		int dividingValue2 = strClusters.get(midIndex).getStrClusterId();
+		do {
+			while((strClusters.get(g).getSeqClusterId() < dividingValue) || (strClusters.get(g).getSeqClusterId() == dividingValue && strClusters.get(g).getStrClusterId() < dividingValue2)) g++;
+			while((strClusters.get(h).getSeqClusterId() > dividingValue) || (strClusters.get(h).getSeqClusterId() == dividingValue && strClusters.get(h).getStrClusterId() > dividingValue2)) h--;
+			if(g <= h) {
+				Cluster temp = strClusters.get(g);
+				strClusters.set(g, strClusters.get(h));
+				strClusters.set(h, temp);
+				g++;
+				h--;
+			}
+		}
+		while (g < h);
+		if (h > first) quickSort (strClusters, first, h);
+		if (g < last) quickSort (strClusters, g, last);
+	}
+
+	/**
+	 * Uses quickSort algorithm to sort a List<Tuple2<Integer, List<Cluster>>> based on their sequence cluster Ids
+	 * @param altSeqIdClusters the List<Tuple2<Integer, List<Cluster>>> to be sorted
+	 * @param first the index of the first Tuple2 to be sorted
+	 * @param last the index of the last Tuple2 to be sorted
+	 */
+	public void quickSortAlt(List<Tuple2<Integer, List<Cluster>>> altSeqIdClusters, int first, int last) {
+		int g = first, h = last;
+		int midIndex = (first + last) / 2;
+		int dividingValue = altSeqIdClusters.get(midIndex)._1;
+		do {
+			while(altSeqIdClusters.get(g)._1 < dividingValue) g++;
+			while(altSeqIdClusters.get(h)._1 > dividingValue) h--;
+			if(g <= h) {
+				Tuple2<Integer,List<Cluster>> temp = altSeqIdClusters.get(g);
+				altSeqIdClusters.set(g, altSeqIdClusters.get(h));
+				altSeqIdClusters.set(h, temp);
+				g++;
+				h--;
+			}
+		}
+		while (g < h);
+		if (h > first) quickSortAlt (altSeqIdClusters, first, h);
+		if (g < last) quickSortAlt (altSeqIdClusters, g, last);
+	}
+
+//	/**
+//	 * Uses quickSort algorithm to sort a list of clusters based on their structural cluster Ids
+//	 * @param strClusters the list of clusters to be sorted
+//	 * @param first the index of the first cluster in the list of clusters to be sorted
+//	 * @param last the index of the last cluster in the list of clusters to be sorted
+//	 */
+//	public void quickSortByStrId(List<Cluster> strClusters, int first, int last) {
+//		int g = first, h = last;
+//		int midIndex = (first + last) / 2;
+//		int dividingValue = strClusters.get(midIndex).getStrClusterId();
+//		do {
+//			while(strClusters.get(g).getStrClusterId() < dividingValue) g++;
+//			while(strClusters.get(h).getStrClusterId() > dividingValue) h--;
+//			if(g <= h) {
+//				Cluster temp = strClusters.get(g);
+//				strClusters.set(g, strClusters.get(h));
+//				strClusters.set(h, temp);
+//				g++;
+//				h--;
+//			}
+//		}
+//		while (g < h);
+//		if (h > first) quickSort (strClusters, first, h);
+//		if (g < last) quickSort (strClusters, g, last);
+//	}
 }
