@@ -20,19 +20,19 @@ public class SequenceClusterIdComparison {
 	private static int NUM_TASKS_PER_THREAD = 3; // Spark recommends 2-3 tasks per thread
 
 	public static void main(String[] args) {
-		
+
 		int seqIdBig = 100;
 		int seqIdSmall = 90;
 
 		// initialize Spark		
 		JavaSparkContext sc = getSparkContext();
-		
+
 		/*long startTest = System.nanoTime();
 		List<Tuple2<Integer, List<Integer>>> list = getSeqIdClustering(90, sc);
 		System.out.println(list);
 		System.out.println("Time: " + (System.nanoTime() - startTest)/1E9 + " sec.");
 		System.exit(-1);*/
-		
+
 		long start = System.nanoTime();
 
 		//read <sequence cluster id, PdbId.chainId> pairs
@@ -52,56 +52,89 @@ public class SequenceClusterIdComparison {
 		int big = getNumSeqClusters(seqIdBig);
 		int small = getNumSeqClusters(seqIdSmall);
 		int score = big - small;
-		
+
 		System.out.println(big);
 		System.out.println(small);
 		System.out.println("The difference in cluster numbers is " + score);
-//		System.exit(-1);
-		
+		//		System.exit(-1);
+
 		List<Tuple2<Integer, Iterable<String>>> clustersList = clusters.map(t -> t).collect();
-		
+
 		List<Integer> dif = clusters2.map(t -> getGroupDifference(t._2, clustersList)).collect();
-		
+
 		int sum = 0;
-		
+
 		for(Integer i: dif) {
 			System.out.println(i);
 			sum += i;
 		}
-		
+
 		System.out.println(big);
 		System.out.println(small);
 		System.out.println("The difference in cluster numbers is " + score);
 		System.out.println("The value is " + sum);
 		System.out.println("The difference between score and sum is " + (score - sum));
-		
+
 		System.out.println("Time: " + (System.nanoTime() - start)/1E9 + " sec.");
+
+	}
+
+	public static List<Tuple2<Integer, List<Integer>>> getSeqIdClustering(int seqId, JavaSparkContext sc, int startCluster, int endCluster) {
+		//read <sequence cluster id, PdbId.chainId> pairs
+		JavaPairRDD<Integer,String> clusterPairs = getSequenceClusters(sc, 100)
+				.cache();
+
+		//read <sequence cluster id, PdbId.chainId> pairs
+		JavaPairRDD<Integer,String> clusterPairs2 = getSequenceClusters(sc, seqId)
+				.filter(c -> (c._1 >= startCluster && c._1 <= endCluster))
+				.cache();
+
+		// group by cluster id
+		JavaPairRDD<Integer, Iterable<String>> clusters = clusterPairs.groupByKey();
+
+		// group by cluster id
+		JavaPairRDD<Integer, Iterable<String>> clusters2 = clusterPairs2.groupByKey();
+
+
+		List<Tuple2<Integer, Iterable<String>>> clustersList = clusters.map(t -> t).collect();
+
+		List<Tuple2<Integer, List<Integer>>> dif = clusters2.map(t -> new Tuple2<Integer, List<Integer>>(t._1, getGroupDifferenceArray(t._2, clustersList))).collect();
+
+		return dif;
+	}
+
+	public static List<Integer> getSeq100Clusters(int seqId, JavaSparkContext sc, int startCluster, int endCluster) {
+		//read <sequence cluster id, PdbId.chainId> pairs
+		JavaPairRDD<Integer,String> clusterPairs = getSequenceClusters(sc, 100)
+				.cache();
+
+		//read <sequence cluster id, PdbId.chainId> pairs
+		JavaPairRDD<Integer,String> clusterPairs2 = getSequenceClusters(sc, seqId)
+				.filter(c -> (c._1 >= startCluster && c._1 <= endCluster))
+				.cache();
+
+		// group by cluster id
+		JavaPairRDD<Integer, Iterable<String>> clusters = clusterPairs.groupByKey();
+
+		// group by cluster id
+		JavaPairRDD<Integer, Iterable<String>> clusters2 = clusterPairs2.groupByKey();
+
 		
+		List<Tuple2<Integer, Iterable<String>>> clustersList = clusters.map(t -> t).collect();
+		
+		List<Tuple2<Integer, List<Integer>>> dif = clusters2.map(t -> new Tuple2<Integer, List<Integer>>(t._1, getGroupDifferenceArray(t._2, clustersList))).collect();
+		
+		List<Integer> seq100Clusters = new ArrayList<Integer>();
+		
+		for(int a = 0; a < dif.size(); a ++) {
+			for(int b = 0; b < dif.get(a)._2.size(); b ++) {
+				seq100Clusters.add(dif.get(a)._2.get(b));
+			}
+		}
+		
+		return seq100Clusters;
 	}
-	
-	public static List<Tuple2<Integer, List<Integer>>> getSeqIdClustering(int seqId, JavaSparkContext sc) {
-				//read <sequence cluster id, PdbId.chainId> pairs
-				JavaPairRDD<Integer,String> clusterPairs = getSequenceClusters(sc, 100)
-						.cache();
 
-				//read <sequence cluster id, PdbId.chainId> pairs
-				JavaPairRDD<Integer,String> clusterPairs2 = getSequenceClusters(sc, seqId)
-						.cache();
-
-				// group by cluster id
-				JavaPairRDD<Integer, Iterable<String>> clusters = clusterPairs.groupByKey();
-
-				// group by cluster id
-				JavaPairRDD<Integer, Iterable<String>> clusters2 = clusterPairs2.groupByKey();
-
-				
-				List<Tuple2<Integer, Iterable<String>>> clustersList = clusters.map(t -> t).collect();
-				
-				List<Tuple2<Integer, List<Integer>>> dif = clusters2.map(t -> new Tuple2<Integer, List<Integer>>(t._1, getGroupDifferenceArray(t._2, clustersList))).collect();
-				
-				return dif;
-	}
-	
 	private static int getGroupDifference(Iterable<String> list, List<Tuple2<Integer, Iterable<String>>> clusters) {
 		List<Tuple2<Integer, Iterable<String>>> clusterList = clusters;
 		List<Integer> clusterIdList = new ArrayList<Integer>();
@@ -115,7 +148,7 @@ public class SequenceClusterIdComparison {
 		}
 		return clusterIdList.size() - 1;
 	}
-	
+
 	private static List<Integer> getGroupDifferenceArray(Iterable<String> list, List<Tuple2<Integer, Iterable<String>>> clusters) {
 		List<Tuple2<Integer, Iterable<String>>> clusterList = clusters;
 		List<Integer> clusterIdList = new ArrayList<Integer>();
@@ -129,7 +162,7 @@ public class SequenceClusterIdComparison {
 		}
 		return clusterIdList;
 	}
-	
+
 	private static boolean contains(Tuple2<Integer, Iterable<String>> tuple, String s) {
 		Iterator<String> iter = tuple._2().iterator();
 		while(iter.hasNext()) {
