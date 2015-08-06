@@ -155,23 +155,23 @@ public class SequenceToStructureClusterer {
 
 		quickSort(strClusterList, 0, strClusterList.size() - 1);
 
-//		int prevSeqId = 0;
-//		int seqClusterId;
-//		int startIndex = 0;
-//		for(int n = 0; n < strClusterList.size(); n ++) {
-//			seqClusterId = strClusterList.get(n).getSeqClusterId();
-//			if(seqClusterId != prevSeqId) {
-//				if(n - 1 - startIndex > 1) {
-//					quickSortByStrId(strClusterList, startIndex, n-1);
-//				}
-//				startIndex = n;
-//				prevSeqId = strClusterList.get(n).getSeqClusterId();
-//			}
-//			else if(n == strClusterList.size()-1) {
-//				if(n - startIndex > 1)
-//					quickSortByStrId(strClusterList, startIndex, n);
-//			}
-//		}
+		//		int prevSeqId = 0;
+		//		int seqClusterId;
+		//		int startIndex = 0;
+		//		for(int n = 0; n < strClusterList.size(); n ++) {
+		//			seqClusterId = strClusterList.get(n).getSeqClusterId();
+		//			if(seqClusterId != prevSeqId) {
+		//				if(n - 1 - startIndex > 1) {
+		//					quickSortByStrId(strClusterList, startIndex, n-1);
+		//				}
+		//				startIndex = n;
+		//				prevSeqId = strClusterList.get(n).getSeqClusterId();
+		//			}
+		//			else if(n == strClusterList.size()-1) {
+		//				if(n - startIndex > 1)
+		//					quickSortByStrId(strClusterList, startIndex, n);
+		//			}
+		//		}
 
 		/*		for(Cluster c: strClusterList) {
 			System.out.println(c);
@@ -826,19 +826,26 @@ public class SequenceToStructureClusterer {
 
 		for(int x = 0; x < altSeqIdClusters.size(); x ++) {
 			for(int y = 0; y < altSeqIdClusters.get(x)._2.size() - 1; y ++) {
-				List<Tuple3<String, SimplePolymerChain, Double>> strRepChain1 = altSeqIdClusters.get(x)._2.get(y).getStrRepChain();
+				Cluster strCluster1 = altSeqIdClusters.get(x)._2.get(y);
+				List<Tuple3<String, SimplePolymerChain, Double>> strRepChain1 = strCluster1.getStrRepChain();
 				for(int z = y +1; z < altSeqIdClusters.get(x)._2.size(); z ++) {
-					List<Tuple3<String, SimplePolymerChain, Double>> strRepChain2 = altSeqIdClusters.get(x)._2.get(z).getStrRepChain();
+					Cluster strCluster2 = altSeqIdClusters.get(x)._2.get(z);
+					List<Tuple3<String, SimplePolymerChain, Double>> strRepChain2 = strCluster2.getStrRepChain();
 					boolean canMerge = true;
-					for(int alpha = 0; alpha < strRepChain1.size(); alpha ++) {
-						for(int beta = 0; beta < strRepChain2.size(); beta ++) {
-							double rmsd = TmScorer.getFatCatTmScore(strRepChain1.get(alpha)._2().getCoordinates(), strRepChain2.get(beta)._2().getCoordinates())[1];
-							if(strRepChain1.get(alpha)._3() + strRepChain2.get(beta)._3() + rmsd > maxRmsd) {
-								//	System.out.println(strRepChain1.get(alpha)._3() + "  " + strRepChain2.get(beta)._3() + "  " + rmsd);
-								canMerge = false;
-							}
-							else {
-								//	System.out.println(strRepChain1.get(alpha)._3() + "  " + strRepChain2.get(beta)._3() + "  " + rmsd);
+					if(strCluster1.getSeqClusterId() == strCluster2.getSeqClusterId()) {
+						canMerge = false;
+					}
+					else {
+						for(int alpha = 0; alpha < strRepChain1.size(); alpha ++) {
+							for(int beta = 0; beta < strRepChain2.size(); beta ++) {
+								double rmsd = TmScorer.getFatCatTmScore(strRepChain1.get(alpha)._2().getCoordinates(), strRepChain2.get(beta)._2().getCoordinates())[1];
+								if(strRepChain1.get(alpha)._3() + strRepChain2.get(beta)._3() + rmsd > maxRmsd) {
+									//	System.out.println(strRepChain1.get(alpha)._3() + "  " + strRepChain2.get(beta)._3() + "  " + rmsd);
+									canMerge = false;
+								}
+								else {
+									//	System.out.println(strRepChain1.get(alpha)._3() + "  " + strRepChain2.get(beta)._3() + "  " + rmsd);
+								}
 							}
 						}
 					}
@@ -846,6 +853,7 @@ public class SequenceToStructureClusterer {
 						Cluster mergedCluster = altSeqIdClusters.get(x)._2.get(y).merge(altSeqIdClusters.get(x)._2.get(z), 0, 0);
 						altSeqIdClusters.get(x)._2.set(y, mergedCluster);
 						altSeqIdClusters.get(x)._2.remove(z);
+						z--;
 					}
 				}
 			}
@@ -1162,29 +1170,29 @@ public class SequenceToStructureClusterer {
 		if (g < last) quickSortAlt (altSeqIdClusters, g, last);
 	}
 
-//	/**
-//	 * Uses quickSort algorithm to sort a list of clusters based on their structural cluster Ids
-//	 * @param strClusters the list of clusters to be sorted
-//	 * @param first the index of the first cluster in the list of clusters to be sorted
-//	 * @param last the index of the last cluster in the list of clusters to be sorted
-//	 */
-//	public void quickSortByStrId(List<Cluster> strClusters, int first, int last) {
-//		int g = first, h = last;
-//		int midIndex = (first + last) / 2;
-//		int dividingValue = strClusters.get(midIndex).getStrClusterId();
-//		do {
-//			while(strClusters.get(g).getStrClusterId() < dividingValue) g++;
-//			while(strClusters.get(h).getStrClusterId() > dividingValue) h--;
-//			if(g <= h) {
-//				Cluster temp = strClusters.get(g);
-//				strClusters.set(g, strClusters.get(h));
-//				strClusters.set(h, temp);
-//				g++;
-//				h--;
-//			}
-//		}
-//		while (g < h);
-//		if (h > first) quickSort (strClusters, first, h);
-//		if (g < last) quickSort (strClusters, g, last);
-//	}
+	//	/**
+	//	 * Uses quickSort algorithm to sort a list of clusters based on their structural cluster Ids
+	//	 * @param strClusters the list of clusters to be sorted
+	//	 * @param first the index of the first cluster in the list of clusters to be sorted
+	//	 * @param last the index of the last cluster in the list of clusters to be sorted
+	//	 */
+	//	public void quickSortByStrId(List<Cluster> strClusters, int first, int last) {
+	//		int g = first, h = last;
+	//		int midIndex = (first + last) / 2;
+	//		int dividingValue = strClusters.get(midIndex).getStrClusterId();
+	//		do {
+	//			while(strClusters.get(g).getStrClusterId() < dividingValue) g++;
+	//			while(strClusters.get(h).getStrClusterId() > dividingValue) h--;
+	//			if(g <= h) {
+	//				Cluster temp = strClusters.get(g);
+	//				strClusters.set(g, strClusters.get(h));
+	//				strClusters.set(h, temp);
+	//				g++;
+	//				h--;
+	//			}
+	//		}
+	//		while (g < h);
+	//		if (h > first) quickSort (strClusters, first, h);
+	//		if (g < last) quickSort (strClusters, g, last);
+	//	}
 }
