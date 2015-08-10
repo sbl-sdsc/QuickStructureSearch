@@ -19,7 +19,7 @@
 package org.rcsb.project3;
 
 /**
- * Traceback directions.
+ * Traceback directions used in SmithWatermanGotoh.
  * 
  * @author Ahmed Moustafa (ahmed@users.sf.net)
  */

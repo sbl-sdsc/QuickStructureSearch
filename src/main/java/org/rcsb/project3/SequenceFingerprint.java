@@ -8,6 +8,15 @@ import javax.vecmath.Point3d;
  * @author Chris Li
  */
 public interface SequenceFingerprint {
+	/**
+	 * transfer the Point3d coordinates into a SequenceFeature fingerprint
+	 * @param coordinates
+	 * @return
+	 */
 	public SequenceFeatureInterface<?> getFingerprint(Point3d[] coordinates);
+	/**
+	 * get the name of the fingerprint
+	 * @return
+	 */
 	public String getName();
 }

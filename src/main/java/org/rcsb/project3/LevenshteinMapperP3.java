@@ -9,10 +9,9 @@ import org.apache.spark.broadcast.Broadcast;
 import scala.Tuple2;
 
 /**
- * This class maps a pair of chains, specified by two indices into the broadcasted data list, to
- * a Jaccard Index. It calculates the Jaccard index for multi-sets.
+ * This class compares and scores a pair of chains' fingerprint with the Levenshtein algorithm.
  * 
- * @author  Peter Rose
+ * @author  Peter Rose, Chris Li
  */
 public class LevenshteinMapperP3 implements AlignmentAlgorithmInterface {
 	private static final long serialVersionUID = 1L;

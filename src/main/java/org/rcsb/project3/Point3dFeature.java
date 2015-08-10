@@ -4,6 +4,12 @@ import java.io.Serializable;
 
 import javax.vecmath.Point3d;
 
+/**
+ * This class implements the SequenceFeatureInterface.
+ * It is used for comparing protein's coordinates directly.
+ *  
+ * @author Chris Li
+ */
 public class Point3dFeature implements SequenceFeatureInterface<Point3d>, Serializable {
 
 	private static final long serialVersionUID = 1L;
@@ -21,6 +27,7 @@ public class Point3dFeature implements SequenceFeatureInterface<Point3d>, Serial
 	@Override
 	public double similarity(SequenceFeatureInterface<Point3d> sequence2,
 			int i, int j) {
+		// check for gap
 		if (this.get(i) == null || sequence2.get(j) == null)
 			return gap;
 		else {

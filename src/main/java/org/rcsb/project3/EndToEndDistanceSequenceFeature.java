@@ -23,8 +23,8 @@ public class EndToEndDistanceSequenceFeature implements SequenceFeatureInterface
 	private double gap = -1;
 	    
     /**
-     * Constructor that will store an int array of DCT1D feature
-     * @param DCT1DSequence
+     * Constructor that will store an int array as EndToEndDistance feature
+     * @param EndToEndSequence
      */
 	public EndToEndDistanceSequenceFeature(int[] EndToEndSequence) {
 		this.EndToEndSequence = EndToEndSequence;
@@ -36,7 +36,7 @@ public class EndToEndDistanceSequenceFeature implements SequenceFeatureInterface
 	}
 	
 	/**
-	 * Constructor that will store an int array of DCT1D feature and update the settings
+	 * Constructor that will store an int array as EndToEndDistance feature and update the settings
 	 * @param DCT1DSequence
 	 * @param gap
 	 * @param match

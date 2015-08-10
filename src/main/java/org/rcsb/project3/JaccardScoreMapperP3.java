@@ -12,7 +12,7 @@ import scala.Tuple2;
  * This class maps a pair of chains, specified by two indices into the broadcasted data list, to
  * a Jaccard Index. It calculates the Jaccard index for multi-sets.
  * 
- * @author  Peter Rose
+ * @author  Peter Rose, Chris Li
  */
 public class JaccardScoreMapperP3 implements AlignmentAlgorithmInterface {
 	private static final long serialVersionUID = 1L;
