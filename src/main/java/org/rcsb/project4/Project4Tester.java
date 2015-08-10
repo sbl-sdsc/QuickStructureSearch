@@ -10,7 +10,6 @@ import java.util.Set;
 import javax.vecmath.Point3d;
 import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.Text;
-import org.apache.spark.Accumulator;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
@@ -75,16 +74,7 @@ public class Project4Tester {
         long startTime2 = System.nanoTime();
 
 		final Broadcast<List<Tuple2<String,Point3d[]>>> chainsBc = sc.broadcast(chains);
-		// Timers for parallel threads
-		final Accumulator<Long> timer1 = sc.accumulator(new Long(0),new TimeAccumulator());
-		final Accumulator<Long> timer2 = sc.accumulator(new Long(0),new TimeAccumulator());
-		final Accumulator<Long> timer3 = sc.accumulator(new Long(0),new TimeAccumulator());
-		final Accumulator<Long> timer4 = sc.accumulator(new Long(0),new TimeAccumulator());
-		List<Accumulator<Long>> timers = new ArrayList<Accumulator<Long>>();
-		timers.add(timer1);
-		timers.add(timer2);
-		timers.add(timer3);
-		timers.add(timer4);
+
 		int nChains = chains.size();
 		Random r = new Random(seed);
 		PrintWriter writer = new PrintWriter(outputFileName);
@@ -101,7 +91,7 @@ public class Project4Tester {
 			List<Tuple2<String, Float[]>> list = sc
 					.parallelizePairs(pairs, NUM_THREADS*NUM_TASKS_PER_THREAD) // distribute data
 					//.filter(new ChainPairLengthFilter(chainsBc, 0.5, 1.0)) // restrict the difference in chain length
-					.mapToPair(new ChainPairToTmMapperP4(chainsBc,timers)) // maps pairs of chain id indices to chain id, TM score pairs
+					.mapToPair(new ChainPairToTmMapperP4(chainsBc)) // maps pairs of chain id indices to chain id, TM score pairs
 					.collect();	// copy result to master node
 
 			// write results to .csv file
@@ -115,10 +105,6 @@ public class Project4Tester {
 		System.out.println("First step time		: " + (endTime1 - startTime1)/1E9 + " s");
 		System.out.println("Second step time	: " + (endTime2 - startTime2)/1E9 + " s");
 		System.out.println("Third step time		: " + (endTime3 - startTime3)/1E9 + " s");
-		System.out.println("doChainAfp time		: " + timers.get(0).value()/1E9 + " s");
-		System.out.println("calAfpDis time		: " + timers.get(1).value()/1E9 + " s");
-		//System.out.println("calAfpDis time		: " + timers.get(2).value()/1E9 + " s");
-		//System.out.println("max d2 value		: " + timers.get(3).value() + " s");
 
 		
 		sc.stop();

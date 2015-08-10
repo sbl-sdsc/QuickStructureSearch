@@ -1,9 +1,7 @@
 package org.rcsb.project4;
 
 import java.io.Serializable;
-import java.util.List;
 import javax.vecmath.Point3d;
-import org.apache.spark.Accumulator;
 import org.biojava.nbio.structure.AminoAcidImpl;
 import org.biojava.nbio.structure.Atom;
 import org.biojava.nbio.structure.AtomImpl;
@@ -28,10 +26,9 @@ public class TmScorerP4 implements Serializable {
 	 * Get the TM Score for the input protein chains
 	 * @param points1
 	 * @param points2
-	 * @param timers
 	 * @return
 	 */
-	public static Float[] getFatCatTmScore(Point3d[] points1, Point3d[] points2, List<Accumulator<Long>> timers) {
+	public static Float[] getFatCatTmScore(Point3d[] points1, Point3d[] points2) {
 		Float[] scores = new Float[6];
 		// Cast Point3d to Atom
 		Atom[] ca1 = getCAAtoms(points1);
@@ -40,7 +37,7 @@ public class TmScorerP4 implements Serializable {
 		AFPChain afp = null;
 		try {
 			FatCatRigidP4 fatCat  = new FatCatRigidP4();
-			afp = fatCat.align(ca1,ca2,timers);
+			afp = fatCat.align(ca1,ca2);
 			double tmScore = AFPChainScorer.getTMScore(afp, ca1, ca2);
 			afp.setTMScore(tmScore);
 		} catch (StructureException e) {

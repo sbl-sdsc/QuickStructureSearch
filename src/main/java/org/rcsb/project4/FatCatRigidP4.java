@@ -2,8 +2,9 @@ package org.rcsb.project4;
 
 import java.util.ArrayList;
 import java.util.List;
+
 import javax.vecmath.Point3d;
-import org.apache.spark.Accumulator;
+
 import org.biojava.nbio.structure.Atom;
 import org.biojava.nbio.structure.AtomImpl;
 import org.biojava.nbio.structure.Calc;
@@ -11,6 +12,7 @@ import org.biojava.nbio.structure.SVDSuperimposer;
 import org.biojava.nbio.structure.StructureException;
 import org.biojava.nbio.structure.StructureTools;
 import org.biojava.nbio.structure.align.AFPTwister;
+import org.biojava.nbio.structure.align.fatcat.calc.AFPOptimizer;
 import org.biojava.nbio.structure.align.fatcat.calc.AFPPostProcessor;
 import org.biojava.nbio.structure.align.fatcat.calc.FatCatParameters;
 import org.biojava.nbio.structure.align.fatcat.calc.SigEva;
@@ -29,13 +31,9 @@ import org.rcsb.structuralAlignment.SuperPositionQCP;
 public class FatCatRigidP4{
 	// Parameters of FatCatRigid
 	FatCatParameters params;
-	// Timers for parallel time counting
-	List<Accumulator<Long>> timers;
 
 	public FatCatRigidP4(){
 		params = new FatCatParameters();
-		//params.setRmsdCut(2.5);
-		//params.setDisCut(4.5);
 		params.setDisFilter(4);
 		params.setMaxTra(0);		
 	}
@@ -44,13 +42,10 @@ public class FatCatRigidP4{
 	 * Align two protein chains
 	 * @param ca1
 	 * @param ca2
-	 * @param timers
 	 * @return
 	 * @throws StructureException
 	 */
-	public AFPChain align(Atom[] ca1, Atom[] ca2, List<Accumulator<Long>> timers) throws StructureException {			
-		// Load timers
-		this.timers = timers;
+	public AFPChain align(Atom[] ca1, Atom[] ca2) throws StructureException {			
 		AFPChain afpChain = new AFPChain();
 		afpChain.setCa1Length(ca1.length);
 		afpChain.setCa2Length(ca2.length);
@@ -79,11 +74,7 @@ public class FatCatRigidP4{
 		if (afpNum < 1)
 			return;
 		//run AFP chaining
-		// Timer for doChainAfp
-		//long startTime = System.nanoTime();
-		AFPChainerP4.doChainAfp(params,afpChain,ca1,ca2,timers);
-		//AFPChainer.doChainAfp(params,afpChain,ca1,ca2);
-		//timers.get(0).add(System.nanoTime() - startTime);
+		AFPChainerP4.doChainAfp(params,afpChain,ca1,ca2);
 		
 		int afpChainLen = afpChain.getAfpChainLen();
 		if (afpChainLen < 1)     {
@@ -94,9 +85,9 @@ public class FatCatRigidP4{
 		// do post processing
 		AFPPostProcessor.postProcess(params, afpChain,ca1,ca2);		
 		// Optimize the final alignment 
-		AFPOptimizerP4.optimizeAln(params, afpChain,ca1,ca2);
-		AFPOptimizerP4.blockInfo( afpChain);
-		AFPOptimizerP4.updateScore(params,afpChain);
+		AFPOptimizer.optimizeAln(params, afpChain,ca1,ca2);
+		AFPOptimizer.blockInfo( afpChain);
+		AFPOptimizer.updateScore(params,afpChain);
 		AFPAlignmentDisplay.getAlign(afpChain,ca1,ca2);
 		AFPTwister.twistPDB(afpChain, ca1, ca2clone);
 
@@ -155,15 +146,9 @@ public class FatCatRigidP4{
 					continue;
 				} //be cautious to use this filter !!
 
-				// Timers for getRmsd
-				//long startTime = System.nanoTime();
 				// here FATCAT does a a jacobi transformation
-				//rmsd = kearsay(fragLen, ca1[p1], ca2[p2], r, t);
-				// Use the BioJava SVD instead:
-				//rmsd = getRmsd(ca1,ca2,fragLen, p1,p2,r,t);
-				// Use QCP instead:
+				// Use QCP to get rmsd
 				rmsd = getRmsdP3d(ca1,ca2,fragLen, p1,p2);
-				//timers.get(1).add(System.nanoTime() - startTime);
 
 				if(rmsd < rmsdCut)      {
 					AFP afptmp = new AFP();
