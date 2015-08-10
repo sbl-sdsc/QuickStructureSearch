@@ -50,8 +50,8 @@ import scala.Tuple2;
 public class FingerPrintTesterForGeoComp { 
 	private static int NUM_THREADS = 8;
 	private static int NUM_TASKS_PER_THREAD = 3; // Spark recommends 2-3 tasks per thread
-	private static String fingerPrintName = "EndToEndDistanceDouble";
-	private static String alignmentAlgorithm = "SmithWatermanWithGeoComp37";
+	private static String fingerPrintName = "EndToEnd";
+	private static String alignmentAlgorithm = "SmithWatermanGotoh";
 
 	public static void main(String[] args ) throws FileNotFoundException
 	{
@@ -96,7 +96,7 @@ public class FingerPrintTesterForGeoComp {
 				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
 
 		JavaSparkContext sc = new JavaSparkContext(conf);
-						
+							
 		PrintWriter writer = new PrintWriter(outputPath + "result_" + fingerPrintName + "_" + alignmentAlgorithm + ".csv");
 		writer.print("FingerPrint");
 		writer.print(",");
@@ -123,6 +123,17 @@ public class FingerPrintTesterForGeoComp {
 		writer.print("F1");
 		writer.println();
 		writer.flush();
+		
+		PrintWriter writer2 = new PrintWriter(outputPath + "TM_compare_" + fingerPrintName + "_" + alignmentAlgorithm + ".csv");
+		writer2.print("Protein1 Id");
+		writer2.print(",");
+		writer2.print("Protein2 Id");
+		writer2.print(",");
+		writer2.print("TM");
+		writer2.print(",");
+		writer2.print("FP");
+		writer2.println();
+		writer2.flush();
 		
 		JavaPairRDD<String, Point3d[]> proteinChains = sc
 				.sequenceFile(sequenceFile, Text.class, ArrayWritable.class, NUM_THREADS*NUM_TASKS_PER_THREAD)  // read protein chains
@@ -187,9 +198,10 @@ public class FingerPrintTesterForGeoComp {
 					.mapToPair(new ChainIdToIndexMapper(availableChainIdsBc)) // map chain ids to indices into feature vector
 //					.mapToPair(new LCSFeatureIndexP3(featureVectorsBc,0))
 //					.mapToPair(new SmithWatermanP3(featureVectorsBc,0))
-					.mapToPair(new SmithWatermanWithGeoComp(featureVectorsBc))
+//					.mapToPair(new SmithWatermanWithGeoComp(featureVectorsBc))
 //					.mapToPair(new JaccardScoreMapperP3(featureVectorsBc))
 //					.mapToPair(new LevenshteinMapperP3(featureVectorsBc))
+					.mapToPair(new SmithWatermanGotohP3(featureVectorsBc))
 					.join(trainingData) // join with TM metrics from the input file
 					.sortByKey()
 					.collect();
@@ -198,12 +210,14 @@ public class FingerPrintTesterForGeoComp {
 		    totalPairs += results.size();
 		    resultSet.addAll(results);
 			writeToCsv(writer, fingerPrintName, alignmentAlgorithm, inputFileName, results);
+			writeToCsv2(writer2, results);
 		}
 		writeToCsv(writer, fingerPrintName, alignmentAlgorithm, "All", resultSet);
 		writer.println("Total Pairs: " + totalPairs);
 		writer.println("Total Running Time: " + (System.nanoTime()-t1)/1E9 + " s");
 		writer.flush();
 		writer.close();
+		writer2.close();
 
 		sc.stop();
 		sc.close();
@@ -214,7 +228,7 @@ public class FingerPrintTesterForGeoComp {
 	
 	private void writeToCsv(PrintWriter writer, String fingerPrint,
 			String alignment, String inputFileName, List<Tuple2<String, Tuple2<Float, String>>> results) {
-		float tmThreshold = 0.6f;
+		float tmThreshold = 0.5f;
 		for (float f = 0.1f; f < 0.8f; f+= 0.05f) {
 			writer.print(fingerPrint);
 			writer.print(",");
@@ -245,6 +259,21 @@ public class FingerPrintTesterForGeoComp {
 		}
 		writer.println();
 		writer.flush();
+	}
+	
+	private static void writeToCsv2(PrintWriter writer, List<Tuple2<String, Tuple2<Float, String>>> results) {
+		for (Tuple2<String, Tuple2<Float, String>> t : results) {
+			float tmScore = Float.parseFloat(t._2._2.split(",")[0]);
+			if (tmScore < 0)
+				continue;
+			writer.print(t._1);
+			writer.print(",");
+			writer.printf("%8.2f",tmScore);
+			writer.print(",");
+			writer.printf("%8.2f",t._2._1);
+			writer.println();
+			writer.flush();
+		}
 	}
 	
 	private static float[] getStatistics(List<Tuple2<String, Tuple2<Float, String>>> joinedResults, float threshold, float tmThreshold) {

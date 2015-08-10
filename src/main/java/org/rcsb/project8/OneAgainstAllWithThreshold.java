@@ -41,12 +41,11 @@ public class OneAgainstAllWithThreshold {
 	private static int NUM_THREADS = 8;
 	private static int NUM_TASKS_PER_THREAD = 3; // Spark recommends 2-3 tasks per thread
 	private static int BATCH_SIZE = 50;
-	private static double fingerPrintFilter = 0.75;
+	private static double fingerPrintFilter = 0.75; 
 	// Other fingerPrint: AngleSequenceFingerprint() || DCT1DSequenceFingerprint()
 	private static SequenceFingerprint fingerPrint = new EndToEndDistanceDoubleSequenceFingerprint();
 	// Other alignment: LCSFeatureIndexP3() || SmithWatermanP3() || JaccardScoreMapperP3() || LevenshteinMapperP3()
 	private static AlignmentAlgorithmInterface alignmentAlgorithm = new SmithWatermanWithGeoComp();
-	//private static final double[] filters = {0.35,0.5,0.7,0.75};
 	
 	public static void main(String[] args ) throws FileNotFoundException
 	{
@@ -68,6 +67,7 @@ public class OneAgainstAllWithThreshold {
 			outputPath = args[3];
 		}
 		
+		// match tm with fp
 		if (tmFilter > 0.85)
 			fingerPrintFilter = 0.75;
 		else if (tmFilter > 0.8)
@@ -117,10 +117,12 @@ public class OneAgainstAllWithThreshold {
 			return;
 		}
 		
+		long st1 = System.nanoTime();
+		
 		// 1st step:
 		//		calculate <chainId, feature vector> pairs for fingerPrint sequence
         JavaPairRDD<String, SequenceFeatureInterface<?>> features = proteinChains
-		        .mapToPair(new ChainSmootherMapper(new SavitzkyGolay7PointSmoother(1))) // add new chain smoother here ...
+//		        .mapToPair(new ChainSmootherMapper(new SavitzkyGolay7PointSmoother(1))) // add new chain smoother here ...
 	       	    .mapToPair(new ChainToSequenceFeatureVectorMapper(fingerPrint))
 	       	    .cache();
         
@@ -140,6 +142,7 @@ public class OneAgainstAllWithThreshold {
 			ChainIndex.add(i);
 		}
 
+		long st2 = System.nanoTime();
 		// 2nd step:
 		//		calculate alignment score
 	    List<Tuple2<String, Float>> results = sc
@@ -153,11 +156,13 @@ public class OneAgainstAllWithThreshold {
 	    //		use fingerprint filter to get reduce TM computation
 	    List<Integer> pass = new ArrayList<Integer>();
 	    for (Tuple2<String, Float> t: results) {
-	    	if (t._2 >= fingerPrintFilter) {
+	    	if (t._2 >= 0.5) {
 	    		String[] pros = t._1.split(",");
 	    		pass.add(ChainIds.indexOf(pros[1]));
 	    	}
 	    }
+	    
+	    long et1 = System.nanoTime();
 	    
         // output fingerPrint result
 		PrintWriter writer = new PrintWriter(outputPath + "OneAgainstAll_" + targetProteinId + "_FingerPrint.csv");
@@ -180,6 +185,8 @@ public class OneAgainstAllWithThreshold {
 		
         // 4th step:
         //		calculate TM score using FatCat
+		long st = System.nanoTime();
+		
         boolean flag = true;
         while(flag) { 
         	// run part of the pairs at each time
@@ -199,6 +206,11 @@ public class OneAgainstAllWithThreshold {
 			writeTmScoreToCsv(writer2,tmResults);
         }
 	    
+        System.out.println(pass.size());
+        System.out.println("Fingerprint Time: " + ((st2 - st1) / 1E9) + " s");
+        System.out.println("Alignment Time: " + ((et1 - st2) / 1E9) + " s");
+        System.out.println("FatCat Time: " + ((System.nanoTime() - st) / 1E9) + " s");
+        
 	    writer2.close();
 	    
 		sc.stop();
