@@ -67,8 +67,9 @@ public class HadoopToParquet {
 
 		// Apply the schema to the RDD.
 		DataFrame dataFrame = sqlContext.createDataFrame(rowRDD, schema);
-
-		dataFrame.write().mode(SaveMode.Overwrite)
+		
+		dataFrame.coalesce(1).write().mode(SaveMode.Overwrite)
+//		dataFrame.write().mode(SaveMode.Overwrite)
 		.partitionBy("index")
 		.parquet("/Users/hina/Data/ExampleFiles/seq.parquet");
 		sc.close();
