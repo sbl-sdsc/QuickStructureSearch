@@ -18,6 +18,7 @@ import org.biojava.nbio.structure.Calc;
 public class StructuralAlphabetFingerprint implements SequenceFingerprint, Serializable {
 
 	private static final long serialVersionUID = 1L;
+	// most frequent blocks
 	double[][] references = {
 			{ 41.14,   75.53,  13.92,  -99.80,  131.88,  -96.27, 122.08,  -99.68},
 			{108.24,  -90.12, 119.54,  -92.21,  -18.06, -128.93, 147.04,  -99.90},
@@ -38,18 +39,18 @@ public class StructuralAlphabetFingerprint implements SequenceFingerprint, Seria
 		};
 	String blockName = "abcdefghijklmnop";
 	
-
 	public StructuralAlphabetFingerprint() {
 	}
 	
 	/**
      * Returns a fingerprint as sequence for the given chain. 
-     * @param coords coordinates of a macromolecule fragment
+     * @param coords
      * @return
      */
+	@Override
 	public StructuralAlphabetFeature getFingerprint(Point3d[] coordinates) {
 		List<Double> angles = new ArrayList<Double>();
-		
+		// compute psi and phi angles
 		for (int i = 0; i < coordinates.length/3-1; i++) {
 			Atom aCA = point3dToAtom(coordinates[i*3]);
 			Atom aN = point3dToAtom(coordinates[i*3+1]);
@@ -66,6 +67,7 @@ public class StructuralAlphabetFingerprint implements SequenceFingerprint, Seria
 			angles.add(phi);
 		}
 		String[] assign = new String[(angles.size()-5)/2];
+		// compare with the reference blocks
 		for (int i = 0; i < angles.size()-7; i+= 2) {
 			double[] block = new double[8];
 			for (int j = 0; j < 8; j++) {
@@ -73,14 +75,14 @@ public class StructuralAlphabetFingerprint implements SequenceFingerprint, Seria
 			}
 			assign[i/2] = assign(block);
 		}
-//		for (int i = 0; i < assign.length; i ++) {
-//			System.out.print(assign[i]);
-//		}
-//		System.out.println();
 		return new StructuralAlphabetFeature(assign);
-		
 	}
 	
+	/**
+	 * transfer Point3d to Atom
+	 * @param p
+	 * @return
+	 */
 	public Atom point3dToAtom(Point3d p) {
 		Atom a = new AtomImpl();
 		a.setX(p.x);
@@ -89,6 +91,11 @@ public class StructuralAlphabetFingerprint implements SequenceFingerprint, Seria
 		return a;
 	}
 	
+	/**
+	 * Assign a reference block name to the input block
+	 * @param block
+	 * @return
+	 */
 	public String assign(double[] block) {
 		double minRmsda = Double.MAX_VALUE;
 		char minBlock = 0;
@@ -102,6 +109,12 @@ public class StructuralAlphabetFingerprint implements SequenceFingerprint, Seria
 		return Character.toString(minBlock);
 	}
 
+	/**
+	 * check rmsd for the angle
+	 * @param ref
+	 * @param block
+	 * @return
+	 */
 	public double rmsda(double[] ref, double[] block) {
 		double sum = 0;
 		for (int i = 0; i < ref.length; i++) {
@@ -111,6 +124,11 @@ public class StructuralAlphabetFingerprint implements SequenceFingerprint, Seria
 		return sum;
 	}
 	
+	/**
+	 * make sure the angle is between -180 and 180
+	 * @param angle
+	 * @return
+	 */
 	public double angleModule360(double angle) {
 		if (angle > 180)
 			return angle - 360;
@@ -120,6 +138,7 @@ public class StructuralAlphabetFingerprint implements SequenceFingerprint, Seria
 			return angle;
 	}
 	
+	@Override
 	public String getName() {
 		return this.getClass().getSimpleName();
 	}

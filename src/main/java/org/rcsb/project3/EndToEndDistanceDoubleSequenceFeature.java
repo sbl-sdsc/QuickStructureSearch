@@ -22,23 +22,29 @@ public class EndToEndDistanceDoubleSequenceFeature implements SequenceFeatureInt
 	private double mismatch = -1;
 	private double gap = -1;
 	private double diff = 1;
-	    
-	public EndToEndDistanceDoubleSequenceFeature(double[] EndToEndSequence, Point3d[] coords) {
-		this.EndToEndSequence = EndToEndSequence;
-		this.coords = coords;
-	}
 	
     /**
-     * Constructor that will store an int array of DCT1D feature
-     * @param DCT1DSequence
+     * Constructor that will store an int array as EndToEndDistance feature
+     * @param EndToEndSequence
      */
 	public EndToEndDistanceDoubleSequenceFeature(double[] EndToEndSequence) {
 		this.EndToEndSequence = EndToEndSequence;
 	}
 	
 	/**
-	 * Constructor that will store an int array of DCT1D feature and update the settings
-	 * @param DCT1DSequence
+     * Constructor that will store an int array as EndToEndDistance feature and a Point3d array
+     * as the coordinates of the protein
+	 * @param EndToEndSequence
+	 * @param coords
+	 */
+	public EndToEndDistanceDoubleSequenceFeature(double[] EndToEndSequence, Point3d[] coords) {
+		this.EndToEndSequence = EndToEndSequence;
+		this.coords = coords;
+	}
+	
+	/**
+	 * Constructor that will store an int array as EndToEndDistance feature and update the settings
+	 * @param EndToEndSequence
 	 * @param gap
 	 * @param match
 	 * @param mismatch

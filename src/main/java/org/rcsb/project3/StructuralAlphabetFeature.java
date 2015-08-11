@@ -6,7 +6,7 @@ import javax.vecmath.Point3d;
 
 /**
  * This class implements the SequenceFeatureInterface.
- * It is used for the calculation for AngleSequenceFingerprint
+ * It is used for the calculation for StructuralAlphabetFingerprint
  * 
  * @author Chris Li
  */
@@ -19,6 +19,7 @@ public class StructuralAlphabetFeature implements SequenceFeatureInterface<Strin
 	private double match = 1;
     private double mismatch = -1;
     private double gap = -1;
+    // score matrix for checking similarity
     private static double[][] scoreMatrix = {
     		{ 516, -59, 113, -105, -411,-177, -27,-361,  47,-103,-644,-259, -599, -372,-124, -83 },
     		{ -59, 541,-146, -210, -155,-310, -97,  90, 182,-128, -30,  29, -745, -242,-165,  22 },
@@ -40,7 +41,7 @@ public class StructuralAlphabetFeature implements SequenceFeatureInterface<Strin
     private static String blockName = "abcdefghijklmnop";
 	
     /**
-     * Constructor that will store a double array of angle
+     * Constructor that will store a String array
      * @param AngleSequence
      */
 	public StructuralAlphabetFeature(String[] AlphabetSequence) {

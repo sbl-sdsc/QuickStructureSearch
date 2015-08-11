@@ -23,13 +23,19 @@ public class DCT1DSequenceFeature implements SequenceFeatureInterface<Integer>, 
 	private double gap = -1;
 	    
     /**
-     * Constructor that will store a int array of DCT1D feature
+     * Constructor that will store an int array as DCT1D feature
      * @param DCT1DSequence
      */
 	public DCT1DSequenceFeature(int[] DCT1DSequence) {
 		this.DCT1DSequence = DCT1DSequence;
 	}
 	
+	/**
+	 * Constructor that will store an int array as DCT1D feature and a Point3d array as the 
+	 * coordinates of the protein
+	 * @param DCT1DSequence
+	 * @param coords
+	 */
 	public DCT1DSequenceFeature(int[] DCT1DSequence, Point3d[] coords) {
 		this.DCT1DSequence = DCT1DSequence;
 		this.coords = coords;

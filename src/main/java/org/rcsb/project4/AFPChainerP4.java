@@ -24,7 +24,6 @@ package org.rcsb.project4;
  * Created by Andreas Prlic - RCSB PDB 
  * 
  */
-import org.apache.spark.Accumulator;
 import org.biojava.nbio.structure.Atom;
 import org.biojava.nbio.structure.Calc;
 import org.biojava.nbio.structure.StructureException;
@@ -39,15 +38,13 @@ import java.util.List;
 
 import javax.vecmath.Point3d;
 
-/** a class to chain AFPs to an alignment
+/** a class to chain AFPs to an alignment, add precomputation filter for calAfpDis
  * 
- * @author Andreas Prlic
+ * @author Andreas Prlic, Chris Li
  *
  */
 public class AFPChainerP4
 {
-	static List<Accumulator<Long>> classTimers; 
-	static double max;
 	/**
   // Key function: chain (assembly) the AFPs
   // a AFP (k) is defined as (i, j, k), with i and j are staring points
@@ -73,11 +70,8 @@ public class AFPChainerP4
   //              n  |                         |
   //              2  ---------------------------
   //                  schematic of AFP chaining
-	 * @param timers 
 	 */
-	public static void doChainAfp(FatCatParameters params, AFPChain afpChain,Atom[] ca1, Atom[] ca2, List<Accumulator<Long>> timers){
-		classTimers = timers;
-		max = 0;
+	public static void doChainAfp(FatCatParameters params, AFPChain afpChain,Atom[] ca1, Atom[] ca2){
 		List<AFP> afpSet = afpChain.getAfpSet();
 
 		afpChain.setConn(0d);
@@ -128,19 +122,14 @@ public class AFPChainerP4
 				n = 0;
 			else
 				n = getCompatibleAfps(i, list, params, afpChain); //get a compatible list
-			//printf("afp %d, compatible %d\n", i, n);
 			for(j0 = 0; j0 < n; j0 ++)      {
 				j = list[j0];
 				if (twi[j] > 0)
 					continue;
-				//isConnected = afpPairConn(j, i, params,afpChain); //note: j, i
-				//long startTime = System.nanoTime();
-				//isConnected = afpPairConnCrmsd(j, i, params,afpChain,ca1,ca2);
 				isConnected = afpPairConn(j, i, params,afpChain);
-				//timers.get(0).add(System.nanoTime() - startTime);
 				Double conn = afpChain.getConn();
 				int t = 0;
-				if ( isConnected)
+				if (isConnected)
 					t=1;
 				if(twi[j] + t > maxTra) continue;
 				//two many transformation are disfavored
@@ -171,7 +160,6 @@ public class AFPChainerP4
 	}
 
 	private static Matrix getDisTable(int maxlen, Atom[]ca)
-
 	{
 		int length = ca.length;
 		Matrix dis = new Matrix(length,length);
@@ -261,8 +249,6 @@ public class AFPChainerP4
 		int[][] afpBefIndex = afpChain.getAfpBefIndex();
 		int[] twi = afpChain.getTwi();
 
-
-
 		int     n = 0;
 		//compatible region 1-2, [a1,a3][b2,b3]
 				for(i = a1; i <= a3; i ++)      {//i <= a3 instead of i < a3
@@ -331,78 +317,12 @@ public class AFPChainerP4
 		if(gp < maxPenalty)     gp = maxPenalty; //penalty cut-off
 		//note: use < (smaller) instead of >, because maxPenalty is a negative number
 
-		double  d;
-		//TODO
-		double d2 = calAfpDisPo2(afp1, afp2,params, afpChain);
+		double  d = disCut;
+		double d2 = calAfpDisPre(afp1, afp2,params, afpChain);
 		if (d2 < 6)
 			d = calAfpDis(afp1, afp2,params, afpChain);
 		else 
 			d = disCut;		
-		//note: the 'dis' value is numerically equivalent to the 'rms' with exceptions
-
-		boolean     ch = false;
-		double  tp = 0.0;
-		if(d >= disCut) {
-			tp = torsionPenalty;
-			ch = true;
-		} //use the variation of the distances between AFPs
-		else  if(d > disCut - disSmooth)        {
-			double  wt = Math.sqrt((d - disCut + disSmooth) / disSmooth);
-			//using sqrt: penalty increase with dis more quicker than linear function
-			tp = torsionPenalty * wt;
-		}
-
-		dvar = d;
-		conn = tp + gp;
-
-		afpChain.setConn(conn);
-		afpChain.setDVar(dvar);
-		return ch;
-	}
-	
-	public static boolean afpPairConnCrmsd(int afp1, int afp2,  FatCatParameters params, AFPChain afpChain, Atom[] ca1, Atom[] ca2)
-	{
-		Double conn = afpChain.getConn();
-		Double dvar = afpChain.getDVar();
-
-		double misScore = params.getMisScore();
-		double maxPenalty = params.getMaxPenalty();
-		double disCut = params.getDisCut();
-		double gapExtend = params.getGapExtend();
-		double torsionPenalty = params.getTorsionPenalty();
-		double disSmooth = params.getDisSmooth();
-
-		List<AFP> afpSet = afpChain.getAfpSet();
-
-		int     m = calcGap(afpSet.get(afp2),afpSet.get(afp1));
-		int     g = calcMismatch(afpSet.get(afp2),afpSet.get(afp1));
-
-
-		double  gp = misScore * m;      //on average, penalty for a mismatch is misScore, no modification on score
-		if(g > 0)       {
-			gp += gapExtend * g;
-		}
-		if(gp < maxPenalty)     gp = maxPenalty; //penalty cut-off
-		//note: use < (smaller) instead of >, because maxPenalty is a negative number
-
-		double  d;
-		//TODO
-		long st = System.nanoTime();
-		d = calAfpDis(afp1, afp2,params, afpChain);
-		classTimers.get(1).add(System.nanoTime() - st);
-		st = System.nanoTime();
-		double d2 = calAfpDisCrmsd(afp1, afp2,params, afpChain,ca1,ca2);
-		classTimers.get(2).add(System.nanoTime() - st);
-
-//		double d2 = calAfpDisCrmsd(afp1, afp2,params, afpChain,ca1,ca2);
-		if (d2 < 6) {
-			d = calAfpDis(afp1, afp2,params, afpChain);
-		}
-		else {
-			d = disCut;
-		}
-		//d = calAfpDis(afp1, afp2,params, afpChain);
-		
 		//note: the 'dis' value is numerically equivalent to the 'rms' with exceptions
 
 		boolean     ch = false;
@@ -498,78 +418,23 @@ public class AFPChainerP4
 				d = disTable1.get(aj,ai) - disTable2.get(bj,bi);
 				rms += d * d;
 				if(rms > afpDisCut)     { 
-					
-					//System.out.println("a diff "+ (aj - ai) + " b diff " + (bj - bi) + " a&b diff " + ((aj - ai) - (bj - bi)) + " rmsd " + disCut);
 					return (disCut); 
 				}
 			}
 		}
-//		if (((aj - ai) - (bj - bi)) > 15) {
-//			System.out.println("a&b diff " + ((aj - ai) - (bj - bi)) + " first dist " 
-//					+ (disTable1.get(afpSet.get(afp2).getP1(),afpSet.get(afp1).getP1()) 
-//					- disTable2.get(afpSet.get(afp2).getP2(),afpSet.get(afp1).getP2())));
-//		}
-		//System.out.println("a diff "+ (aj - ai) + " b diff " + (bj - bi) + " a&b diff " + ((aj - ai) - (bj - bi)) + " rmsd " + (Math.sqrt(rms / fragLenSq)));
 		return (Math.sqrt(rms / fragLenSq));
 	}
 	
-	private static double calAfpDisCrmsd(int afp1, int afp2, FatCatParameters params, AFPChain afpChain, Atom[] ca1, Atom[] ca2)
+	/**
+	 * Precomputation for calAfpDis, it is used as a filter to reduce the computation
+	 * @param afp1
+	 * @param afp2
+	 * @param params
+	 * @param afpChain
+	 * @return
+	 */
+	private static double calAfpDisPre(int afp1, int afp2, FatCatParameters params, AFPChain afpChain)
 	{
-
-		List<AFP> afpSet = afpChain.getAfpSet();
-
-		int fragLen = params.getFragLen();
-
-		Point3d[] chain1 = new Point3d[fragLen * 2];
-		Point3d[] chain2 = new Point3d[fragLen * 2];
-		for (int i = 0; i < fragLen; i++) {
-			chain1[i] = new Point3d(ca1[i+afpSet.get(afp1).getP1()].getCoords());
-			chain2[i] = new Point3d(ca2[i+afpSet.get(afp1).getP2()].getCoords());
-			chain1[i + fragLen] = new Point3d(ca1[i+afpSet.get(afp2).getP1()].getCoords());
-			chain2[i + fragLen] = new Point3d(ca2[i+afpSet.get(afp2).getP2()].getCoords());
-		}
-		SuperPositionQCP qcp = new SuperPositionQCP();
-		qcp.set(chain1, chain2);
-		double rmsd = qcp.getRmsd();
-		
-		return rmsd;
-	}
-	
-	@SuppressWarnings("unused")
-	private static double calAfpDisPo(int afp1, int afp2, FatCatParameters params, AFPChain afpChain)
-	{
-
-		List<AFP> afpSet = afpChain.getAfpSet();
-
-		Matrix disTable1 = afpChain.getDisTable1();
-		Matrix disTable2 = afpChain.getDisTable2();
-
-		int fragLen = params.getFragLen();
-
-		int     ai1, bi1, aj1, bj1;
-		int 	ai2, bi2, aj2, bj2;
-		double  d1, d2, d3, d4;
-		double  rms = 0;
-		ai1 = afpSet.get(afp1).getP1();
-		bi1 = afpSet.get(afp1).getP2();
-		aj1 = afpSet.get(afp2).getP1();
-		bj1 = afpSet.get(afp2).getP2();
-		d1 = disTable1.get(aj1,ai1) - disTable2.get(bj1,bi1);
-		ai2 = ai1 + fragLen - 1;
-		bi2 = bi1 + fragLen - 1;
-		aj2 = aj1 + fragLen - 1;
-		bj2 = bj1 + fragLen - 1;
-		d2 = disTable1.get(aj2,ai2) - disTable2.get(bj2,bi2);
-		d3 = disTable1.get(aj1,ai2) - disTable2.get(bj1,bi2);
-		d4 = disTable1.get(aj2,ai1) - disTable2.get(bj2,bi1);
-		
-		rms += d1 * d1 + d2 * d2 + d3 * d3 + d4 * d4;
-		return (Math.sqrt(rms / 4));
-	}
-	
-	private static double calAfpDisPo2(int afp1, int afp2, FatCatParameters params, AFPChain afpChain)
-	{
-
 		List<AFP> afpSet = afpChain.getAfpSet();
 
 		Matrix disTable1 = afpChain.getDisTable1();
