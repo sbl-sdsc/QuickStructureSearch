@@ -68,6 +68,7 @@ public class SequenceToStructureClusterer {
 		double gapPenalty = Double.parseDouble(args[8]);
 		double holePenalty = Double.parseDouble(args[9]);
 		int sequenceIdentity = Integer.parseInt(args[10]);
+		String outputFileName2 = args[11];
 		//		String csvFileName = args[11];
 
 		SequenceToStructureClusterer clusterer = new SequenceToStructureClusterer();
@@ -82,7 +83,7 @@ public class SequenceToStructureClusterer {
 		else if(option == 4)
 			clusterer.runPIC(hadoopSequenceFileName, startCluster, endCluster, outputFileName, 2, gapPenalty, holePenalty);
 		else
-			clusterer.alteredSeqIdentity(hadoopSequenceFileName, outputFileName, startCluster, endCluster, maxRmsd, gapPenalty, holePenalty, sequenceIdentity);
+			clusterer.alteredSeqIdentity(hadoopSequenceFileName, outputFileName, startCluster, endCluster, maxRmsd, gapPenalty, holePenalty, sequenceIdentity, outputFileName2);
 	}
 
 	/**
@@ -631,7 +632,7 @@ public class SequenceToStructureClusterer {
 	 * @param sequenceIdentity the percent sequence similarity between members of the same sequence cluster
 	 * @throws FileNotFoundException 
 	 */
-	private void alteredSeqIdentity(String hadoopSequenceFileName, String outputFileName, int startCluster, int endCluster, double maxRmsd, double gapPenalty, double holePenalty, int sequenceIdentity) throws FileNotFoundException {
+	private void alteredSeqIdentity(String hadoopSequenceFileName, String outputFileName, int startCluster, int endCluster, double maxRmsd, double gapPenalty, double holePenalty, int sequenceIdentity, String outputFileName2) throws FileNotFoundException {
 		// initialize Spark		
 		JavaSparkContext sc = getSparkContext();
 
@@ -690,6 +691,14 @@ public class SequenceToStructureClusterer {
 		}
 
 		quickSort(strClusterList, 0, strClusterList.size() - 1);
+		
+		PrintWriter writer100 = new PrintWriter(outputFileName2);
+		writer100.println("SequenceClusterNumber, StructureClusterNumber, StructuralClusterSize, RepresentativeChain, OtherChains");
+		for(Cluster c: strClusterList) {
+			writeToCsv(writer100, c);
+		}
+
+		writer100.close();
 
 		List<List<Cluster>> clusterList = new ArrayList<List<Cluster>>();
 
