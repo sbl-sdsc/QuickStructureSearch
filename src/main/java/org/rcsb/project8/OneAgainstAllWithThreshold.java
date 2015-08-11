@@ -156,7 +156,7 @@ public class OneAgainstAllWithThreshold {
 	    //		use fingerprint filter to get reduce TM computation
 	    List<Integer> pass = new ArrayList<Integer>();
 	    for (Tuple2<String, Float> t: results) {
-	    	if (t._2 >= 0.5) {
+	    	if (t._2 >= fingerPrintFilter) {
 	    		String[] pros = t._1.split(",");
 	    		pass.add(ChainIds.indexOf(pros[1]));
 	    	}

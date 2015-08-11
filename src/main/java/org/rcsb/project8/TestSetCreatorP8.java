@@ -85,7 +85,6 @@ public class TestSetCreatorP8 {
 					//.filter(new ChainPairLengthFilter(chainsBc, 0.5, 1.0)) // restrict the difference in chain length
 					.mapToPair(new ChainPairToTmMapper(chainsBc)) // maps pairs of chain id indices to chain id, TM score pairs
 					.collect();	// copy result to master node
-
 			// write results to .csv file
 			divideSet(writer1,writer2,writer3,writer4,writer5, list);
 		}
@@ -103,6 +102,15 @@ public class TestSetCreatorP8 {
 		System.out.println("ramdom pairs       	: " + nPairs);
 	}
 
+	/**
+	 * Based on the alignment coverage, write to different files
+	 * @param writer1
+	 * @param writer2
+	 * @param writer3
+	 * @param writer4
+	 * @param writer5
+	 * @param list
+	 */
 	private static void divideSet(PrintWriter writer1, PrintWriter writer2,
 			PrintWriter writer3, PrintWriter writer4, PrintWriter writer5,
 			List<Tuple2<String, Float[]>> list) {
@@ -121,6 +129,11 @@ public class TestSetCreatorP8 {
 		}
 	}
 	
+	/**
+	 * write the testset to csv file
+	 * @param writer
+	 * @param t
+	 */
 	private static void writeToCsv(PrintWriter writer, Tuple2<String, Float[]> t) {
 		writer.print(t._1);
 		for (Float f: t._2) {
@@ -133,28 +146,11 @@ public class TestSetCreatorP8 {
 
 	/**
 	 * Returns random pairs of indices for the pairwise comparison.
-	 * @param n number of feature vectors
+	 * @param n
+	 * @param nPairs
+	 * @param seed
 	 * @return
 	 */
-//	private List<Tuple2<Integer, Integer>> randomPairs(int n, int nPairs, long seed) {
-//		Random r = new Random(seed);
-//		Set<Tuple2<Integer,Integer>> set = new HashSet<>(nPairs);
-//
-//		for (int i = 0; i < nPairs; i++) {
-//			int j = r.nextInt(n);
-//			int k = r.nextInt(n);
-//			if (j == k) {
-//				continue;
-//			}
-//
-//			Tuple2<Integer,Integer> tuple = new Tuple2<>(j,k);
-//			if (! set.contains(tuple)) {
-//			    set.add(tuple);
-//			}
-//		}
-//		return new ArrayList<Tuple2<Integer,Integer>>(set);
-//	}
-	
 	private List<Tuple2<Integer, Integer>> randomPairs(int n, int nPairs, long seed) {
 		if (nPairs > BATCH_SIZE)
 			nPairs = BATCH_SIZE;
