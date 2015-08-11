@@ -24,7 +24,6 @@ import org.rcsb.project3.EndToEndDistanceDoubleSequenceFingerprint;
 import org.rcsb.project3.EndToEndDistanceSequenceFingerprint;
 import org.rcsb.project3.JaccardScoreMapperP3;
 import org.rcsb.project3.LevenshteinMapperP3;
-import org.rcsb.project3.RmsdDistanceSequenceFingerprint;
 import org.rcsb.project3.SequenceFeatureInterface;
 import org.rcsb.project3.SmithWatermanGotohP3;
 import org.rcsb.structuralSimilarity.ChainIdFilter;
@@ -166,8 +165,7 @@ public class MultiFingerPrintTesterP8 {
 //		       	    .mapToPair(new ChainToSequenceFeatureVectorMapper(new AngleSequenceFingerprint()))
 //		       	    .mapToPair(new ChainToSequenceFeatureVectorMapper(new DCT1DSequenceFingerprint()))
 //		       	    .mapToPair(new ChainToSequenceFeatureVectorMapper(new EndToEndDistanceSequenceFingerprint()))
-//		       	    .mapToPair(new ChainToSequenceFeatureVectorMapper(new EndToEndDistanceDoubleSequenceFingerprint()))		       	    
-		       	    .mapToPair(new ChainToSequenceFeatureVectorMapper(new RmsdDistanceSequenceFingerprint()))		       	    		       	    
+		       	    .mapToPair(new ChainToSequenceFeatureVectorMapper(new EndToEndDistanceDoubleSequenceFingerprint()))		       	    
 		       	    .cache();
 	        
 	     // broadcast feature vectors

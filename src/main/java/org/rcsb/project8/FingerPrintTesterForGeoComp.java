@@ -25,7 +25,6 @@ import org.rcsb.project3.EndToEndDistanceDoubleSequenceFingerprint;
 import org.rcsb.project3.EndToEndDistanceSequenceFingerprint;
 import org.rcsb.project3.JaccardScoreMapperP3;
 import org.rcsb.project3.LevenshteinMapperP3;
-import org.rcsb.project3.RmsdDistanceSequenceFingerprint;
 import org.rcsb.project3.SequenceFeatureInterface;
 import org.rcsb.project3.SmithWatermanGotohP3;
 import org.rcsb.project3.SmithWatermanWithGeoComp;
