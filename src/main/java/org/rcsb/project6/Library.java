@@ -47,6 +47,8 @@ public class Library
 				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		
+		long start = System.nanoTime();
+
 		List<Tuple2<String, Point3d[]>> chains = sc
 				.sequenceFile(path, Text.class, ArrayWritable.class,NUM_THREADS*NUM_TASKS_PER_THREAD)
 				.sample(false, 0.003, 123)
@@ -67,6 +69,8 @@ public class Library
 		ArrayList<String> title = new ArrayList<>();
 		ArrayList<Integer> freq = new ArrayList<>();
 		int number;
+
+		
 
 		
 		for (Tuple2<String, Point3d[]> t: chains){
@@ -102,7 +106,6 @@ public class Library
 									freq.set(key, number);
 								}
 								else {
-									System.out.println("failure");
 									title.add(tup._1());
 									freq.add(1);
 								}
@@ -154,6 +157,7 @@ public class Library
 		writer.close();
 		System.out.println("library size: " + lib.size());
 		System.out.println("initial size: " + counter);
+		System.out.println("Time: " + (System.nanoTime() - start)/1E9 + " sec.");
 	}
 	
 	public static Integer searcher (ArrayList<String> a, String b) {
