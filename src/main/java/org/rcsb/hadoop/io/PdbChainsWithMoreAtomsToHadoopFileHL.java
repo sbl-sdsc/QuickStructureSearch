@@ -42,16 +42,9 @@ import org.rcsb.structuralSimilarity.IntArrayWritable;
  * This class creates a Hadoop sequence file for protein chains in the PDB. The Hadoop sequence file
  * uses a delta encoding of the PDB coordinates as well as BZIP2 block level compression.
  * 
- * Example run:
- * Jan. 20 PDB release
- * Total structures: 105906
- * Success: 105899
- * Failure: 7
- * Chains: 280565
- * Time: 50605.43170881 sec.
- * Size: 341 MB
+ * Add CA, N and C atoms, the output file is used for the StructuralAlphabetFingerprint.
  * 
- * @author  Peter Rose
+ * @author  Peter Rose, Chirs Li
  */
 public class PdbChainsWithMoreAtomsToHadoopFileHL {
 	private static AtomCache cache = initializeCache();
@@ -65,14 +58,7 @@ public class PdbChainsWithMoreAtomsToHadoopFileHL {
 				+ timeStamp 
 				+ ".seq";
 
-		//		List<String> dna = Arrays.asList("4RNK","4RO4","4RO7");
-		//		List<String> protein = Arrays.asList("4HHB","1STP");
-		//		List<String> pdbIds = dna;
 		Set<String> pdbIds = getAll();
-
-		// create a subset
-	//	List<String> subset = new ArrayList<>(getAll());
-
 
 		StructureIO.setAtomCache(cache);
 		cache.setPath("/Users/Chris/Documents/RCSB/Data/Protein_chains/cache/");
@@ -182,9 +168,6 @@ public class PdbChainsWithMoreAtomsToHadoopFileHL {
 					rna++;
 				}
 
-//				for (Atom a: g.getAtoms()) {
-//					System.out.println(a.toPDB());
-//				}
 				Atom atom = null;
 				Atom atomN = null;
 				Atom atomC = null;

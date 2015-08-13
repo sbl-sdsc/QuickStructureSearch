@@ -25,6 +25,7 @@ import scala.Tuple2;
 
 /**
  * This class print the result of large amount of comparison of origin FatCat and new FatCat
+ * This class is used for testing
  * 
  * @author Chris Li
  */

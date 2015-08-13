@@ -11,6 +11,7 @@ import org.biojava.nbio.structure.AtomImpl;
 import org.biojava.nbio.structure.Calc;
 /**
  * This class transform protein's psi and phi angle into unique blocks.
+ * In order to use this fingerPrint, may need to use sequence file that contain CA, N and C atoms
  * 
  * @author Chris Li
  */

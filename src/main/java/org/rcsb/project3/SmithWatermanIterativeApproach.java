@@ -1,7 +1,6 @@
 package org.rcsb.project3;
 
 import java.io.FileNotFoundException;
-import java.io.PrintWriter;
 import java.text.DecimalFormat;
 import java.text.NumberFormat;
 import java.util.ArrayList;
@@ -86,14 +85,14 @@ public class SmithWatermanIterativeApproach implements AlignmentAlgorithmInterfa
 		
 		Alignment<?> SWAlignment = getAlignment(v1, v2, open, extend);
 		
-		// TODO for OneAgainstAll
 		Point3d[] c1 = this.coords.getValue().get(tuple._1)._2;
 		Point3d[] c2p = this.coords.getValue().get(tuple._2)._2;		
-//		Point3d[] c1 = v1.getCoords();
-//		Point3d[] c2 = v2.getCoords();
+		// c2 may change due to the rotation
 		Point3d[] c2 = new Point3d[c2p.length];
 		for (int i = 0; i < c2p.length; i++)
 			c2[i] = c2p[i];
+		// print out the pdb file
+		// TODO: may delete if not need anymore
 //		if (t2._1.equals("1B0B.A")) {
 //			PrintWriter writer = new PrintWriter("/Users/Chris/Documents/RCSB/Data/pdb/4HHB.pdb");
 //			Atom[] atoms = getCAAtoms(c1);
@@ -216,6 +215,8 @@ public class SmithWatermanIterativeApproach implements AlignmentAlgorithmInterfa
 			Matrix4d m = qcp.getTransformationMatrix();
 			SuperPositionQCP.transform(m, c2);
 			
+			// print out the pdb file
+			// TODO: may delete if not need anymore
 //			if (name.equals("1B0B.A") && name2.equals("4HHB.A")) {
 //				PrintWriter writer = new PrintWriter("/Users/Chris/Documents/RCSB/Data/pdb/1B0B" + it + ".pdb");
 //				Atom[] atoms = getCAAtoms(c2);
@@ -233,6 +234,9 @@ public class SmithWatermanIterativeApproach implements AlignmentAlgorithmInterfa
 			return null;
 	}
 	
+	// function from Atom.toPDB
+	// TODO: may delete if not need anymore
+	@SuppressWarnings("unused")
 	private static Atom[] getCAAtoms(Point3d[] points) {
 		int gaps = 0;
 		for (Point3d p: points) {
@@ -266,6 +270,9 @@ public class SmithWatermanIterativeApproach implements AlignmentAlgorithmInterfa
 		return atoms;
 	}
 	
+	// function from Atom.toPDB
+	// TODO: may delete if not need anymore
+	@SuppressWarnings("unused")
 	private static String toPdb(Atom a) {
 		StringBuffer w = new StringBuffer();
 		DecimalFormat d3 = (DecimalFormat)NumberFormat.getInstance(Locale.US);
@@ -353,6 +360,8 @@ public class SmithWatermanIterativeApproach implements AlignmentAlgorithmInterfa
 		return w.toString();
 	}
 	
+	// function from Atom.toPDB
+	// TODO: may delete if not need anymore
 	private static boolean hasInsertionCode(String pdbserial) {
 		try {
 			Integer.parseInt(pdbserial) ;
@@ -362,6 +371,8 @@ public class SmithWatermanIterativeApproach implements AlignmentAlgorithmInterfa
 		return false ;
 	}
 	
+	// function from Atom.toPDB
+	// TODO: may delete if not need anymore
 	private static String formatAtomName(Atom a) {
 		String fullName = null;
 		String name = a.getName();
@@ -386,6 +397,8 @@ public class SmithWatermanIterativeApproach implements AlignmentAlgorithmInterfa
 		return fullName;
 	}
 	
+	// function from Atom.toPDB
+	// TODO: may delete if not need anymore
 	private static String alignRight(String input, int length){
 		int n = input.length();
 		if ( n >= length)
@@ -401,7 +414,9 @@ public class SmithWatermanIterativeApproach implements AlignmentAlgorithmInterfa
 		return s.toString();
 	}
 	
-private static String alignLeft(String input, int length){
+	// function from Atom.toPDB
+	// TODO: may delete if not need anymore
+	private static String alignLeft(String input, int length){
 		if (input.length() >= length) {
 			return input;
 		}
@@ -412,6 +427,9 @@ private static String alignLeft(String input, int length){
 
 	}
 	
+	/**
+	 * coords need to be set before running the alignment
+	 */
 	@Override
 	public void setCoords(Broadcast<List<Tuple2<String, Point3d[]>>> coords) {
 		this.coords = coords;

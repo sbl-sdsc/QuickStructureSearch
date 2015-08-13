@@ -21,6 +21,7 @@ import org.biojava.nbio.structure.align.util.AFPChainScorer;
 /**
  * The original class to get the TM score of two protein
  * Use for comparing the performance
+ * (Not used)
  */
 public class TmScorerOrigin implements Serializable {
 	private static final long serialVersionUID = 1L;

@@ -148,7 +148,7 @@ public class FatCatRigidP4{
 
 				// here FATCAT does a a jacobi transformation
 				// Use QCP to get rmsd
-				rmsd = getRmsdP3d(ca1,ca2,fragLen, p1,p2);
+				rmsd = getRmsdQCP(ca1,ca2,fragLen, p1,p2);
 
 				if(rmsd < rmsdCut)      {
 					AFP afptmp = new AFP();
@@ -311,7 +311,7 @@ public class FatCatRigidP4{
 	 * @return
 	 * @throws StructureException
 	 */
-	private double getRmsdP3d(Atom[] ca1, Atom[] ca2, int fragLen, int p1, int p2) throws StructureException {
+	private double getRmsdQCP(Atom[] ca1, Atom[] ca2, int fragLen, int p1, int p2) throws StructureException {
 		double rmsd = 99.9;
 		Point3d[] catmp1 = getFragmentP3d(ca1, p1, fragLen,false);
 		Point3d[] catmp2 = getFragmentP3d(ca2, p2, fragLen,true); // clone the atoms for fragment 2 so we can manipulate them...

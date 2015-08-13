@@ -20,6 +20,7 @@ package org.rcsb.project3;
 
 /**
  * This is the helper class for SmithWatermanGotohP3
+ * 
  * An implementation of the Smith-Waterman algorithm with Gotoh's improvement
  * for biological local pairwise sequence alignment.
  * 

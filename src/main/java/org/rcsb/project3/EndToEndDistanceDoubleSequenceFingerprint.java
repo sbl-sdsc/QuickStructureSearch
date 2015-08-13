@@ -1,7 +1,6 @@
 package org.rcsb.project3;
 
 import java.io.Serializable;
-import java.util.Random;
 
 import javax.vecmath.Point3d;
 
