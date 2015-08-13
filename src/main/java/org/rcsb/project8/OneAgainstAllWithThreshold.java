@@ -17,17 +17,12 @@ import org.rcsb.hadoop.io.HadoopToSimpleChainMapper;
 import org.rcsb.project3.AlignmentAlgorithmInterface;
 import org.rcsb.project3.ChainToSequenceFeatureVectorMapper;
 import org.rcsb.project3.EndToEndDistanceDoubleSequenceFingerprint;
-import org.rcsb.project3.EndToEndDistanceSequenceFingerprint;
 import org.rcsb.project3.SequenceFeatureInterface;
 import org.rcsb.project3.SequenceFingerprint;
-import org.rcsb.project3.SmithWatermanGotohP3;
 import org.rcsb.project3.SmithWatermanIterativeApproach;
 import org.rcsb.project4.ChainPairToTmMapperP4;
-import org.rcsb.structuralSimilarity.ChainPairToTmMapper;
-import org.rcsb.structuralSimilarity.ChainSmootherMapper;
 import org.rcsb.structuralSimilarity.GapFilter;
 import org.rcsb.structuralSimilarity.LengthFilter;
-import org.rcsb.structuralSimilarity.SavitzkyGolay7PointSmoother;
 
 import scala.Tuple2;
 
@@ -41,11 +36,26 @@ public class OneAgainstAllWithThreshold {
 	private static int NUM_THREADS = 8;
 	private static int NUM_TASKS_PER_THREAD = 3; // Spark recommends 2-3 tasks per thread
 	private static int BATCH_SIZE = 50;
-	private static double fingerPrintFilter = 0.75; 
+	private double fingerPrintFilter = 0.75; 
 	// Other fingerPrint: AngleSequenceFingerprint() || DCT1DSequenceFingerprint()
-	private static SequenceFingerprint fingerPrint = new EndToEndDistanceDoubleSequenceFingerprint();
+	private SequenceFingerprint fingerPrint = new EndToEndDistanceDoubleSequenceFingerprint();
 	// Other alignment: LCSFeatureIndexP3() || SmithWatermanP3() || JaccardScoreMapperP3() || LevenshteinMapperP3()
-	private static AlignmentAlgorithmInterface alignmentAlgorithm = new SmithWatermanIterativeApproach();
+	private AlignmentAlgorithmInterface alignmentAlgorithm = new SmithWatermanIterativeApproach();
+	
+	/**
+	 * Default constructor
+	 */
+	public OneAgainstAllWithThreshold() {}
+	
+	/**
+	 * Constructor with fingerPrint and alignmentAlgorithm as input
+	 * @param fingerPrint
+	 * @param alignmentAlgorithm
+	 */
+	public OneAgainstAllWithThreshold(SequenceFingerprint fingerPrint, AlignmentAlgorithmInterface alignmentAlgorithm) {
+		this.fingerPrint = fingerPrint;
+		this.alignmentAlgorithm = alignmentAlgorithm;
+	}
 	
 	public static void main(String[] args ) throws FileNotFoundException
 	{
@@ -67,7 +77,26 @@ public class OneAgainstAllWithThreshold {
 			outputPath = args[3];
 		}
 		
+		OneAgainstAllWithThreshold o = new OneAgainstAllWithThreshold();
+		long st = System.nanoTime();
+		o.oneAgainstAll(targetId, sequenceFile, outputPath, tmFilter);
+		System.out.println("Total Running Time: " + (System.nanoTime()-st)/1E9 + " s");
+	}
+	
+	/**
+	 * Run an one against all computation
+	 * @param targetProteinId	target protein's id
+	 * @param sequenceFile		sequence file containing all proteins' sequences
+	 * @param outputPath		path to place all the output file
+	 * @param tmFilter			only output the pairs that is greater than this tm score
+	 * @throws FileNotFoundException
+	 */
+	public void oneAgainstAll(String targetProteinId, String sequenceFile, String outputPath, double tmFilter) throws FileNotFoundException {
 		// match tm with fp
+		if (tmFilter > 1 || tmFilter < 0) {
+			System.out.println("Please enter tmFilter between 0 and 1");
+			return;
+		}
 		if (tmFilter > 0.85)
 			fingerPrintFilter = 0.75;
 		else if (tmFilter > 0.8)
@@ -78,13 +107,6 @@ public class OneAgainstAllWithThreshold {
 			fingerPrintFilter = 0.35;
 		else fingerPrintFilter = 0.2;
 		
-		OneAgainstAllWithThreshold o = new OneAgainstAllWithThreshold();
-		long st = System.nanoTime();
-		o.run(targetId, sequenceFile, outputPath);
-		System.out.println("Total Running Time: " + (System.nanoTime()-st)/1E9 + " s");
-	}
-	
-	private void run(String targetProteinId, String sequenceFile, String outputPath) throws FileNotFoundException {
 		SparkConf conf = new SparkConf()
 				.setMaster("local[" + NUM_THREADS + "]")
 				.setAppName("1" + this.getClass().getSimpleName())
@@ -130,10 +152,12 @@ public class OneAgainstAllWithThreshold {
         List<Tuple2<String,SequenceFeatureInterface<?>>> featureVectors =  features.collect(); // return results to master node     
         final Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> featureVectorsBc = sc.broadcast(featureVectors);
 
+        // set fingerprint
 		alignmentAlgorithm.setSequence(featureVectorsBc);
 		
         final Broadcast<List<Tuple2<String,Point3d[]>>> sequence = sc.broadcast(Chains);
 
+        // set sequence
 		alignmentAlgorithm.setCoords(sequence);
 		
 		// ready for pair parallelize
@@ -165,15 +189,15 @@ public class OneAgainstAllWithThreshold {
 	    long et1 = System.nanoTime();
 	    
         // output fingerPrint result
-		PrintWriter writer = new PrintWriter(outputPath + "OneAgainstAll_" + targetProteinId + "_FingerPrint.csv");
-		writer.print("Target Protein");
-		writer.print(",");
-		writer.print("Protein2");
-		writer.print(",");
-		writer.println("Score");
-		writer.flush();
-	    writeFingerPrintResultToCsv(writer,results);
-	    writer.close();
+//		PrintWriter writer = new PrintWriter(outputPath + "OneAgainstAll_" + targetProteinId + "_FingerPrint.csv");
+//		writer.print("Target Protein");
+//		writer.print(",");
+//		writer.print("Protein2");
+//		writer.print(",");
+//		writer.println("Score");
+//		writer.flush();
+//	    writeFingerPrintResultToCsv(writer,results);
+//	    writer.close();
 		
 		PrintWriter writer2 = new PrintWriter(outputPath + "OneAgainstAll_" + targetProteinId + "_TM.csv");
 		writer2.print("Target Protein");
@@ -203,7 +227,7 @@ public class OneAgainstAllWithThreshold {
 					.mapToPair(new ChainPairToTmMapperP4(sequence)) // maps pairs of chain id indices to chain id, TM score pairs
 					.collect();	// copy result to master node
 			
-			writeTmScoreToCsv(writer2,tmResults);
+			writeTmScoreToCsv(writer2,tmResults, tmFilter);
         }
 	    
         System.out.println(pass.size());
@@ -239,6 +263,7 @@ public class OneAgainstAllWithThreshold {
 	 * @param writer
 	 * @param results
 	 */
+	@SuppressWarnings("unused")
 	private void writeFingerPrintResultToCsv(PrintWriter writer, List<Tuple2<String, Float>> results) {
 		for (Tuple2<String, Float> t : results) {
 			writer.print(t._1);
@@ -254,8 +279,10 @@ public class OneAgainstAllWithThreshold {
 	 * @param writer
 	 * @param results
 	 */
-	private void writeTmScoreToCsv(PrintWriter writer, List<Tuple2<String, Float[]>> results) {
+	private void writeTmScoreToCsv(PrintWriter writer, List<Tuple2<String, Float[]>> results, double tmFilter) {
 		for (Tuple2<String, Float[]> t : results) {
+			if (t._2[0] < tmFilter)
+				continue;
 			writer.print(t._1);
 			for (float score : t._2) {
 				writer.print(",");

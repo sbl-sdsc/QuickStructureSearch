@@ -17,6 +17,7 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
 import org.rcsb.hadoop.io.HadoopToSimpleChainMapper;
+import org.rcsb.project3.AngleHadoopToCAMapper;
 import org.rcsb.project3.AngleSequenceFingerprint;
 import org.rcsb.project3.ChainToSequenceFeatureVectorMapper;
 import org.rcsb.project3.DCT1DSequenceFingerprint;
@@ -26,6 +27,8 @@ import org.rcsb.project3.JaccardScoreMapperP3;
 import org.rcsb.project3.LevenshteinMapperP3;
 import org.rcsb.project3.SequenceFeatureInterface;
 import org.rcsb.project3.SmithWatermanGotohP3;
+import org.rcsb.project3.SmithWatermanIterativeApproach;
+import org.rcsb.project3.StructuralAlphabetFingerprint;
 import org.rcsb.structuralSimilarity.ChainIdFilter;
 import org.rcsb.structuralSimilarity.ChainIdPairFilter;
 import org.rcsb.structuralSimilarity.ChainIdToIndexMapper;
@@ -41,13 +44,15 @@ import scala.Tuple2;
  * This class reads Test Set and a hadoop sequence file, and write the testing result of a pair of fingerPrint and alignment
  * algorithm to a .csv file
  * 
+ * This class is used for testing the relationship of fingerprint score and tm score.
+ * 
  * @author  Chris Li, Peter Rose
  */
 public class FingerPrintTesterP8 { 
 	private static int NUM_THREADS = 8;
 	private static int NUM_TASKS_PER_THREAD = 3; // Spark recommends 2-3 tasks per thread
-	private static String fingerPrintName = "RmsdDistance";
-	private static String alignmentAlgorithm = "SmithWatermanGotoh";
+	private static String fingerPrintName = "EndToEnd";	// name of fingerprint
+	private static String alignmentAlgorithm = "SmithWatermanGotoh";	// name of the alignment algorithm
 
 	public static void main(String[] args ) throws FileNotFoundException
 	{
@@ -92,7 +97,7 @@ public class FingerPrintTesterP8 {
 				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
 
 		JavaSparkContext sc = new JavaSparkContext(conf);
-						
+							
 		PrintWriter writer = new PrintWriter(outputPath + "result_" + fingerPrintName + "_" + alignmentAlgorithm + ".csv");
 		writer.print("FingerPrint");
 		writer.print(",");
@@ -120,11 +125,23 @@ public class FingerPrintTesterP8 {
 		writer.println();
 		writer.flush();
 		
+		PrintWriter writer2 = new PrintWriter(outputPath + "TM_compare_" + fingerPrintName + "_" + alignmentAlgorithm + ".csv");
+		writer2.print("Protein1 Id");
+		writer2.print(",");
+		writer2.print("Protein2 Id");
+		writer2.print(",");
+		writer2.print("TM");
+		writer2.print(",");
+		writer2.print("FP");
+		writer2.println();
+		writer2.flush();
+		
 		JavaPairRDD<String, Point3d[]> proteinChains = sc
 				.sequenceFile(sequenceFile, Text.class, ArrayWritable.class, NUM_THREADS*NUM_TASKS_PER_THREAD)  // read protein chains
 				.mapToPair(new HadoopToSimpleChainMapper()) // convert input to <pdbId.chainId, protein sequence> pairs
 				.filter(t -> t._2.isProtein())
-				.mapToPair(t -> new Tuple2<String, Point3d[]>(t._1, t._2.getCoordinates()))				
+				.mapToPair(t -> new Tuple2<String, Point3d[]>(t._1, t._2.getCoordinates()))
+//				.mapToPair(new AngleHadoopToCAMapper())
 				.filter(new GapFilter(0, 0)) // keep protein chains with gap size <= 3 and <= 5 gaps
 				.filter(new LengthFilter(20,3000)) // keep protein chains with at least 50 residues
 				.cache();
@@ -154,17 +171,16 @@ public class FingerPrintTesterP8 {
 	        		.collect();
 	        
 	        final Broadcast<Set<String>> chainIdsBc = sc.broadcast(new HashSet<String>(chainIds));
-	        
-	        long st = System.nanoTime();
-	        
+          
 	     // calculate <chainId, feature vector> pairs
 	        JavaPairRDD<String, SequenceFeatureInterface<?>> features = proteinChains
 					.filter(new ChainIdFilter<Point3d[]>(chainIdsBc)) // calculate feature vectors for chains in the training set only
-			        .mapToPair(new ChainSmootherMapper(new SavitzkyGolay7PointSmoother(1))) // add new chain smoother here ...
+//			        .mapToPair(new ChainSmootherMapper(new SavitzkyGolay7PointSmoother(1))) // add new chain smoother here ...
 //		       	    .mapToPair(new ChainToSequenceFeatureVectorMapper(new AngleSequenceFingerprint()))
 //		       	    .mapToPair(new ChainToSequenceFeatureVectorMapper(new DCT1DSequenceFingerprint()))
 //		       	    .mapToPair(new ChainToSequenceFeatureVectorMapper(new EndToEndDistanceSequenceFingerprint()))
 		       	    .mapToPair(new ChainToSequenceFeatureVectorMapper(new EndToEndDistanceDoubleSequenceFingerprint()))		       	    
+//		       	    .mapToPair(new ChainToSequenceFeatureVectorMapper(new StructuralAlphabetFingerprint()))		       	    		       	    
 		       	    .cache();
 	        
 	     // broadcast feature vectors
@@ -183,9 +199,10 @@ public class FingerPrintTesterP8 {
 					.mapToPair(new ChainIdToIndexMapper(availableChainIdsBc)) // map chain ids to indices into feature vector
 //					.mapToPair(new LCSFeatureIndexP3(featureVectorsBc,0))
 //					.mapToPair(new SmithWatermanP3(featureVectorsBc,0))
-					.mapToPair(new SmithWatermanGotohP3(featureVectorsBc,0))
+//					.mapToPair(new SmithWatermanWithGeoComp(featureVectorsBc))
 //					.mapToPair(new JaccardScoreMapperP3(featureVectorsBc))
 //					.mapToPair(new LevenshteinMapperP3(featureVectorsBc))
+					.mapToPair(new SmithWatermanGotohP3(featureVectorsBc))
 					.join(trainingData) // join with TM metrics from the input file
 					.sortByKey()
 					.collect();
@@ -194,12 +211,14 @@ public class FingerPrintTesterP8 {
 		    totalPairs += results.size();
 		    resultSet.addAll(results);
 			writeToCsv(writer, fingerPrintName, alignmentAlgorithm, inputFileName, results);
+			writeToCsv2(writer2, results);
 		}
 		writeToCsv(writer, fingerPrintName, alignmentAlgorithm, "All", resultSet);
 		writer.println("Total Pairs: " + totalPairs);
 		writer.println("Total Running Time: " + (System.nanoTime()-t1)/1E9 + " s");
 		writer.flush();
 		writer.close();
+		writer2.close();
 
 		sc.stop();
 		sc.close();
@@ -208,6 +227,14 @@ public class FingerPrintTesterP8 {
 		System.out.println("total time         : " + (t3-t1)/1E9 + " s");
 	}
 	
+	/**
+	 * write the comparison result of fingerprint v.s. TM
+	 * @param writer
+	 * @param fingerPrint	name of the fingerprint
+	 * @param alignment		name of the alignment algorithm
+	 * @param inputFileName	name of the test set
+	 * @param results
+	 */
 	private void writeToCsv(PrintWriter writer, String fingerPrint,
 			String alignment, String inputFileName, List<Tuple2<String, Tuple2<Float, String>>> results) {
 		float tmThreshold = 0.5f;
@@ -243,6 +270,33 @@ public class FingerPrintTesterP8 {
 		writer.flush();
 	}
 	
+	/**
+	 * write both the tm score and the fingerprint score
+	 * @param writer	
+	 * @param results
+	 */
+	private static void writeToCsv2(PrintWriter writer, List<Tuple2<String, Tuple2<Float, String>>> results) {
+		for (Tuple2<String, Tuple2<Float, String>> t : results) {
+			float tmScore = Float.parseFloat(t._2._2.split(",")[0]);
+			if (tmScore < 0)
+				continue;
+			writer.print(t._1);
+			writer.print(",");
+			writer.printf("%8.2f",tmScore);
+			writer.print(",");
+			writer.printf("%8.2f",t._2._1);
+			writer.println();
+			writer.flush();
+		}
+	}
+	
+	/**
+	 * get the statistics result
+	 * @param joinedResults	testing result
+	 * @param threshold		threshold for fingerprint score
+	 * @param tmThreshold	threshold for tm score
+	 * @return
+	 */
 	private static float[] getStatistics(List<Tuple2<String, Tuple2<Float, String>>> joinedResults, float threshold, float tmThreshold) {
 		float[] scores = new float[7];
 		

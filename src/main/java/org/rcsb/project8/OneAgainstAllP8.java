@@ -33,6 +33,8 @@ import scala.Tuple2;
  * This class is used of one-against-all computation. It will first run a fingerprint alignment as a threshold before 
  * actual TM score computation.
  * 
+ * This class is for testing.
+ * 
  * @author Chris Li
  */
 public class OneAgainstAllP8 {
