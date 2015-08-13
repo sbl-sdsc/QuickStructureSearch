@@ -10,8 +10,7 @@ import org.biojava.nbio.structure.Atom;
 import org.biojava.nbio.structure.AtomImpl;
 import org.biojava.nbio.structure.Calc;
 /**
- * This class generate fingerprint that is a sequence of angles which is the angle 
- * between each three points.
+ * This class transform protein's psi and phi angle into unique blocks.
  * 
  * @author Chris Li
  */

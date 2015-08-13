@@ -8,6 +8,7 @@ import javax.vecmath.Point3d;
 /**
  * This class generates a fingerprint (signature) for protein chains based upon
  * the end-to-end distance of fragments
+ * EndToEndDistanceus stored as a double array sequence
  *
  * @author Peter Rose, Chris Li
  */
@@ -23,17 +24,8 @@ public class EndToEndDistanceDoubleSequenceFingerprint implements SequenceFinger
      */
     public EndToEndDistanceDoubleSequenceFingerprint() {}
     
-    /**
-     * Constructor with all parameters
-     * @param length fragment length
-     */
-    public EndToEndDistanceDoubleSequenceFingerprint(int length, double binSize) {
-        this.length = length;
-	}
-    
-    public EndToEndDistanceDoubleSequenceFingerprint(int randomSeed) {
-		Random r = new Random(randomSeed);
-		this.length = 6 + r.nextInt(3);
+    public EndToEndDistanceDoubleSequenceFingerprint(int length) {
+    	this.length = length;
 	}
 	
 	public float[] getParameters() {

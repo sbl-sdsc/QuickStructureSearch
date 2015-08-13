@@ -17,7 +17,7 @@ import scala.Tuple2;
 public class SmithWatermanP3 implements AlignmentAlgorithmInterface {
 
 	private static final long serialVersionUID = 1L;
-	private Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> data = null;
+	private Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences = null;
     // score of indel
     private double indel = 1;
     // length of v1
@@ -35,8 +35,8 @@ public class SmithWatermanP3 implements AlignmentAlgorithmInterface {
     public SmithWatermanP3() {
 	}
     
-    public SmithWatermanP3(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> data) {
-		this.data = data;
+    public SmithWatermanP3(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences) {
+		this.sequences = sequences;
 	}
     
     /**
@@ -44,15 +44,15 @@ public class SmithWatermanP3 implements AlignmentAlgorithmInterface {
      * @param data
      * @param traceback
      */
-	public SmithWatermanP3(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> data, int traceback) {
-		this.data = data;
+	public SmithWatermanP3(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences, int traceback) {
+		this.sequences = sequences;
 		this.traceback = traceback;
 	}
 	
 	@Override
 	public Tuple2<String, Float> call(Tuple2<Integer, Integer> tuple) {
-		Tuple2<String,SequenceFeatureInterface<?>> t1 = this.data.getValue().get(tuple._1);
-		Tuple2<String,SequenceFeatureInterface<?>> t2 = this.data.getValue().get(tuple._2);
+		Tuple2<String,SequenceFeatureInterface<?>> t1 = this.sequences.getValue().get(tuple._1);
+		Tuple2<String,SequenceFeatureInterface<?>> t2 = this.sequences.getValue().get(tuple._2);
 		
 		StringBuilder key = new StringBuilder();
 		key.append(t1._1);
@@ -77,6 +77,7 @@ public class SmithWatermanP3 implements AlignmentAlgorithmInterface {
 		}
 		for (int i = 1; i <= v1length; i++) {
 		    for (int j = 1; j <= v2length; j++) {
+		    	// check every direction
 		    	double diagScore = score[i - 1][j - 1] + calSimilarity(v1,v2,i-1,j-1);
 		    	double upScore = score[i][j - 1] + indel;
 		    	double leftScore = score[i - 1][j] + indel;
@@ -203,10 +204,13 @@ public class SmithWatermanP3 implements AlignmentAlgorithmInterface {
 	}
 
 	@Override
-	public void setSequence(Broadcast<List<Tuple2<String, SequenceFeatureInterface<?>>>> data) {
-		this.data = data;
+	public void setSequence(Broadcast<List<Tuple2<String, SequenceFeatureInterface<?>>>> sequences) {
+		this.sequences = sequences;
 	}
 
+	/**
+	 * Not used in this algorithm
+	 */
 	@Override
 	public void setCoords(Broadcast<List<Tuple2<String, Point3d[]>>> sequence) {
 	}

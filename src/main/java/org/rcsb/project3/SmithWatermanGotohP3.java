@@ -17,7 +17,7 @@ import scala.Tuple2;
 public class SmithWatermanGotohP3 implements AlignmentAlgorithmInterface {
 
 	private static final long serialVersionUID = 1L;
-	private Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> data = null;
+	private Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences = null;
     // print traceback if it is greater than 0
     private int traceback = 0;
     /* With different open and extend penalty, this class could function the same as LCS or SmithWaterman
@@ -32,41 +32,41 @@ public class SmithWatermanGotohP3 implements AlignmentAlgorithmInterface {
     public SmithWatermanGotohP3() {
 	}
     
-    public SmithWatermanGotohP3(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> data) {
-		this.data = data;
+    public SmithWatermanGotohP3(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences) {
+		this.sequences = sequences;
 	}
     
     /***
      * Constructor with setting options
-     * @param data
+     * @param sequences
      * @param open
      * @param extend
      */
-    public SmithWatermanGotohP3(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> data, double open, double extend) {
-		this.data = data;
+    public SmithWatermanGotohP3(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences, double open, double extend) {
+		this.sequences = sequences;
 		this.open = open;
 		this.extend = extend;
 	}
     
     /**
      * Constructor with traceback option
-     * @param data
+     * @param sequences
      * @param traceback
      */
-	public SmithWatermanGotohP3(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> data, int traceback) {
-		this.data = data;
+	public SmithWatermanGotohP3(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences, int traceback) {
+		this.sequences = sequences;
 		this.traceback = traceback;
 	}
 	
 	@Override
-	public void setSequence(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> data) {
-		this.data = data;
+	public void setSequence(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences) {
+		this.sequences = sequences;
 	}
 	
 	@Override
 	public Tuple2<String, Float> call(Tuple2<Integer, Integer> tuple) {
-		Tuple2<String,SequenceFeatureInterface<?>> t1 = this.data.getValue().get(tuple._1);
-		Tuple2<String,SequenceFeatureInterface<?>> t2 = this.data.getValue().get(tuple._2);
+		Tuple2<String,SequenceFeatureInterface<?>> t1 = this.sequences.getValue().get(tuple._1);
+		Tuple2<String,SequenceFeatureInterface<?>> t2 = this.sequences.getValue().get(tuple._2);
 		
 		StringBuilder key = new StringBuilder();
 		key.append(t1._1);
@@ -136,6 +136,9 @@ public class SmithWatermanGotohP3 implements AlignmentAlgorithmInterface {
 		System.out.println();
 	}
 
+	/**
+	 * Not used in this algorithm
+	 */
 	@Override
 	public void setCoords(Broadcast<List<Tuple2<String, Point3d[]>>> sequence) {
 	}

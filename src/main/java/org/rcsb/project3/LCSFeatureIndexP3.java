@@ -9,13 +9,13 @@ import org.apache.spark.broadcast.Broadcast;
 import scala.Tuple2;
 
 /**
- * This class maps a pair of chains to the length longest common subsequence over the length of the chains
+ * This class maps a pair of fingerprint sequence to find out the length longest common subsequence
  * 
  * @author Chris Li
  */
 public class LCSFeatureIndexP3 implements AlignmentAlgorithmInterface {
 	private static final long serialVersionUID = 1L;
-	private Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> data = null;
+	private Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences = null;
 	// print traceback if it is greater than 0
 	private int traceback = 0;
 	
@@ -25,20 +25,20 @@ public class LCSFeatureIndexP3 implements AlignmentAlgorithmInterface {
      * Constructor with traceback option
      */
 	public LCSFeatureIndexP3(Broadcast<List<Tuple2<String, SequenceFeatureInterface<?>>>> featureVectorsBc,int traceback) {
-		this.data = featureVectorsBc;
+		this.sequences = featureVectorsBc;
 		this.traceback = traceback;
 	}
 	
-	public LCSFeatureIndexP3(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> data) {
-		this.data = data;
+	public LCSFeatureIndexP3(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences) {
+		this.sequences = sequences;
 	}
 
 	/**
 	 * Returns <PdbId.Chain, LCS score> pairs.
 	 */
 	public Tuple2<String, Float> call(Tuple2<Integer, Integer> tuple) throws Exception {
-		Tuple2<String,SequenceFeatureInterface<?>> t1 = this.data.getValue().get(tuple._1);
-		Tuple2<String,SequenceFeatureInterface<?>> t2 = this.data.getValue().get(tuple._2);
+		Tuple2<String,SequenceFeatureInterface<?>> t1 = this.sequences.getValue().get(tuple._1);
+		Tuple2<String,SequenceFeatureInterface<?>> t2 = this.sequences.getValue().get(tuple._2);
 		
 		StringBuilder key = new StringBuilder();
 		key.append(t1._1);
@@ -182,9 +182,13 @@ public class LCSFeatureIndexP3 implements AlignmentAlgorithmInterface {
 	}
 
 	@Override
-	public void setSequence(Broadcast<List<Tuple2<String, SequenceFeatureInterface<?>>>> data) {
-		this.data = data;		
+	public void setSequence(Broadcast<List<Tuple2<String, SequenceFeatureInterface<?>>>> sequences) {
+		this.sequences = sequences;		
 	}
+	
+	/**
+	 * Not used in this algorithm
+	 */
 	@Override
 	public void setCoords(Broadcast<List<Tuple2<String, Point3d[]>>> sequence) {
 	}

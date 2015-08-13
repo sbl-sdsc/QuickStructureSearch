@@ -8,7 +8,8 @@ import org.apache.commons.lang.ArrayUtils;
 
 /**
  * This class implements the SequenceFeatureInterface.
- * It is used for the calculation for EndToEndDistanceSequenceFingerprint
+ * It is used for the calculation for EndToEndDistanceDoubleSequenceFingerprint.
+ * EndToEndDistanceus stored as a double array sequence
  * 
  * @author Chris Li
  */
@@ -21,7 +22,10 @@ public class EndToEndDistanceDoubleSequenceFeature implements SequenceFeatureInt
 	private double match = 1;
 	private double mismatch = -1;
 	private double gap = -1;
+	// Smaller than diff = identity
 	private double diff = 1;
+	// Smaller than maxDiff = similarity
+	private double maxDiff = 6;
 	
     /**
      * Constructor that will store an int array as EndToEndDistance feature
@@ -68,7 +72,7 @@ public class EndToEndDistanceDoubleSequenceFeature implements SequenceFeatureInt
 			if (difference < diff)
 				return match;
 			else {
-				double similarity = 1 - difference/6;
+				double similarity = 1 - difference/maxDiff;
 				if (similarity > 0)
 					return similarity;
 				else

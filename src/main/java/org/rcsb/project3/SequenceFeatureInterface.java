@@ -54,7 +54,7 @@ public interface SequenceFeatureInterface<T> {
 	 */
 	public double todouble(int index);
 	/**
-	 * Get the point3d coords of the protein
+	 * Get the point3d coords of the protein, only used in SmithWatermanIterativeApproach
 	 * @return
 	 */
 	public Point3d[] getCoords();

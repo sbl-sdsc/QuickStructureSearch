@@ -27,7 +27,7 @@ import org.rcsb.project3.JaccardScoreMapperP3;
 import org.rcsb.project3.LevenshteinMapperP3;
 import org.rcsb.project3.SequenceFeatureInterface;
 import org.rcsb.project3.SmithWatermanGotohP3;
-import org.rcsb.project3.SmithWatermanWithGeoComp;
+import org.rcsb.project3.SmithWatermanIterativeApproach;
 import org.rcsb.project3.StructuralAlphabetFingerprint;
 import org.rcsb.structuralSimilarity.ChainIdFilter;
 import org.rcsb.structuralSimilarity.ChainIdPairFilter;

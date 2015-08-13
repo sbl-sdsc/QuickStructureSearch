@@ -21,7 +21,7 @@ import org.rcsb.project3.EndToEndDistanceSequenceFingerprint;
 import org.rcsb.project3.SequenceFeatureInterface;
 import org.rcsb.project3.SequenceFingerprint;
 import org.rcsb.project3.SmithWatermanGotohP3;
-import org.rcsb.project3.SmithWatermanWithGeoComp;
+import org.rcsb.project3.SmithWatermanIterativeApproach;
 import org.rcsb.structuralSimilarity.ChainPairToTmMapper;
 import org.rcsb.structuralSimilarity.ChainSmootherMapper;
 import org.rcsb.structuralSimilarity.GapFilter;
@@ -44,7 +44,7 @@ public class OneAgainstAllForGeoComp {
 	// Other fingerPrint: AngleSequenceFingerprint() || DCT1DSequenceFingerprint()
 	private static SequenceFingerprint fingerPrint = new EndToEndDistanceDoubleSequenceFingerprint();
 	// Other alignment: LCSFeatureIndexP3() || SmithWatermanP3() || JaccardScoreMapperP3() || LevenshteinMapperP3()
-	private static AlignmentAlgorithmInterface alignmentAlgorithm = new SmithWatermanWithGeoComp();
+	private static AlignmentAlgorithmInterface alignmentAlgorithm = new SmithWatermanIterativeApproach();
 	
 	public static void main(String[] args ) throws FileNotFoundException
 	{

@@ -32,9 +32,11 @@ public class Point3dFeature implements SequenceFeatureInterface<Point3d>, Serial
 			return gap;
 		else {
 			double dist = this.get(i).distance(sequence2.get(j));
+			// identity
 			if (dist < diff)
 				return match;
 			else {
+				// similarity
 				double score = 1 - dist/(diff*2.5);
 				if (score > 0)
 					return score;

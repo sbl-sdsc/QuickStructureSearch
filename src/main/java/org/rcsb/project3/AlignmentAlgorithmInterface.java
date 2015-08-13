@@ -16,7 +16,7 @@ import scala.Tuple2;
  */
 public interface AlignmentAlgorithmInterface extends PairFunction<Tuple2<Integer,Integer>,String,Float>{
 	/**
-	 * load seqeuence(fingerprint) data
+	 * load sequence(fingerprint) data
 	 * @param sequences
 	 */
 	public void setSequence(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences);

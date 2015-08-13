@@ -30,7 +30,11 @@ public class AngleSequenceFeature implements SequenceFeatureInterface<Double>, S
 	public AngleSequenceFeature(double[] AngleSequence) {
 		this.AngleSequence = AngleSequence;
 	}
-	
+	/**
+	 * Constructor that also take the protein's 3d coords as an input
+	 * @param AngleSequence
+	 * @param coords
+	 */
 	public AngleSequenceFeature(double[] AngleSequence, Point3d[] coords) {
 		this.AngleSequence = AngleSequence;
 		this.coords = coords;

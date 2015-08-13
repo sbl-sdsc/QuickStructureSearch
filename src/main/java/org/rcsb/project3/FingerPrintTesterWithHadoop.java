@@ -28,7 +28,7 @@ import scala.Tuple2;
 
 /**
  * This class reads .csv files of protein chain pairs and TM similarity metrics and compares
- * the results with similarities calculated by fingerprinting methods
+ * the results one .csv file with similarities calculated by fingerprint methods
  * 
  * @author  Peter Rose
  */

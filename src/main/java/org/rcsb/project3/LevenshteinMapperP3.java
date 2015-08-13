@@ -9,27 +9,27 @@ import org.apache.spark.broadcast.Broadcast;
 import scala.Tuple2;
 
 /**
- * This class compares and scores a pair of chains' fingerprint with the Levenshtein algorithm.
+ * This class compares and scores a pair of chains' fingerprint sequences with the Levenshtein Distance algorithm.
  * 
  * @author  Peter Rose, Chris Li
  */
 public class LevenshteinMapperP3 implements AlignmentAlgorithmInterface {
 	private static final long serialVersionUID = 1L;
-	private Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> data = null;
+	private Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences = null;
 
 	public LevenshteinMapperP3() {
 	}
 
-	public LevenshteinMapperP3(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> data) {
-		this.data = data;
+	public LevenshteinMapperP3(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences) {
+		this.sequences = sequences;
 	}
 
 	/**
 	 * Returns <PdbId.Chain, Levenshtein distance> pairs. 
 	 */
 	public Tuple2<String, Float> call(Tuple2<Integer, Integer> tuple) throws Exception {
-		Tuple2<String,SequenceFeatureInterface<?>> t1 = this.data.getValue().get(tuple._1);
-		Tuple2<String,SequenceFeatureInterface<?>> t2 = this.data.getValue().get(tuple._2);
+		Tuple2<String,SequenceFeatureInterface<?>> t1 = this.sequences.getValue().get(tuple._1);
+		Tuple2<String,SequenceFeatureInterface<?>> t2 = this.sequences.getValue().get(tuple._2);
 		
 		StringBuilder key = new StringBuilder();
 		key.append(t1._1);
@@ -45,10 +45,13 @@ public class LevenshteinMapperP3 implements AlignmentAlgorithmInterface {
     }
 
 	@Override
-	public void setSequence(Broadcast<List<Tuple2<String, SequenceFeatureInterface<?>>>> data) {
-		this.data = data;
+	public void setSequence(Broadcast<List<Tuple2<String, SequenceFeatureInterface<?>>>> sequences) {
+		this.sequences = sequences;
 	}
 
+	/**
+	 * Not used in this algorithm
+	 */
 	@Override
 	public void setCoords(Broadcast<List<Tuple2<String, Point3d[]>>> sequence) {
 	}

@@ -27,13 +27,14 @@ import scala.Tuple2;
 /**
  * This class maps a pair of chains to the longest local common subsequence over the length of the chains
  * using SmithWaterman algorithm and Gotoh's improvement
+ * It is an improved version of SmithWatermanGotohP3 with the iterative approach
  * 
  * @author Chris Li
  */
-public class SmithWatermanWithGeoComp implements AlignmentAlgorithmInterface {
+public class SmithWatermanIterativeApproach implements AlignmentAlgorithmInterface {
 
 	private static final long serialVersionUID = 1L;
-	private Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> data = null;
+	private Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences = null;
 	private Broadcast<List<Tuple2<String,Point3d[]>>> coords = null;
     /* With different open and extend penalty, this class could function the same as LCS or SmithWaterman
      * LCS: open = extend = 0;
@@ -46,34 +47,34 @@ public class SmithWatermanWithGeoComp implements AlignmentAlgorithmInterface {
     // number of rotate and transform time
     private int rotateTime = 4;
 
-    public SmithWatermanWithGeoComp() {
+    public SmithWatermanIterativeApproach() {
 	}
     
-    public SmithWatermanWithGeoComp(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> data) {
-		this.data = data;
+    public SmithWatermanIterativeApproach(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences) {
+		this.sequences = sequences;
 	}
     
     /***
      * Constructor with setting options
-     * @param data
+     * @param sequences
      * @param open
      * @param extend
      */
-    public SmithWatermanWithGeoComp(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> data, double open, double extend) {
-		this.data = data;
+    public SmithWatermanIterativeApproach(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences, double open, double extend) {
+		this.sequences = sequences;
 		this.open = open;
 		this.extend = extend;
 	}
     
 	@Override
-	public void setSequence(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> data) {
-		this.data = data;
+	public void setSequence(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences) {
+		this.sequences = sequences;
 	}
 	
 	@Override
 	public Tuple2<String, Float> call(Tuple2<Integer, Integer> tuple) throws FileNotFoundException {
-		Tuple2<String,SequenceFeatureInterface<?>> t1 = this.data.getValue().get(tuple._1);
-		Tuple2<String,SequenceFeatureInterface<?>> t2 = this.data.getValue().get(tuple._2);
+		Tuple2<String,SequenceFeatureInterface<?>> t1 = this.sequences.getValue().get(tuple._1);
+		Tuple2<String,SequenceFeatureInterface<?>> t2 = this.sequences.getValue().get(tuple._2);
 		
 		StringBuilder key = new StringBuilder();
 		key.append(t1._1);
@@ -115,7 +116,7 @@ public class SmithWatermanWithGeoComp implements AlignmentAlgorithmInterface {
 
 		// rotate and transform to overlap two chains
 		for (int trial = 0; trial < rotateTime; trial++) {
-			SWAlignment = rotateAlign(SWAlignment, c1, c2, t1._1,t2._1, trial);
+			SWAlignment = iterativeApproach(SWAlignment, c1, c2, t1._1,t2._1, trial);
 		}
 
 		// FatCat score calculation
@@ -188,11 +189,12 @@ public class SmithWatermanWithGeoComp implements AlignmentAlgorithmInterface {
 	 * @return
 	 * @throws FileNotFoundException
 	 */
-	private Alignment<?> rotateAlign(Alignment<?> SWAlignment, Point3d[] c1, Point3d[] c2, String name2, String name, int it) throws FileNotFoundException {
+	private Alignment<?> iterativeApproach(Alignment<?> SWAlignment, Point3d[] c1, Point3d[] c2, String name2, String name, int it) throws FileNotFoundException {
 		// if last alignment fail, just return null
 		if (SWAlignment != null && SWAlignment.getSequence1().length > 1) {
 			Integer[] v1Order = SWAlignment.getSequence1();
 			Integer[] v2Order = SWAlignment.getSequence2();
+			// remove null gap
 			ArrayList<Point3d> lp1 = new ArrayList<Point3d>();
 			ArrayList<Point3d> lp2 = new ArrayList<Point3d>();
 			for (int i = 0; i < v1Order.length; i++) {
