@@ -26,12 +26,19 @@ import org.rcsb.structuralSimilarity.SavitzkyGolay7PointSmoother;
 
 import scala.Tuple2;
 
-public class SecondaryStructTest3 {
+/**
+ * For testing large test sets
+ * 
+ * @author Kevin Wu
+ *
+ */
+public class TestAll {
 	private static final int NUM_THREADS = 4;
 	private static final int NUM_TASKS_PER_THREAD = 3;
-	private static final boolean smooth = true;
+	private static final boolean smooth = false;
 
 	public static void main(String[] args) throws IOException {
+		long t = 0;
 		Set<String> needed = new HashSet<>();
 		Map<String, SecondaryStruct> pts = new HashMap<>();
 		ChainPair[] pairs = new ChainPair[0];
@@ -39,7 +46,7 @@ public class SecondaryStructTest3 {
 		String date;
 		date = new SimpleDateFormat("yyyy_MM_dd__hh-mm-ss").format(new Date());
 		PrintWriter out = new PrintWriter(new FileWriter("output_" + date + ".csv"));
-		try (BufferedReader br = new BufferedReader(new FileReader("data/testsethuge.csv"))) {
+		try (BufferedReader br = new BufferedReader(new FileReader("data/testsetHuge.csv"))) {
 			N = Integer.parseInt(br.readLine());
 			pairs = new ChainPair[N];
 			for (int i = 0; i < N; i++) {
@@ -59,11 +66,15 @@ public class SecondaryStructTest3 {
 		addAllIntoMap(needed, pts, args[0], smooth);
 		for (int i = 0; i < N; i++) {
 			System.out.println((i + 1) + " / " + N);
-			if (pts.containsKey(pairs[i].getN1()) && pts.containsKey(pairs[i].getN2()))
+			if (pts.containsKey(pairs[i].getN1()) && pts.containsKey(pairs[i].getN2())) {
+				long t0 = System.nanoTime();
+				double aln = SecondaryStructTools.align(pts.get(pairs[i].getN1()), pts.get(pairs[i].getN2()));
+				t += System.nanoTime() - t0;
 				out.printf("%s,%s,%.5f,%.5f" + System.lineSeparator(), pairs[i].getN1(), pairs[i].getN2(),
-						pairs[i].getTm(),
-						SecondaryStructTools.align(pts.get(pairs[i].getN1()), pts.get(pairs[i].getN2())));
+						pairs[i].getTm(), aln);
+			}
 		}
+		System.out.printf("Time: %.3f" + System.lineSeparator(), (t / 1E9));
 		out.close();
 	}
 

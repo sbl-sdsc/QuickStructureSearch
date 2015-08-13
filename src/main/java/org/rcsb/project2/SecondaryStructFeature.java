@@ -33,8 +33,18 @@ public class SecondaryStructFeature implements StructureCompare {
 		return features._1.length;
 	}
 
+	public int lengthOf(int i) {
+		return features._2[i] - features._1[i];
+	}
+
 	public Tuple2<int[], int[]> getFeatures() {
 		return features;
 	}
 
+	public int getNumPoints() {
+		int o = 0;
+		for (int i = 0; i < length(); i++)
+			o += features._2[i] - features._1[i];
+		return o;
+	}
 }

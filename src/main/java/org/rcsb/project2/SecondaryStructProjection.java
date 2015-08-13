@@ -10,6 +10,12 @@ import javax.vecmath.Vector2d;
 
 import scala.Tuple2;
 
+/**
+ * Class for projections of secondary structures
+ * 
+ * @author Kevin Wu
+ *
+ */
 public class SecondaryStructProjection {
 	private final double X_DIFF = 5.0;
 	private final double Y_DIFF = 5.0;
@@ -54,22 +60,59 @@ public class SecondaryStructProjection {
 		return N;
 	}
 
+	/**
+	 * Gets the start point of the ith vector
+	 * 
+	 * @param i
+	 *            Which vector to get the start point of
+	 * @return The start point of the ith vector
+	 */
 	public Vector2d getStart(int i) {
 		return s[i];
 	}
 
+	/**
+	 * Gets the end point of the ith vector
+	 * 
+	 * @param i
+	 *            Which vector to get the end point of
+	 * @return The end point of the ith vector
+	 */
 	public Vector2d getEnd(int i) {
 		return e[i];
 	}
 
+	/**
+	 * Gets the start and end of the ith vector
+	 * 
+	 * @param i
+	 *            Which vector to get the start and end of
+	 * @return The start and end of the ith vector
+	 */
 	public Tuple2<Vector2d, Vector2d> get(int i) {
 		return new Tuple2<>(new Vector2d(s[i]), new Vector2d(e[i]));
 	}
 
+	/**
+	 * Gets the start and end of a vector that is close to the given start and end
+	 * 
+	 * @param t
+	 *            Start and end of the given vector
+	 * @return the vector that is close to the given start and end
+	 */
 	public Tuple2<Integer, Double> getCloseTo(Tuple2<Vector2d, Vector2d> t) {
 		return getCloseTo(t._1, t._2);
 	}
 
+	/**
+	 * Gets the start and end of a vector that is close to the given start and end
+	 * 
+	 * @param st
+	 *            Start vector
+	 * @param en
+	 *            end vector
+	 * @return the vector that is close to the given start and end
+	 */
 	public Tuple2<Integer, Double> getCloseTo(Vector2d st, Vector2d en) {
 		Tuple2<Integer, Double> NO_MATCH = new Tuple2<>(-1, -1.0);
 		// System.out.println("finding " + st + " , " + en);
@@ -130,6 +173,15 @@ public class SecondaryStructProjection {
 		return score < 50 ? new Tuple2<>(min, score) : NO_MATCH;
 	}
 
+	/**
+	 * Finds an index based on the given Predicate. This does binary search.
+	 * 
+	 * @param len
+	 *            search space, from 0 to len-1
+	 * @param bigger
+	 *            Predicate for locating the index.
+	 * @return Index where the given Predicate leads to
+	 */
 	private static int search(int len, Predicate<Integer> bigger) {
 		int lo = 0;
 		int hi = len - 1;

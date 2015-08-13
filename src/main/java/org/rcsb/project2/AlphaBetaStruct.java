@@ -5,6 +5,12 @@ import javax.vecmath.Vector3d;
 
 import scala.Tuple2;
 
+/**
+ * Class for Alpha helices and Beta Strands
+ * 
+ * @author Kevin Wu
+ *
+ */
 public class AlphaBetaStruct extends SecondaryStructFeature {
 	public AlphaBetaStruct(Tuple2<int[], int[]> features, Vector3d normP, Vector3d normX, Point3d normC, Point3d[] pts) {
 		this.features = features;
