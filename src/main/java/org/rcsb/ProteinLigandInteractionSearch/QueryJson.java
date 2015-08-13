@@ -28,6 +28,7 @@ public class QueryJson {
 	public static void main(String[] args ) throws FileNotFoundException
 	{
 		String path = args[0];
+		String jsonfile=args[1];
 		JavaSparkContext sc = getSparkContext();
 		// sc is an existing JavaSparkContext.
 		SQLContext sqlContext = new org.apache.spark.sql.SQLContext(sc);
@@ -45,9 +46,9 @@ public class QueryJson {
 		System.out.println("Choose either:  1. Atom name or 2.Element name  3. Simple query");
 		Scanner scan = new Scanner(System.in);
 		int choice = scan.nextInt();   
-		List<String> input= ReadJsn();
+		List<String> input= ReadJsn(jsonfile);
 		String [] Pro = new String[2]; // residue 1 (protein) names
-		String [] Lig= new String[2]; // residue 2 (Ligand) names
+		String [] Lig= new String[2]; // residue 2 (ligand) names
 		String [] atom1= new String[2]; // atom 1 (protein) names
 		String [] atom2= new String[2]; // atom 2 (ligand) names
 		String [] elemnt1= new String[2]; // element 1
@@ -299,7 +300,7 @@ public class QueryJson {
 		System.out.println("Time: " + (System.nanoTime() - start)/1E9 + " sec.");
 	}
 
-	private static List<String> ReadJsn () {
+	private static List<String> ReadJsn (String path) {
 		String res1=null;
 		String res2= null;
 		String atm1=null;
@@ -312,7 +313,8 @@ public class QueryJson {
 		List<String> queries = new ArrayList <String>();
 		JSONParser parser = new JSONParser();
 		try {
-			Object obj = parser.parse(new FileReader("/Users/hina/query1.txt"));
+//			String path=args[0];
+			Object obj = parser.parse(new FileReader(path));
 			JSONObject jsonObject = (JSONObject) obj;
 			JSONArray interactions = (JSONArray) jsonObject.get("interactions");
 			Iterator<?> iterator = interactions.iterator();
