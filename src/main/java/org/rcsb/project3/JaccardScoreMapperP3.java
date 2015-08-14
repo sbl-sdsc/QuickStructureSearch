@@ -12,6 +12,8 @@ import scala.Tuple2;
  * This class maps a pair of chains, specified by two indices into the broadcasted sequences list, to
  * a Jaccard Index. It calculates the Jaccard index for multi-sets.
  * 
+ * Order of fragments are getting ignored for Jaccard index calculation.
+ * 
  * @author  Peter Rose, Chris Li
  */
 public class JaccardScoreMapperP3 implements AlignmentAlgorithmInterface {

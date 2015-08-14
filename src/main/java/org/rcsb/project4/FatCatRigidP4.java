@@ -25,6 +25,7 @@ import org.rcsb.structuralAlignment.SuperPositionQCP;
 /**
  * This class calculates the TM score of two protein chains using the FatCatRigid.
  * Use the new QCP method to improve the speed of getting RMSD
+ * New functions: getRmsdQCP and getFragmentP3d
  * 
  * @author Chris Li
  */

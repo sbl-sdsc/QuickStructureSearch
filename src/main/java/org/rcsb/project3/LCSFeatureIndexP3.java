@@ -11,6 +11,8 @@ import scala.Tuple2;
 /**
  * This class maps a pair of fingerprint sequence to find out the length longest common subsequence
  * 
+ * Using SmithWatermanGotoh with different parameters will result the same output and may have faster speed.
+ * 
  * @author Chris Li
  */
 public class LCSFeatureIndexP3 implements AlignmentAlgorithmInterface {

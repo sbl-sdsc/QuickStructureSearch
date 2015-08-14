@@ -12,6 +12,8 @@ import scala.Tuple2;
  * This class maps a pair of chains to the longest local common subsequence over the length of the chains
  * using the SmithWaterman algorithm
  * 
+ * Using SmithWatermanGotoh with different parameters will result the same output and may have faster speed.
+ * 
  * @author Chris Li
  */
 public class SmithWatermanP3 implements AlignmentAlgorithmInterface {

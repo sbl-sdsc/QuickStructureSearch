@@ -9,8 +9,8 @@ import org.apache.commons.lang.ArrayUtils;
 /**
  * This class implements the SequenceFeatureInterface.
  * It is used for the calculation for EndToEndDistanceSequenceFingerprint
- * EndToEndDistance is treated as fragment, and stored as an int array
- * No similarity for this
+ * EndToEndDistance is treated as fragment, and stored as an int array ( for different bin )
+ * No similarity for this, may be used for Jaccard Index
  * 
  * @author Chris Li
  */

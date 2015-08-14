@@ -44,6 +44,7 @@ public class SmithWatermanIterativeApproach implements AlignmentAlgorithmInterfa
     // extend gap penalty
     private double extend = 0.5;
     // number of rotate and transform time
+    // TODO in the Iterative Approach, may use different parameters for SmithWatermanGotoh for different iteration.
     private int rotateTime = 4;
 
     public SmithWatermanIterativeApproach() {

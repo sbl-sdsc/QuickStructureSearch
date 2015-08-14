@@ -13,6 +13,8 @@ import org.biojava.nbio.structure.Calc;
  * This class transform protein's psi and phi angle into unique blocks.
  * In order to use this fingerPrint, may need to use sequence file that contain CA, N and C atoms
  * 
+ * reference: https://github.com/pierrepo/PBxplore/blob/master/PBlib.py
+ * 
  * @author Chris Li
  */
 public class StructuralAlphabetFingerprint implements SequenceFingerprint, Serializable {

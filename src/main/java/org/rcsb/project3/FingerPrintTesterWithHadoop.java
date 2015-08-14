@@ -30,6 +30,8 @@ import scala.Tuple2;
  * This class reads .csv files of protein chain pairs and TM similarity metrics and compares
  * the results one .csv file with similarities calculated by fingerprint methods
  * 
+ * It is used for fingerprint and alignment testing
+ * 
  * @author  Peter Rose
  */
 public class FingerPrintTesterWithHadoop { 

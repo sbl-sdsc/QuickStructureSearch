@@ -8,6 +8,8 @@ import javax.vecmath.Point3d;
  * This class implements the SequenceFeatureInterface.
  * It is used for the calculation for StructuralAlphabetFingerprint
  * 
+ * reference: https://github.com/pierrepo/PBxplore/blob/master/PBlib.py
+ * 
  * @author Chris Li
  */
 public class StructuralAlphabetFeature implements SequenceFeatureInterface<String>, Serializable {

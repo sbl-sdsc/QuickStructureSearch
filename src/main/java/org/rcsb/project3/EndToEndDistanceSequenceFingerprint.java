@@ -8,8 +8,8 @@ import javax.vecmath.Point3d;
 /**
  * This class generates a fingerprint (signature) for protein chains based upon
  * the end-to-end distance of fragments
- * EndToEndDistance is treated as fragment, and stored as an int array
- * No similarity for this
+ * EndToEndDistance is treated as fragment, and stored as an int array ( for different bin )
+ * No similarity for this, may be used for Jaccard Index
  *
  * @author Peter Rose
  */

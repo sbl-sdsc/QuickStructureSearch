@@ -30,6 +30,8 @@ import scala.Tuple2;
  * This class is used of one-against-all computation. It will first run a fingerprint alignment as a threshold before 
  * actual TM score computation.
  * 
+ * The main function is an example of how to use this class.
+ * 
  * @author Chris Li
  */
 public class OneAgainstAllWithThreshold {
@@ -43,7 +45,7 @@ public class OneAgainstAllWithThreshold {
 	private AlignmentAlgorithmInterface alignmentAlgorithm = new SmithWatermanIterativeApproach();
 	
 	/**
-	 * Default constructor
+	 * Default constructor with EndToEndDistanceDoubleSequenceFingerprint & SmithWatermanIterativeApproach
 	 */
 	public OneAgainstAllWithThreshold() {}
 	
@@ -97,6 +99,7 @@ public class OneAgainstAllWithThreshold {
 			System.out.println("Please enter tmFilter between 0 and 1");
 			return;
 		}
+		// TODO may need further parameters optimized
 		if (tmFilter > 0.85)
 			fingerPrintFilter = 0.75;
 		else if (tmFilter > 0.8)

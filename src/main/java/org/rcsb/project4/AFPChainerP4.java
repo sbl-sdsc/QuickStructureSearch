@@ -41,6 +41,7 @@ import javax.vecmath.Point3d;
 /**
  * a class to chain AFPs to an alignment, add precomputation filter for calAfpDis
  * add the function calAfpDisPre as a filter to reduce computations
+ * new function: calAfpDisPre
  * 
  * @author Andreas Prlic, Chris Li
  *

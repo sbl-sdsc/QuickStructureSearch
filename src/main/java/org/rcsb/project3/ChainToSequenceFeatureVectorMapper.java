@@ -7,7 +7,7 @@ import org.apache.spark.api.java.function.PairFunction;
 import scala.Tuple2;
 
 /**
- * This class is used to map the protein chain to sequence feature
+ * This class is used to map the protein chain to sequence feature (fingerprint)
  * 
  * @author Chris Li
  */
