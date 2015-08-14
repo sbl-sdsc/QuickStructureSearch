@@ -31,12 +31,19 @@ import scala.Tuple3;
  * @author Grant Summers
  *
  */
-
 public class Library
 {
 	private static int NUM_THREADS = 4;
 	private static int NUM_TASKS_PER_THREAD = 3;	
 	private static int length = 8;
+
+	/**
+	 * Main method
+	 * @param  args                         no arguments necessary - all specified. Make sure to modify 
+	 *                                      the path below to fit your computer!
+	 * @throws FileNotFoundException
+	 * @throws UnsupportedEncodingException
+	 */
 	public static void main(String[] args) throws FileNotFoundException, UnsupportedEncodingException
 	{
 		
@@ -60,17 +67,17 @@ public class Library
 				.collect();		
 		
 		ArrayList<Tuple3<String, String, Point3d[]>> lib = new ArrayList<>();
-		ArrayList<Double> templist = new ArrayList<>();
 		SuperPositionQCP qcp = new SuperPositionQCP(true);
-		ArrayList<Integer> skiplist = new ArrayList<>();
 		int threshold = 1;
 		boolean bool = true;
 		int counter = 0;
 		ArrayList<String> title = new ArrayList<>();
 		ArrayList<Integer> freq = new ArrayList<>();
 		int number;
-
-		
+		double q;
+		ArrayList<ArrayList<Double>> comparisons = new ArrayList<>();
+		ArrayList<Double> templist = new ArrayList<>();
+		ArrayList<Integer> skiplist = new ArrayList<>();
 
 		
 		for (Tuple2<String, Point3d[]> t: chains){
@@ -93,13 +100,20 @@ public class Library
 					libloop: for (int i = 0; i < lib.size(); i++) {
 						if (lib.get(i)._2().equals(tup._2()) && !skiplist.contains(i)) {
 							qcp.set(lib.get(i)._3(), tup._3());
-							double q = qcp.getRmsd();
-							
+							q = qcp.getRmsd();
+							for (int j = i; j < comparisons.size(); j++) {
+								if (i == lib.size() - 1) {
+									System.out.println("i and end");
+									break;
+								}
+								else if (comparisons.get(j).size() > i && Math.abs(q - comparisons.get(j).get(i)) >= 1) {
+									skiplist.add(j);
+									System.out.println("something added to  skipplist!");
+								}
+							}
 							if (q < threshold) {
 								bool = false;
-								if(!templist.isEmpty()){
-									templist.clear();
-								}
+								templist.clear();
 								int key = searcher(title, lib.get(i)._1());
 								if (key != -1) {
 									number = freq.get(key) + 1;
@@ -123,8 +137,9 @@ public class Library
 					if (bool == true) {
 						title.add(tup._1());
 						freq.add(1);
-						templist.clear();
 						lib.add(tup);
+						comparisons.add(templist);
+						templist.clear();
 					}
 					else {
 						bool = true;
@@ -160,6 +175,13 @@ public class Library
 		System.out.println("Time: " + (System.nanoTime() - start)/1E9 + " sec.");
 	}
 	
+
+	/**
+	 * Finds the index of a string in an arraylist, to be used in conjunction with another arraylist.
+	 * @param  a Arraylist to search through
+	 * @param  b Search argument
+	 * @return   index of b in a - if it exists, otherwise, returns -1
+	 */
 	public static Integer searcher (ArrayList<String> a, String b) {
 		for (int s = 0; s < a.size(); s++) {
 			if (a.get(s).equals(b)) {
@@ -169,6 +191,12 @@ public class Library
 		return -1;
 	}
 
+	/**
+	 * Returns a string in the form of "x - y", where x is the length of p rounded down
+	 * to the nearest @round and y is the length of p rounded up to the nearest @round.
+	 * @param p point 3d array that this method finds the length boundaries of.
+	 * @return String with length of p rounded up and down to the nearest @round.
+	 */
 	public static String lengthy (Point3d[] p) {
 		int round = 2;
 		double i = Math.abs(p[p.length-1].distance(p[0]));
