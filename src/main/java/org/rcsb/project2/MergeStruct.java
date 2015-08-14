@@ -4,6 +4,12 @@ import java.util.Arrays;
 
 import scala.Tuple2;
 
+/**
+ * For merging alpha helices and beta strands
+ * 
+ * @author Kevin Wu
+ *
+ */
 public class MergeStruct extends SecondaryStructFeature {
 
 	public MergeStruct(SecondaryStruct s) {

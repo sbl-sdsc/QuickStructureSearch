@@ -56,12 +56,32 @@ public class SecondaryStruct {
 		return dists.length;
 	}
 
+	/**
+	 * @return length of alpha helices
+	 */
 	public int getAlphaLength() {
 		return alphaHelices.length();
 	}
 
+	/**
+	 * @return length of beta strands
+	 */
 	public int getBetaLength() {
 		return betaStrands.length();
+	}
+
+	/**
+	 * @return number of alpha helix points
+	 */
+	public int getNumAlphaPoints() {
+		return alphaHelices.getNumPoints();
+	}
+
+	/**
+	 * @return number of beta strand points
+	 */
+	public int getNumBetaPoints() {
+		return betaStrands.getNumPoints();
 	}
 
 	/**
@@ -91,14 +111,23 @@ public class SecondaryStruct {
 		return Arrays.copyOfRange(dists, i, j);
 	}
 
+	/**
+	 * @return Point3d array (backbone)
+	 */
 	public Point3d[] getPoints() {
 		return pts;
 	}
 
+	/**
+	 * @return {@link SecondaryStructFeature} for the alpha helices
+	 */
 	public SecondaryStructFeature getAlpha() {
 		return alphaHelices;
 	}
 
+	/**
+	 * @return {@link SecondaryStructFeature} for the beta strands
+	 */
 	public SecondaryStructFeature getBeta() {
 		return betaStrands;
 	}
@@ -116,10 +145,22 @@ public class SecondaryStruct {
 		return alphaHelices.getProjection(i);
 	}
 
+	/**
+	 * Return a {@link SecondaryStructProjection} for the projection of all the beta strand vectors onto the ith beta
+	 * strand plane
+	 * 
+	 * @param i
+	 *            index of beta strand to project onto.
+	 * @return A {@link SecondaryStructProjection} for the projection of all the beta strand vectors onto the ith beta
+	 *         strand plane
+	 */
 	public SecondaryStructProjection getBetaProjection(int i) {
 		return betaStrands.getProjection(i);
 	}
 
+	/**
+	 * initialize the principal axes vectors
+	 */
 	private void initNormProjections() {
 		MomentsOfInertia m = new MomentsOfInertia();
 		for (Point3d pt : pts) {
@@ -144,14 +185,34 @@ public class SecondaryStruct {
 		normX = new Vector3d(v[hi]);
 	}
 
+	/**
+	 * returns the norm projections for the alpha helices using the bits in b to determine which axes to flip
+	 * 
+	 * @param b
+	 *            bits in b determine which axes flip, 0 for no flip
+	 * @return {@link SecondaryStructProjection} on the norm vectors
+	 */
 	public SecondaryStructProjection getAlphaNormProjection(byte b) {
 		return alphaHelices.getNormProjection(b);
 	}
 
+	/**
+	 * returns the norm projections for the beta strands using the bits in b to determine which axes to flip
+	 * 
+	 * @param b
+	 *            bits in b determine which axes flip, 0 for no flip
+	 * @return {@link SecondaryStructProjection} on the norm vectors
+	 */
 	public SecondaryStructProjection getBetaNormProjection(byte b) {
 		return betaStrands.getNormProjection(b);
 	}
 
+	/**
+	 * Prints a {@link SecondaryStructProjection}
+	 * 
+	 * @param p
+	 *            {@link SecondaryStructProjection} to print
+	 */
 	public static void printProjection(SecondaryStructProjection p) {
 		for (int i = 0; i < p.length(); i++) {
 			System.out.printf("%.3f\t%.3f\t%.3f\t%.3f" + System.lineSeparator(), p.getStart(i).x, p.getStart(i).y,
@@ -159,6 +220,27 @@ public class SecondaryStruct {
 		}
 	}
 
+	/**
+	 * prints the coordinates of the vectors
+	 * 
+	 * @param t
+	 *            {@link Tuple2} of int[] for the vectors
+	 */
+	public void printVectors(Tuple2<int[], int[]> t) {
+		int[] s = t._1;
+		int[] e = t._2;
+		for (int i = 0; i < s.length; i++) {
+			System.out.println("=" + pts[s[i]] + "\t=" + pts[e[i]]);// + "\t=Segment[A" + (i + 1) + ", B" + (i + 1) +
+			// "]");
+		}
+	}
+
+	/**
+	 * prints the alpha projection onto the ind'th alpha helix
+	 * 
+	 * @param ind
+	 *            index of which alpha helix to be the plane for projection
+	 */
 	public void printAlphaProjection(int ind) {
 		SecondaryStructProjection alpha = getAlphaProjection(ind);
 		for (int i = 0; i < alpha.length(); i++) {
@@ -167,15 +249,12 @@ public class SecondaryStruct {
 		}
 	}
 
-	public void testPrint(Tuple2<int[], int[]> t) {
-		int[] s = t._1;
-		int[] e = t._2;
-		for (int i = 0; i < s.length; i++) {
-			System.out.println("=" + pts[s[i]] + "\t=" + pts[e[i]]);// + "\t=Segment[A" + (i + 1) + ", B" + (i + 1) +
-																	// "]");
-		}
-	}
-
+	/**
+	 * prints the beta projection onto the ind'th beta strand
+	 * 
+	 * @param ind
+	 *            index of which beta strand to be the plane for projection
+	 */
 	public void printBetaProjection(int ind) {
 		SecondaryStructProjection beta = getBetaProjection(ind);
 		for (int i = 0; i < beta.length(); i++) {
@@ -201,8 +280,12 @@ public class SecondaryStruct {
 	public void printStrands() {
 		Tuple2<int[], int[]> strand = betaStrands.getFeatures();
 		for (int i = 0; i < strand._1.length; i++) {
-			System.out.printf("%d-%d, %.5f" + System.lineSeparator(), strand._1[i] + 1, strand._2[i] + 1,
-					pts[strand._1[i]].distance(pts[strand._2[i]]));
+			boolean nice = false;
+			if (nice)
+				System.out.printf("%d-%d|", strand._1[i] + 1, strand._2[i] + 1);
+			else
+				System.out.printf("%d-%d, %.5f :: %s" + System.lineSeparator(), strand._1[i] + 1, strand._2[i] + 1,
+						pts[strand._1[i]].distance(pts[strand._2[i]]), pts[strand._1[i]]);
 		}
 	}
 

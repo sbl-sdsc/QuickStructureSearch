@@ -30,7 +30,6 @@ import org.biojava.nbio.structure.symmetry.geometry.SuperPositionQCP;
 import org.rcsb.hadoop.io.HadoopToSimpleChainMapper;
 import org.rcsb.hadoop.io.SimplePolymerChain;
 import org.rcsb.hadoop.io.SimplePolymerType;
-import org.rcsb.structuralSimilarity.TmScorer;
 import org.rcsb.utils.BlastClustReader;
 
 import scala.Tuple2;
@@ -847,7 +846,7 @@ public class SequenceToStructureClusterer {
 					else {
 						for(int alpha = 0; alpha < strRepChain1.size(); alpha ++) {
 							for(int beta = 0; beta < strRepChain2.size(); beta ++) {
-								double rmsd = TmScorer.getFatCatTmScore(strRepChain1.get(alpha)._2().getCoordinates(), strRepChain2.get(beta)._2().getCoordinates())[1];
+								double rmsd = SmithWaterman.getFatCatTmScore(strRepChain1.get(alpha)._2().getCoordinates(), strRepChain2.get(beta)._2().getCoordinates())[1];
 								if(strRepChain1.get(alpha)._3() + strRepChain2.get(beta)._3() + rmsd > maxRmsd) {
 									//	System.out.println(strRepChain1.get(alpha)._3() + "  " + strRepChain2.get(beta)._3() + "  " + rmsd);
 									canMerge = false;
