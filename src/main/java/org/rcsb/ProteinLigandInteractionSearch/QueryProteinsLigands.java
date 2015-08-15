@@ -11,7 +11,11 @@ import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
 import org.rcsb.hadoop.io.HadoopToParquetFile;
-
+/**
+ * 
+ * @author Hinna Shabir
+ *
+ */
 public class QueryProteinsLigands {
 
 

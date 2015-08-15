@@ -8,7 +8,11 @@ import java.util.List;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-
+/**
+ * 
+ * @author Hinna Shabir
+ *
+ */
 public class ReadJson {
 	// read the json file and return a string for each protein-ligand interaction to query the parquet file
 	public static String Read () {

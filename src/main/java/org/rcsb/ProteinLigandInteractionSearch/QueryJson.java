@@ -7,7 +7,6 @@ import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Scanner;
-
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
@@ -18,17 +17,37 @@ import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
 import org.rcsb.hadoop.io.HadoopToParquetFile;
-
+/**
+ * 
+ * @author Hinna Shabir
+ *
+ */
 public class QueryJson {
 
 	private static int NUM_THREADS = 8;
 	private static int NUM_TASKS_PER_THREAD = 3; // Spark recommends 2-3 tasks per thread
 
 	@SuppressWarnings("null")
+	/**
+	 * 
+	 * @param args
+	 * @throws FileNotFoundException
+	 */
 	public static void main(String[] args ) throws FileNotFoundException
 	{
 		String path = args[0];
-		String jsonfile=args[1];
+		String jsonfile=args[1];   
+		List<String> input= ReadJsn(jsonfile);
+		String [] Pro = new String[2]; // residue 1 (protein) names
+		String [] Lig= new String[2]; // residue 2 (ligand) names
+		String [] atom1= new String[2]; // atom 1 (protein) names
+		String [] atom2= new String[2]; // atom 2 (ligand) names
+		String [] elemnt1= new String[2]; // element 1
+		String [] elemnt2= new String[2]; // element 2
+		int [] dist1 = new int [2]; // lower bound
+		int [] dist2= new int [2];  // upper bound
+		String [] pnum= new String [2];
+		String [] lnum= new String [2];
 		JavaSparkContext sc = getSparkContext();
 		// sc is an existing JavaSparkContext.
 		SQLContext sqlContext = new org.apache.spark.sql.SQLContext(sc);
@@ -42,21 +61,10 @@ public class QueryJson {
 		// Register the DataFrame as a table.
 		data.registerTempTable("Distances");
 		DataFrame results=null;
-//		long querystart = System.nanoTime();
 		System.out.println("Choose either:  1. Atom name or 2.Element name  3. Simple query");
 		Scanner scan = new Scanner(System.in);
-		int choice = scan.nextInt();   
-		List<String> input= ReadJsn(jsonfile);
-		String [] Pro = new String[2]; // residue 1 (protein) names
-		String [] Lig= new String[2]; // residue 2 (ligand) names
-		String [] atom1= new String[2]; // atom 1 (protein) names
-		String [] atom2= new String[2]; // atom 2 (ligand) names
-		String [] elemnt1= new String[2]; // element 1
-		String [] elemnt2= new String[2]; // element 2
-		int [] dist1 = new int [2]; // lower bound
-		int [] dist2= new int [2];  // upper bound
-		String [] pnum= new String [2];
-		String [] lnum= new String [2];
+		int choice = scan.nextInt();
+		// make data suitable for sql by enclosing in quotes
 	    for (int i=0; i<input.size();i++)
 		{
 		String [] strng = input.get(i).trim().split("-");
@@ -81,8 +89,8 @@ public class QueryJson {
 //			dist1[0]=Integer.parseInt(strng[4]);
 //			dist2[0]=Integer.parseInt(strng[5]);
 			results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
-					" WHERE D1.res1="+ Pro[0]+" AND D1.res2=" +Lig[0]+ 
-					" AND D1.atom1="+ atom1[0]+" AND D1.atom2="+atom2[0] + " AND D1.distance >="+  dist1[0]+ 
+					" WHERE D1.res1="+ Pro[0]+" AND D1.res2=" + Lig[0]+ 
+					" AND D1.atom1="+ atom1[0]+" AND D1.atom2="+ atom2[0] + " AND D1.distance >="+  dist1[0]+ 
 					" AND D1.distance <="+ dist2[0]);
 			break;
 
@@ -283,7 +291,6 @@ public class QueryJson {
 			System.out.println("Choose either 1 or 2");
 		}
 //		System.out.println("Querying Time: " + (System.nanoTime() - querystart)/1E9 + " sec.");
-
 		List<String> Rows = results.javaRDD().map(new Function<Row, String>() {
 			private static final long serialVersionUID = 1L;
 			public String call(Row row) {
@@ -299,7 +306,11 @@ public class QueryJson {
 
 		System.out.println("Time: " + (System.nanoTime() - start)/1E9 + " sec.");
 	}
-
+/**
+ * 
+ * @param path
+ * @return
+ */
 	private static List<String> ReadJsn (String path) {
 		String res1=null;
 		String res2= null;
@@ -350,6 +361,10 @@ public class QueryJson {
 		}
 		return (queries);
 	}
+	/**
+	 * 
+	 * @return
+	 */
 
 	private static JavaSparkContext getSparkContext() {
 		SparkConf conf = new SparkConf()

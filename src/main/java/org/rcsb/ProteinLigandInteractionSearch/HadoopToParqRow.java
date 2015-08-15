@@ -7,18 +7,13 @@ import org.apache.spark.api.java.function.Function;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import scala.Tuple2;
-
+/**
+ * 
+ * @author Hinna Shabir
+ *
+ */
 public class HadoopToParqRow implements Function<Tuple2<String, Iterable<String>>, Row> {
-
-	private static final long serialVersionUID = 1L;
-	@Override
 	public Row call(Tuple2<String, Iterable<String>> tuple) throws Exception {
-
-//		int strlen= tuple._1.length();
-//		if (strlen!=13){
-//		System.out.println(tuple._1);
-//		}
-		
 		ArrayList <String> v= new ArrayList <String>();
 		String [] keys= tuple._1.split(",");
 		for (String s:tuple._2) {
@@ -26,12 +21,6 @@ public class HadoopToParqRow implements Function<Tuple2<String, Iterable<String>
 		}
 		String[] pdbIds = v.toArray(new String[v.size()]);
 		// System.out.println("# of PdbIds: " + pdbIds.length);
-		 
-//		for (int i=0; i<pdbIds.length ;i++){
-//	       System.out.println(i);
-//	       System.out.println("pdbIds :"+ pdbIds[i]);
-//		}
-		
 		List<String> aminos=Arrays.asList("ARG", "HIS","LYS","ASP","GLU","SER","THR","ASN","GLN","CYS","GLY","PRO","ALA","VAL","ILE","LEU","MET","PHE","TYR","TRP");
 		String index= new String();
 		index= "Other";
@@ -41,14 +30,9 @@ public class HadoopToParqRow implements Function<Tuple2<String, Iterable<String>
 				break;
 			}
 		}
-		//System.out.println(keys[6]);
-		//System.out.println("distance: "+ keys[12]);
-		//System.out.println(pdbIds);
-		
 //		if (keys[12].equals("O")||keys[12].equals("Cd") ){
 //				keys[12]="0";
-//		}	
-		
+//		}		
 		int size=keys.length;
 		if (size!=13){
 		System.out.println("Length: "+size);

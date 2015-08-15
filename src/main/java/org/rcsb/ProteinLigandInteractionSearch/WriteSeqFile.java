@@ -15,7 +15,6 @@ import java.util.SortedSet;
 import java.util.TreeSet;
 
 import javax.vecmath.Point3d;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IOUtils;
@@ -35,12 +34,21 @@ import org.biojava.nbio.structure.align.util.HTTPConnectionTools;
 import org.biojava.nbio.structure.io.FileParsingParameters;
 import org.biojava.nbio.structure.io.mmcif.ChemCompGroupFactory;
 import org.biojava.nbio.structure.io.mmcif.DownloadChemCompProvider;
-
+/**
+ * This class creates a hadoop sequence file of protein-ligand interactions,
+ * the file contains chain id, sequence number, insertion code, residue name, atom name and element name
+ * @author Hinna Shabir
+ *
+ */
 
 public class WriteSeqFile {
 	private static AtomCache cache = initializeCache();
 	private static String allUrl = "http://www.rcsb.org/pdb/rest/getCurrent/";
-
+/**
+ * 
+ * @param args ?? no parameter?
+ * @throws IOException ??
+ */
 	public static void main(String[] args) throws IOException {
 		String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
 
@@ -57,18 +65,12 @@ public class WriteSeqFile {
 		subset.add("2R80");
 		subset.add("3D7K");
 		subset.add("3FZN");
-		/*	subset.add("4I73");
-		subset.add("4EHC");
-		subset.add("3N95");
-		subset.add("3SH1");
-		subset.add("3N96");*/
 		StructureIO.setAtomCache(cache);
 		cache.setPath("/Users/hina/DistanceData/");
 
 		long start = System.nanoTime();
 
 		SequenceFile.Writer writer = null;
-
 		int failure = 0;
 		int success = 0;
 		int chains = 0;
@@ -193,7 +195,7 @@ public class WriteSeqFile {
 
 	/**
 	 * Returns the current list of all PDB IDs.
-	 * @return PdbChainKey set of all PDB IDs.
+	 * @return representatives set of all PDB IDs.
 	 */
 	public static SortedSet<String> getAll() {
 		SortedSet<String> representatives = new TreeSet<String>();
@@ -224,7 +226,10 @@ public class WriteSeqFile {
 
 		return representatives;
 	}
-
+/**
+ * 
+ * @return
+ */
 	private static AtomCache initializeCache() {
 		AtomCache cache = new AtomCache();
 		cache.setUseMmCif(true);

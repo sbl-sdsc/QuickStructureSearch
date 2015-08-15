@@ -9,16 +9,18 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 
 import scala.Tuple2;
-
 /**
- * This class creates structural alignments between random protein chain pairs 
- * using jFatCAT and scores the alignments with the TM score
- * 
- * @author  Peter Rose
+ * Reads the hadoop seqeunce file of protein-ligand interactions
+ * @author Hinna Shabir
+ *
  */
 public class ReadSeqFile { 
 	private static int NUM_THREADS = 1;
-
+/**
+ * 
+ * @param args Path of the sequence file to be read
+ * @throws FileNotFoundException
+ */
 	public static void main(String[] args ) throws FileNotFoundException
 	{
 		String sequenceFileName = args[0];
@@ -28,7 +30,11 @@ public class ReadSeqFile {
 		creator.run(sequenceFileName);
 		System.out.println("Time: " + ((System.nanoTime()-t1)/1E9) + " s");
 	}
-
+/**
+ * 
+ * @param sequenceFileName Path of the sequence file to be read
+ * @throws FileNotFoundException
+ */
 	private void run(String sequenceFileName) throws FileNotFoundException {
 		// setup spark
 		JavaSparkContext sc = getSparkContext();
@@ -41,12 +47,14 @@ public class ReadSeqFile {
 	   for(Tuple2<String, String> interaction: interactions){
 		   System.out.println("Interaction: "+ interaction._1 + "  "+ interaction._2);
 	   }
-
 		sc.stop();
 		sc.close();
-
 	}
 	
+	/**
+	 * 
+	 * @return
+	 */
 	private JavaSparkContext getSparkContext() {
 		SparkConf conf = new SparkConf()
 				.setMaster("local[" + NUM_THREADS + "]")
@@ -57,6 +65,5 @@ public class ReadSeqFile {
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		return sc;
 	}
-
 }
 

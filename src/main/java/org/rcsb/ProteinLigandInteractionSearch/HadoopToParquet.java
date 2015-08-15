@@ -18,19 +18,25 @@ import org.apache.spark.sql.types.StructType;
 import org.rcsb.hadoop.io.HadoopToParquetFile;
 
 import scala.Tuple2;
-
+/**
+ * This class creates a Parquet file from the Hadoop sequence file of Protein-Ligand interactions
+ * @author Hinna Shabir
+ *
+ */
 public class HadoopToParquet {
 
 	private static int NUM_THREADS = 8;
 	private static int NUM_TASKS_PER_THREAD = 3; // Spark recommends 2-3 tasks per thread
-
+/**
+ * 
+ * @param args Path of the hadoop sequence file
+ * @throws FileNotFoundException
+ */
 	public static void main(String[] args ) throws FileNotFoundException
 	{
 		String path = args[0];
-
 		JavaSparkContext sc = getSparkContext();
 		// sc is an existing JavaSparkContext.
-		
 		SQLContext sqlContext = new org.apache.spark.sql.SQLContext(sc);
 //		sqlContext.setConf("spark.sql.parquet.compression.codec", "gzip");
 //		sqlContext.setConf("spark.sql.parquet.compression.codec", "uncompressed");
@@ -67,7 +73,6 @@ public class HadoopToParquet {
 
 		// Apply the schema to the RDD.
 		DataFrame dataFrame = sqlContext.createDataFrame(rowRDD, schema);
-		
 		dataFrame.coalesce(1).write().mode(SaveMode.Overwrite)
 //		dataFrame.write().mode(SaveMode.Overwrite)
 		.partitionBy("index")
@@ -75,15 +80,14 @@ public class HadoopToParquet {
 		sc.close();
 		System.out.println("Time: " + (System.nanoTime() - start)/1E9 + " sec.");
 	}
-
+/**
+ * 
+ * @return
+ */
 	private static JavaSparkContext getSparkContext() {
 		SparkConf conf = new SparkConf()
 		.setMaster("local[" + NUM_THREADS + "]")
 		.setAppName(HadoopToParquetFile.class.getSimpleName());
-		//.set("spark.driver.maxResultSize", "2g");
-		//.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
-
-		//conf.registerKryoClasses(new Class[]{SimplePolymerChain.class, SimplePolymerType.class, SimplePolymerChainCodec.class});
 
 		JavaSparkContext sc = new JavaSparkContext(conf);	
 		return sc;
