@@ -3,7 +3,6 @@ package org.rcsb.ProteinLigandInteractionSearch;
 import java.io.FileNotFoundException;
 import java.io.FileReader;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Iterator;
 import java.util.List;
 import java.util.Scanner;
@@ -25,12 +24,10 @@ import org.rcsb.hadoop.io.HadoopToParquetFile;
 public class QueryJson {
 
 	private static int NUM_THREADS = 8;
-	private static int NUM_TASKS_PER_THREAD = 3; // Spark recommends 2-3 tasks per thread
-
-	@SuppressWarnings("null")
+	private static int NUM_TASKS_PER_THREAD = 3; // Spark recommends 2-3 tasks per thread	
 	/**
 	 * 
-	 * @param args
+	 * @param args path of parquet file and protein-ligand query text file
 	 * @throws FileNotFoundException
 	 */
 	public static void main(String[] args ) throws FileNotFoundException
@@ -39,22 +36,21 @@ public class QueryJson {
 		String jsonfile=args[1];   
 		List<String> input= ReadJsn(jsonfile);
 		String [] Pro = new String[2]; // residue 1 (protein) names
-		String [] Lig= new String[2]; // residue 2 (ligand) names
-		String [] atom1= new String[2]; // atom 1 (protein) names
-		String [] atom2= new String[2]; // atom 2 (ligand) names
-		String [] elemnt1= new String[2]; // element 1
-		String [] elemnt2= new String[2]; // element 2
-		int [] dist1 = new int [2]; // lower bound
-		int [] dist2= new int [2];  // upper bound
-		String [] pnum= new String [2];
-		String [] lnum= new String [2];
+		String [] Lig = new String[2]; // residue 2 (ligand) names
+		String [] atom1 = new String[2]; // atom 1 (protein) names
+		String [] atom2 = new String[2]; // atom 2 (ligand) names
+		String [] elemnt1 = new String[2]; // element 1
+		String [] elemnt2 = new String[2]; // element 2
+		int [] dist1 = new int [2]; // lower distance bound
+		int [] dist2 = new int [2]; // upper distance bound
+		String [] pnum = new String [2];
+		String [] lnum = new String [2];
 		JavaSparkContext sc = getSparkContext();
 		// sc is an existing JavaSparkContext.
 		SQLContext sqlContext = new org.apache.spark.sql.SQLContext(sc);
 		sqlContext.setConf("spark.sql.parquet.compression.codec", "snappy");
 		sqlContext.setConf("spark.sql.parquet.filterPushdown", "true");
 		long start = System.nanoTime();
-
 		DataFrame data = sqlContext.read().format("parquet").load(path);
 		System.out.println("data read;" + data.toString());
 		System.out.println("Time: " + (System.nanoTime() - start)/1E9 + " sec.");
@@ -80,7 +76,7 @@ public class QueryJson {
 		lnum[i]="'"+strng[9]+"'";
 		}
 		switch (choice) {
-		case 3:
+			case 3:
 //			String [] strng=input.get(1).trim().split("-");;
 //			Pro[0]="'"+strng[0]+"'";
 //			Lig[0]="'"+strng[1]+"'";
@@ -90,19 +86,18 @@ public class QueryJson {
 //			dist2[0]=Integer.parseInt(strng[5]);
 			results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
 					" WHERE D1.res1="+ Pro[0]+" AND D1.res2=" + Lig[0]+ 
-					" AND D1.atom1="+ atom1[0]+" AND D1.atom2="+ atom2[0] + " AND D1.distance >="+  dist1[0]+ 
+					" AND D1.atom1="+ atom1[0]+" AND D1.atom2="+ atom2[0] + " AND D1.distance >="+ dist1[0]+ 
 					" AND D1.distance <="+ dist2[0]);
 			break;
 
 			case 1:
-
 			if(pnum[0].equalsIgnoreCase("'1'") && pnum[1].equalsIgnoreCase("'2'") && lnum[0].equalsIgnoreCase("'3'") && lnum[1].equalsIgnoreCase("'4'")){
 				System.out.println("Case 1");
 				results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
 						" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.index="+ Pro[0]+" AND D1.res2=" +Lig[0]+ 
-						" AND D1.atom1="+ atom1[0]+" AND D1.atom2="+atom2[0] + " AND D1.distance >="+  dist1[0]+ 
+						" AND D1.atom1="+ atom1[0]+" AND D1.atom2="+ atom2[0] + " AND D1.distance >="+ dist1[0]+ 
 						" AND D1.distance <="+ dist2[0] +" AND D2.index=" + Pro[1]+" AND D2.res2=" + Lig[1] + " AND D2.atom1="
-						+ atom1[1]+" AND D2.atom2=" +atom2[1] + " AND D2.distance >="+ dist1[1]+ " AND D2.distance <=" + dist2[1]
+						+ atom1[1]+" AND D2.atom2=" + atom2[1] + " AND D2.distance >="+ dist1[1]+ " AND D2.distance <=" + dist2[1]
 						+" AND (D1.chainId1<>D2.chainId1 OR D1.Rnum1<>D2.Rnum1) "
 						+ " AND (D1.chainId2<>D2.chainId2 OR D1.Rnum2<>D2.Rnum2)");
 			}
@@ -111,10 +106,10 @@ public class QueryJson {
 				System.out.println("Case 2");
 				long querystart = System.nanoTime();
 				results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
-						" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ Pro[0]+" AND D1.res2=" +Lig[0]+ 
-						" AND D1.atom1="+ atom1[0]+" AND D1.atom2="+atom2[0] + " AND D1.distance >="+ dist1[0] + 
-						" AND D1.distance <="+ dist2[0]+" AND D2.res1=" + Pro[1]+" AND D2.res2=" +Lig[1]+ " AND D2.atom1="+ 
-						atom1[1]+" AND D2.atom2=" + atom2[1] + " AND D2.distance >="+  dist1[1]+ " AND D2.distance <=" + dist2[1]
+						" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ Pro[0]+" AND D1.res2=" + Lig[0]+ 
+						" AND D1.atom1="+ atom1[0]+" AND D1.atom2="+ atom2[0] + " AND D1.distance >="+ dist1[0] + 
+						" AND D1.distance <="+ dist2[0]+" AND D2.res1=" + Pro[1]+" AND D2.res2=" + Lig[1]+ " AND D2.atom1="+ 
+						atom1[1]+" AND D2.atom2=" + atom2[1] + " AND D2.distance >="+ dist1[1]+ " AND D2.distance <=" + dist2[1]
 						+ " AND (D1.chainId1<>D2.chainId1 OR D1.Rnum1<>D2.Rnum1)"
 						+ " AND D1.chainId2=D2.chainId2 AND D1.Rnum2=D2.Rnum2 AND D1.Ins2=D2.Ins2");
 				System.out.println("Querying Time: " + (System.nanoTime() - querystart)/1E9 + " sec.");
@@ -123,8 +118,8 @@ public class QueryJson {
 			else if (pnum[0].equalsIgnoreCase("'1a'") && pnum[1].equalsIgnoreCase("'1b'") && lnum[0].equalsIgnoreCase("'2'") && lnum[1].equalsIgnoreCase("'3'")){
 				System.out.println("Case 3");
 				results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
-						" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ Pro[0]+" AND D1.res2=" +Lig[0]+ 
-						" AND D1.atom1="+ atom1[0]+" AND D1.atom2="+atom2[0] + " AND D1.distance >="+ dist1[0] + 
+						" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ Pro[0]+" AND D1.res2=" + Lig[0]+ 
+						" AND D1.atom1="+ atom1[0]+" AND D1.atom2="+ atom2[0] + " AND D1.distance >="+ dist1[0] + 
 						" AND D1.distance <="+ dist2[0] +" AND D2.res1=" + Pro[1]+" AND D2.res2=" + Lig[1]+ " AND D2.atom1="+ 
 						atom1[1]+" AND D2.atom2=" + atom2[1] + " AND D2.distance >="+ dist1[1]+ " AND D2.distance <=" + dist2[1] +
 						" AND D1.chainId1=D2.chainId1 AND D1.Rnum1=D2.Rnum1 AND D1.Ins1=D2.Ins1"
@@ -134,8 +129,8 @@ public class QueryJson {
 			else if (pnum[0].equalsIgnoreCase("'1a'") && pnum[1].equalsIgnoreCase("'1b'") && lnum[0].equalsIgnoreCase("'2a'") && lnum[1].equalsIgnoreCase("'2b'")){
 				System.out.println("Case 4");
 				results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
-						" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ Pro[0]+" AND D1.res2=" +Lig[0]+ 
-						" AND D1.atom1="+ atom1[0] +" AND D1.atom2="+ atom2[0] + " AND D1.distance >="+  dist1[0] + 
+						" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ Pro[0]+" AND D1.res2=" + Lig[0]+ 
+						" AND D1.atom1="+ atom1[0] +" AND D1.atom2="+ atom2[0] + " AND D1.distance >="+ dist1[0] + 
 						" AND D1.distance <="+ dist2[0] +" AND D2.res1=" + Pro[1]+" AND D2.res2=" + Lig[1] + " AND D2.atom1="+ 
 						atom1[1]+" AND D2.atom2=" + atom2[1] + " AND D2.distance >="+  dist1[1] + " AND D2.distance <=" + dist2[1]+
 						" AND D1.chainId1=D2.chainId1 AND D1.Rnum1=D2.Rnum1 AND D1.Ins1=D2.Ins1"+
@@ -146,7 +141,7 @@ public class QueryJson {
 				long Qstart = System.nanoTime();
 				System.out.println("Case 5");
 				results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
-						" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ Pro[0]+" AND D1.res2=" +Lig[0]+ 
+						" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ Pro[0]+" AND D1.res2=" + Lig[0]+ 
 						" AND D1.atom1= "+ atom1[0] +" AND D1.atom2= "+ atom2[0] + " AND D1.distance >="+ dist1[0] + 
 						" AND D1.distance <="+ dist2[0]+" AND D2.res1= " + Pro[1]+" AND D2.res2= " +Lig[1]+ " AND D2.atom1= "+ 
 						atom1[1]+" AND D2.atom2= " + atom2[1] + " AND D2.distance >= "+ dist1[1] + " AND D2.distance <= " + dist2[1] +
@@ -158,8 +153,8 @@ public class QueryJson {
 			else if (pnum[0].equalsIgnoreCase("'1a'") && pnum[1].equalsIgnoreCase("'1b'") && lnum[0].equalsIgnoreCase("'2'") && lnum[1].equalsIgnoreCase("'2'")){
 				System.out.println("Case 6");
 				results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
-						" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ Pro[0]+" AND D1.res2=" +Lig[0]+ 
-						" AND D1.atom1="+ atom1[0]+" AND D1.atom2="+ atom2[0] + " AND D1.distance >="+  dist1[0]+ 
+						" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ Pro[0]+" AND D1.res2=" + Lig[0]+ 
+						" AND D1.atom1="+ atom1[0]+" AND D1.atom2="+ atom2[0] + " AND D1.distance >="+ dist1[0]+ 
 						" AND D1.distance <="+ dist2[0]+" AND D2.res1=" + Pro[1]+" AND D2.res2=" + Lig[1] + " AND D2.atom1="+ 
 						atom1[1]+" AND D2.atom2=" + atom2[1] + " AND D2.distance >="+  dist1[1]+ " AND D2.distance <=" + dist2[1]+
 						" AND D1.chainId1=D2.chainId1 AND D1.Rnum1=D2.Rnum1 AND D1.Ins1=D2.Ins1"+
@@ -169,10 +164,10 @@ public class QueryJson {
 			else if (pnum[0].equalsIgnoreCase("'1'") && pnum[1].equalsIgnoreCase("'1'") && lnum[0].equalsIgnoreCase("'2'") && lnum[1].equalsIgnoreCase("'3'")){
 				System.out.println("Case 7");
 				results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
-						" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ Pro[0]+" AND D1.res2=" +Lig[0]+ 
-						" AND D1.atom1="+ atom1[0] +" AND D1.atom2="+ atom2[0] + " AND D1.distance >="+  dist1[0]+ 
+						" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ Pro[0]+" AND D1.res2=" + Lig[0]+ 
+						" AND D1.atom1="+ atom1[0] +" AND D1.atom2="+ atom2[0] + " AND D1.distance >="+ dist1[0]+ 
 						" AND D1.distance <="+ dist2[0]+" AND D2.res1=" + Pro[1]+" AND D2.res2=" +Lig[1]+ " AND D2.atom1="+ 
-						atom1[1]+" AND D2.atom2=" + atom2[1] + " AND D2.distance >="+  dist1[1]+ " AND D2.distance <=" + dist2[1] +
+						atom1[1]+" AND D2.atom2=" + atom2[1] + " AND D2.distance >="+ dist1[1]+ " AND D2.distance <=" + dist2[1] +
 						" AND D1.chainId1=D2.chainId1 AND D1.Rnum1=D2.Rnum1 AND D1.Ins1=D2.Ins1"+
 						" AND (D1.chainId2<>D2.chainId2 OR D1.Rnum2<>D2.Rnum2 )");
 			}	
@@ -180,10 +175,10 @@ public class QueryJson {
 			else if (pnum[0].equalsIgnoreCase("'1'") && pnum[1].equalsIgnoreCase("'1'") && lnum[0].equalsIgnoreCase("'2a'") && lnum[1].equalsIgnoreCase("'2b'")){
 				System.out.println("Case 8");
 				results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
-						" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ Pro[0]+" AND D1.res2=" +Lig[0]+ 
-						" AND D1.atom1="+ atom1[0] +" AND D1.atom2="+ atom2[0] + " AND D1.distance >="+  dist1[0]+ 
-						" AND D1.distance <="+ dist2[0]+" AND D2.res1=" + Pro[1]+" AND D2.res2=" +Lig[1]+ " AND D2.atom1="+ 
-						atom1[1] +" AND D2.atom2=" + atom2[1] + " AND D2.distance >="+  dist1[1] + " AND D2.distance <=" + dist2[1]+
+						" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ Pro[0]+" AND D1.res2="  +Lig[0]+ 
+						" AND D1.atom1="+ atom1[0] +" AND D1.atom2="+ atom2[0] + " AND D1.distance >="+ dist1[0]+ 
+						" AND D1.distance <="+ dist2[0]+" AND D2.res1=" + Pro[1]+" AND D2.res2=" + Lig[1]+ " AND D2.atom1="+ 
+						atom1[1] +" AND D2.atom2=" + atom2[1] + " AND D2.distance >="+ dist1[1] + " AND D2.distance <=" + dist2[1]+
 						" AND D1.chainId1=D2.chainId1 AND D1.Rnum1=D2.Rnum1 AND D1.Ins1=D2.Ins1"+
 						" AND D1.chainId2=D2.chainId2 AND D1.Rnum2=D2.Rnum2 AND D1.Ins2=D2.Ins2");// 2a 2b
 			}	
@@ -196,10 +191,10 @@ public class QueryJson {
 				if(pnum[0].equalsIgnoreCase("'1'") && pnum[1].equalsIgnoreCase("'2'") && lnum[0].equalsIgnoreCase("'3'") && lnum[1].equalsIgnoreCase("'4'")){
 					System.out.println("Case 2.1");
 					results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
-							" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ Pro[0]+" AND D1.res2=" +Lig[0]+ 
-							" AND D1.element1="+ elemnt1[0]+" AND D1.element2="+elemnt2[0] + " AND D1.distance >="+  dist1[0]+ 
+							" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ Pro[0]+" AND D1.res2=" + Lig[0]+ 
+							" AND D1.element1="+ elemnt1[0]+" AND D1.element2="+ elemnt2[0] + " AND D1.distance >="+ dist1[0]+ 
 							" AND D1.distance <="+ dist2[0] +" AND D2.res1=" + Pro[1]+" AND D2.res2=" +Lig[1]+ " AND D2.element1="
-							+ elemnt1[1]+" AND D2.element2=" +elemnt2[1] + " AND D2.distance >="+  dist1[1]+ " AND D2.distance <=" + dist2[1]
+							+ elemnt1[1]+" AND D2.element2=" + elemnt2[1] + " AND D2.distance >="+  dist1[1]+ " AND D2.distance <=" + dist2[1]
 									+" AND (D1.chainId1<>D2.chainId1 OR D1.Rnum1<>D2.Rnum1) "
 									+ " AND (D1.chainId2<>D2.chainId2 OR D1.Rnum2<>D2.Rnum2)");
 				}
@@ -207,10 +202,10 @@ public class QueryJson {
 				else if (pnum[0].equalsIgnoreCase("'1'") && pnum[1].equalsIgnoreCase("'2'") && lnum[0].equalsIgnoreCase("'3a'") && lnum[1].equalsIgnoreCase("'3b'")){
 					System.out.println("Case 2.2");
 					results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
-							" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ Pro[0]+" AND D1.res2=" +Lig[0]+ 
-							" AND D1.element1="+ elemnt1[0]+" AND D1.element2="+elemnt2[0] + " AND D1.distance >="+  dist1[0]+ 
-							" AND D1.distance <="+ dist2[0]+" AND D2.res1=" + Pro[1]+" AND D2.res2=" +Lig[1]+ " AND D2.element1="+ 
-							elemnt1[1]+" AND D2.element2=" +elemnt2[1] + " AND D2.distance >="+  dist1[1]+ " AND D2.distance <=" + dist2[1]+
+							" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ Pro[0]+" AND D1.res2=" + Lig[0]+ 
+							" AND D1.element1="+ elemnt1[0]+" AND D1.element2="+ elemnt2[0] + " AND D1.distance >="+ dist1[0]+ 
+							" AND D1.distance <="+ dist2[0]+" AND D2.res1=" + Pro[1]+" AND D2.res2=" + Lig[1]+ " AND D2.element1="+ 
+							elemnt1[1]+" AND D2.element2=" + elemnt2[1] + " AND D2.distance >="+ dist1[1]+ " AND D2.distance <=" + dist2[1]+
 							" AND D1.atom2<>D2.atom2"+ " AND (D1.chainId1<>D2.chainId1 OR D1.Rnum1<>D2.Rnum1)"+
 							" AND D1.chainId2=D2.chainId2 AND D1.Rnum2=D2.Rnum2 AND D1.Ins2=D2.Ins2");
 				}
@@ -218,10 +213,10 @@ public class QueryJson {
 				else if (pnum[0].equalsIgnoreCase("'1a'") && pnum[1].equalsIgnoreCase("'1b'") && lnum[0].equalsIgnoreCase("'2'") && lnum[1].equalsIgnoreCase("'3'")){
 					System.out.println("Case 2.3");
 					results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
-							" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ Pro[0]+" AND D1.res2=" +Lig[0]+ 
-							" AND D1.element1="+ elemnt1[0]+" AND D1.element2="+elemnt2[0] + " AND D1.distance >="+  dist1[0]+ 
+							" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ Pro[0]+" AND D1.res2=" + Lig[0]+ 
+							" AND D1.element1="+ elemnt1[0]+" AND D1.element2="+ elemnt2[0] + " AND D1.distance >="+ dist1[0]+ 
 							" AND D1.distance <="+ dist2[0]+" AND D2.res1=" + Pro[1]+" AND D2.res2=" +Lig[1]+ " AND D2.element1="+ 
-							elemnt1[1]+" AND D2.element2=" +elemnt2[1] + " AND D2.distance >="+  dist1[1]+ " AND D2.distance <=" + dist2[1]+
+							elemnt1[1]+" AND D2.element2=" +elemnt2[1] + " AND D2.distance >="+ dist1[1]+ " AND D2.distance <=" + dist2[1]+
 							" AND D1.atom1<>D2.atom1"+ " AND D1.chainId1=D2.chainId1 AND D1.Rnum1=D2.Rnum1 AND D1.Ins1=D2.Ins1"
 							+ " AND (D1.chainId2<>D2.chainId2 OR D1.Rnum2<>D2.Rnum2) ");
 				}
@@ -229,10 +224,10 @@ public class QueryJson {
 				else if (pnum[0].equalsIgnoreCase("'1a'") && pnum[1].equalsIgnoreCase("'1b'") && lnum[0].equalsIgnoreCase("'2a'") && lnum[1].equalsIgnoreCase("'2b'")){
 					System.out.println("Case 2.4");
 					results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
-							" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ Pro[0]+" AND D1.res2=" +Lig[0]+ 
-							" AND D1.element1="+ elemnt1[0]+" AND D1.element2="+elemnt2[0] + " AND D1.distance >="+  dist1[0]+ 
+							" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ Pro[0]+" AND D1.res2=" + Lig[0]+ 
+							" AND D1.element1="+ elemnt1[0]+" AND D1.element2="+ elemnt2[0] + " AND D1.distance >="+ dist1[0]+ 
 							" AND D1.distance <="+ dist2[0]+" AND D2.res1=" + Pro[1]+" AND D2.res2=" +Lig[1]+ " AND D2.element1="+ 
-							elemnt1[1]+" AND D2.element2=" +elemnt2[1] + " AND D2.distance >="+  dist1[1]+ " AND D2.distance <=" + dist2[1]+
+							elemnt1[1]+" AND D2.element2=" + elemnt2[1] + " AND D2.distance >="+ dist1[1]+ " AND D2.distance <=" + dist2[1]+
 							" AND D1.atom2<>D2.atom2 AND D1.atom1<>D2.atom1"+ " AND D1.chainId1=D2.chainId1 AND D1.Rnum1=D2.Rnum1 AND D1.Ins1=D2.Ins1"+
 							" AND D1.chainId2=D2.chainId2 AND D1.Rnum2=D2.Rnum2 AND D1.Ins2=D2.Ins2");
 				}
@@ -240,10 +235,10 @@ public class QueryJson {
 				else if (pnum[0].equalsIgnoreCase("'1'") && pnum[1].equalsIgnoreCase("'2'") && lnum[0].equalsIgnoreCase("'3'") && lnum[1].equalsIgnoreCase("'3'")){
 					System.out.println("Case 2.5");
 					results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
-							" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ Pro[0]+" AND D1.res2=" +Lig[0]+ 
-							" AND D1.element1= "+ elemnt1[0]+" AND D1.element2= "+elemnt2[0] + " AND D1.distance >="+  dist1[0]+ 
-							" AND D1.distance <="+ dist2[0]+" AND D2.res1= " + Pro[1]+" AND D2.res2= " +Lig[1]+ " AND D2.element1= "+ 
-							elemnt1[1]+" AND D2.element2= " +elemnt2[1] + " AND D2.distance >= "+  dist1[1]+ " AND D2.distance <= " + dist2[1]+
+							" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ Pro[0]+" AND D1.res2=" + Lig[0]+ 
+							" AND D1.element1= "+ elemnt1[0]+" AND D1.element2= "+ elemnt2[0] + " AND D1.distance >="+  dist1[0]+ 
+							" AND D1.distance <="+ dist2[0]+" AND D2.res1= " + Pro[1]+" AND D2.res2= " + Lig[1]+ " AND D2.element1= "+ 
+							elemnt1[1]+" AND D2.element2= " + elemnt2[1] + " AND D2.distance >= "+  dist1[1]+ " AND D2.distance <= " + dist2[1]+
 							" AND D1.atom2=D2.atom2" + " AND (D1.chainId1<>D2.chainId1 OR D1.Rnum1<>D2.Rnum1)"+
 							" AND D1.chainId2=D2.chainId2 AND D1.Rnum2=D2.Rnum2 AND D1.Ins2=D2.Ins2");
 				}	
@@ -251,10 +246,10 @@ public class QueryJson {
 				else if (pnum[0].equalsIgnoreCase("'1a'") && pnum[1].equalsIgnoreCase("'1b'") && lnum[0].equalsIgnoreCase("'2'") && lnum[1].equalsIgnoreCase("'2'")){
 					System.out.println("Case 2.6");
 					results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
-							" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ Pro[0]+" AND D1.res2=" +Lig[0]+ 
-							" AND D1.element1="+ elemnt1[0]+" AND D1.element2="+elemnt2[0] + " AND D1.distance >="+  dist1[0]+ 
-							" AND D1.distance <="+ dist2[0]+" AND D2.res1=" + Pro[1]+" AND D2.res2=" +Lig[1]+ " AND D2.element1="+ 
-							elemnt1[1]+" AND D2.element2=" +elemnt2[1] + " AND D2.distance >="+  dist1[1]+ " AND D2.distance <=" + dist2[1]+
+							" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ Pro[0]+" AND D1.res2=" + Lig[0]+ 
+							" AND D1.element1="+ elemnt1[0]+" AND D1.element2="+ elemnt2[0] + " AND D1.distance >="+ dist1[0]+ 
+							" AND D1.distance <="+ dist2[0]+" AND D2.res1=" + Pro[1]+" AND D2.res2=" + Lig[1]+ " AND D2.element1="+ 
+							elemnt1[1]+" AND D2.element2=" + elemnt2[1] + " AND D2.distance >="+ dist1[1]+ " AND D2.distance <=" + dist2[1]+
 							" AND D1.atom2=D2.atom2 AND D1.atom1<>D2.atom1"+" AND D1.chainId1=D2.chainId1 AND D1.Rnum1=D2.Rnum1 AND D1.Ins1=D2.Ins1"+
 							" AND D1.chainId2=D2.chainId2 AND D1.Rnum2=D2.Rnum2 AND D1.Ins2=D2.Ins2");// 1a 1b
 				}	
@@ -262,10 +257,10 @@ public class QueryJson {
 				else if (pnum[0].equalsIgnoreCase("'1'") && pnum[1].equalsIgnoreCase("'1'") && lnum[0].equalsIgnoreCase("'2'") && lnum[1].equalsIgnoreCase("'3'")){
 					System.out.println("Case 2.7");
 					results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
-							" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ Pro[0]+" AND D1.res2=" +Lig[0]+ 
-							" AND D1.element1="+ elemnt1[0]+" AND D1.element2="+elemnt2[0] + " AND D1.distance >="+  dist1[0]+ 
-							" AND D1.distance <="+ dist2[0]+" AND D2.res1=" + Pro[1]+" AND D2.res2=" +Lig[1]+ " AND D2.element1="+ 
-							elemnt1[1]+" AND D2.element2=" +elemnt2[1] + " AND D2.distance >="+  dist1[1]+ " AND D2.distance <=" + dist2[1]+
+							" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ Pro[0]+" AND D1.res2=" + Lig[0]+ 
+							" AND D1.element1="+ elemnt1[0]+" AND D1.element2="+ elemnt2[0] +" AND D1.distance >="+ dist1[0]+ 
+							" AND D1.distance <="+ dist2[0]+" AND D2.res1=" + Pro[1]+" AND D2.res2=" +Lig[1]+" AND D2.element1="+ 
+							elemnt1[1]+" AND D2.element2=" +elemnt2[1] + " AND D2.distance >="+ dist1[1]+" AND D2.distance <=" + dist2[1]+
 							" AND D1.atom1=D2.atom1 "+" AND D1.chainId1=D2.chainId1 AND D1.Rnum1=D2.Rnum1 AND D1.Ins1=D2.Ins1"+
 							" AND (D1.chainId2<>D2.chainId2 OR D1.Rnum2<>D2.Rnum2 )");
 				}	
@@ -273,19 +268,17 @@ public class QueryJson {
 				else if (pnum[0].equalsIgnoreCase("'1'") && pnum[1].equalsIgnoreCase("'1'") && lnum[0].equalsIgnoreCase("'2a'") && lnum[1].equalsIgnoreCase("'2b'")){
 					System.out.println("Case 2.8");
 					results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
-							" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ Pro[0]+" AND D1.res2=" +Lig[0]+ 
-							" AND D1.element1="+ elemnt1[0]+" AND D1.element2="+elemnt2[0] + " AND D1.distance >="+  dist1[0]+ 
-							" AND D1.distance <="+ dist2[0]+" AND D2.res1=" + Pro[1]+" AND D2.res2=" +Lig[1]+ " AND D2.element1="+ 
-							elemnt1[1]+" AND D2.element2=" +elemnt2[1] + " AND D2.distance >="+  dist1[1]+ " AND D2.distance <=" + dist2[1]+
+							" INNER JOIN Distances D2 ON D2.pdbId=D1.pdbId WHERE D1.res1="+ Pro[0]+" AND D1.res2="+ Lig[0]+ 
+							" AND D1.element1=" + elemnt1[0]+" AND D1.element2=" + elemnt2[0] + " AND D1.distance >="+ dist1[0]+ 
+							" AND D1.distance <=" + dist2[0]+" AND D2.res1=" + Pro[1]+" AND D2.res2="+ Lig[1]+ " AND D2.element1="+ 
+							elemnt1[1]+" AND D2.element2=" + elemnt2[1] + " AND D2.distance >="+ dist1[1]+ " AND D2.distance <=" + dist2[1]+
 							" AND D1.atom2<>D2.atom2 AND D1.atom1=D2.atom1"+" AND D1.chainId1=D2.chainId1 AND D1.Rnum1=D2.Rnum1 AND D1.Ins1=D2.Ins1"+
 							" AND D1.chainId2=D2.chainId2 AND D1.Rnum2=D2.Rnum2 AND D1.Ins2=D2.Ins2");// 2a 2b
 				}
-
 				else{
 					System.out.println("NOT FOUND!");
 					System.exit(-1);
 				}
-
 				break;
 		default:
 			System.out.println("Choose either 1 or 2");
@@ -303,7 +296,6 @@ public class QueryJson {
 		for (String s: Rows){
 			System.out.println(s.toCharArray());
 		}
-
 		System.out.println("Time: " + (System.nanoTime() - start)/1E9 + " sec.");
 	}
 /**
@@ -365,7 +357,6 @@ public class QueryJson {
 	 * 
 	 * @return
 	 */
-
 	private static JavaSparkContext getSparkContext() {
 		SparkConf conf = new SparkConf()
 		.setMaster("local[" + NUM_THREADS + "]")
