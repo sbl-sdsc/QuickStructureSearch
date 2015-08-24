@@ -45,6 +45,7 @@ public class QueryJson {
 		int [] dist2 = new int [2]; // upper distance bound
 		String [] pnum = new String [2];
 		String [] lnum = new String [2];
+		int choice = 0;
 		JavaSparkContext sc = getSparkContext();
 		// sc is an existing JavaSparkContext.
 		SQLContext sqlContext = new org.apache.spark.sql.SQLContext(sc);
@@ -56,10 +57,12 @@ public class QueryJson {
 		System.out.println("Time: " + (System.nanoTime() - start)/1E9 + " sec.");
 		// Register the DataFrame as a table.
 		data.registerTempTable("Distances");
-		DataFrame results=null;
-		System.out.println("Choose either:  1. Atom name or 2.Element name  3. Simple query");
-		Scanner scan = new Scanner(System.in);
-		int choice = scan.nextInt();
+		DataFrame results=null;	
+		
+//		System.out.println("Choose either: 1. Atom name or 2. Element name or 3. Simple query");
+//		Scanner scan = new Scanner(System.in);
+//		int choice = scan.nextInt();
+
 		// make data suitable for sql by enclosing in quotes
 	    for (int i=0; i<input.size();i++)
 		{
@@ -74,7 +77,9 @@ public class QueryJson {
 		dist2[i]=Integer.parseInt(strng[7]);
 		pnum[i]="'"+strng[8]+"'";
 		lnum[i]="'"+strng[9]+"'";
+		choice=Integer.parseInt(strng[10]);
 		}
+
 		switch (choice) {
 			case 3:
 //			String [] strng=input.get(1).trim().split("-");;
@@ -84,9 +89,11 @@ public class QueryJson {
 //			atom2[0]="'"+strng[3]+"'";
 //			dist1[0]=Integer.parseInt(strng[4]);
 //			dist2[0]=Integer.parseInt(strng[5]);
+				System.out.println(atom1[0]+ atom1[1]);
+				System.out.println(atom2[0]+ atom2[1]);
 			results = sqlContext.sql ("SELECT D1.pdbId FROM Distances D1"+
 					" WHERE D1.res1="+ Pro[0]+" AND D1.res2=" + Lig[0]+ 
-					" AND D1.atom1="+ atom1[0]+" AND D1.atom2="+ atom2[0] + " AND D1.distance >="+ dist1[0]+ 
+					" AND D1.element1="+ atom1[0]+" AND D1.atom2="+ atom2[0] + " AND D1.distance >="+ dist1[0]+ 
 					" AND D1.distance <="+ dist2[0]);
 			break;
 
@@ -313,6 +320,7 @@ public class QueryJson {
 		int distmin = 0;
 		int distmax = 0;
 		String str=null;
+		int choice;
 		List<String> queries = new ArrayList <String>();
 		JSONParser parser = new JSONParser();
 		try {
@@ -343,9 +351,17 @@ public class QueryJson {
 				num2= Integer.parseInt((String) innerObject2.get("num"));
 				System.out.println(atm1);
 				System.out.println(atm2);
-				str= res1+"-"+res2+"-"+atm1+"-"+atm2+"-"+elmnt1+"-"+elmnt2+"-"+distmin+"-"+distmax+'-'+num1+'-'+num2;	
+				if (atm1==null && atm2==null){
+					choice =2; // i.e. element name is provided in query
+				}
+				else if (elmnt1==null && elmnt2==null){
+					choice =1; // atom name is provided in query
+				}
+				else
+				choice =3;
+				str= res1+"-"+res2+"-"+atm1+"-"+atm2+"-"+elmnt1+"-"+elmnt2+"-"+distmin+"-"+distmax+'-'+num1+'-'+num2+'-'+choice;	
 				System.out.println("String: "+str);
-				queries.add(str);
+				queries.add(str);	
 			}
 
 		} catch (Exception e) {
