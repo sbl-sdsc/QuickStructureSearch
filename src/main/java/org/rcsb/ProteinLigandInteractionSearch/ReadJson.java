@@ -14,7 +14,7 @@ import org.json.simple.parser.JSONParser;
  *
  */
 public class ReadJson {
-	// read the json file and return a string for each protein-ligand interaction to query the parquet file
+	// read the JSON file and return a string for each Protein-Ligand interaction to query the Parquet file
 	public static String Read () {
 		String res1=null;
 		String res2= null;
