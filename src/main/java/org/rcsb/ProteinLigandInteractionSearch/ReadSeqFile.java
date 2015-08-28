@@ -1,11 +1,8 @@
 package org.rcsb.ProteinLigandInteractionSearch;
-
 import java.io.FileNotFoundException;
 import java.util.List;
-
 import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 
 import scala.Tuple2;
@@ -38,7 +35,6 @@ public class ReadSeqFile {
 	private void run(String sequenceFileName) throws FileNotFoundException {
 		// setup spark
 		JavaSparkContext sc = getSparkContext();
-		
 		// Get <Interaction, pdbId> pairs
         List<Tuple2<String, String>> interactions = sc
 				.sequenceFile(sequenceFileName, Text.class, Text.class, NUM_THREADS)  // read protein chains
@@ -59,11 +55,7 @@ public class ReadSeqFile {
 		SparkConf conf = new SparkConf()
 				.setMaster("local[" + NUM_THREADS + "]")
 				.setAppName(this.getClass().getSimpleName());
-				//set("spark.driver.maxResultSize", "2g")
-				//.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
-
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		return sc;
 	}
 }
-

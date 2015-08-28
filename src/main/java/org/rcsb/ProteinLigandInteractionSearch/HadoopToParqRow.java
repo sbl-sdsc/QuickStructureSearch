@@ -1,5 +1,4 @@
 package org.rcsb.ProteinLigandInteractionSearch;
-
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
@@ -8,7 +7,7 @@ import org.apache.spark.sql.Row;
 import org.apache.spark.sql.RowFactory;
 import scala.Tuple2;
 /**
- * 
+ * Create rows of features for the Java RDD
  * @author Hinna Shabir
  *
  */
@@ -20,19 +19,16 @@ public class HadoopToParqRow implements Function<Tuple2<String, Iterable<String>
 			v.add(s);
 		}
 		String[] pdbIds = v.toArray(new String[v.size()]);
-		// System.out.println("# of PdbIds: " + pdbIds.length);
+
 		List<String> aminos=Arrays.asList("ARG", "HIS","LYS","ASP","GLU","SER","THR","ASN","GLN","CYS","GLY","PRO","ALA","VAL","ILE","LEU","MET","PHE","TYR","TRP");
 		String index= new String();
 		index= "Other";
 		for(String amino:aminos){
 			if (keys[6].equals(amino)){
-				index=keys[6] ;
+				index=keys[6] ; // Create an index field that has the residue name of the protein i.e. 21 distinct values
 				break;
 			}
 		}
-//		if (keys[12].equals("O")||keys[12].equals("Cd") ){
-//				keys[12]="0";
-//		}		
 		int size=keys.length;
 		if (size!=13){
 		System.out.println("Length: "+size);

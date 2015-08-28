@@ -38,12 +38,9 @@ public class HadoopToParquet {
 		JavaSparkContext sc = getSparkContext();
 		// sc is an existing JavaSparkContext.
 		SQLContext sqlContext = new org.apache.spark.sql.SQLContext(sc);
-//		sqlContext.setConf("spark.sql.parquet.compression.codec", "gzip");
-//		sqlContext.setConf("spark.sql.parquet.compression.codec", "uncompressed");
 		sqlContext.setConf("spark.sql.parquet.compression.codec", "snappy");
 		sqlContext.setConf("spark.sql.parquet.filterPushdown", "true");
 		long start = System.nanoTime();
-		
 		// read sequence file and map
 		JavaRDD<Row> rowRDD = sc
 				.sequenceFile(path, Text.class, Text.class)
@@ -53,7 +50,7 @@ public class HadoopToParquet {
 				.map(new HadoopToParqRow())
 				.cache();
 
-		List<StructField> fields = new ArrayList<StructField>();
+		List<StructField> fields = new ArrayList<StructField>();// create data fields of features for the DataFrame 
 		fields.add(DataTypes.createStructField("index", DataTypes.StringType, false));
 		fields.add(DataTypes.createStructField("chainId1", DataTypes.StringType, false));
 		fields.add(DataTypes.createStructField("chainId2", DataTypes.StringType, false));
@@ -74,7 +71,6 @@ public class HadoopToParquet {
 		// Apply the schema to the RDD.
 		DataFrame dataFrame = sqlContext.createDataFrame(rowRDD, schema);
 		dataFrame.coalesce(1).write().mode(SaveMode.Overwrite)
-//		dataFrame.write().mode(SaveMode.Overwrite)
 		.partitionBy("index")
 		.parquet("/Users/hina/Data/ExampleFiles/seq.parquet");
 		sc.close();
@@ -88,7 +84,6 @@ public class HadoopToParquet {
 		SparkConf conf = new SparkConf()
 		.setMaster("local[" + NUM_THREADS + "]")
 		.setAppName(HadoopToParquetFile.class.getSimpleName());
-
 		JavaSparkContext sc = new JavaSparkContext(conf);	
 		return sc;
 	}
