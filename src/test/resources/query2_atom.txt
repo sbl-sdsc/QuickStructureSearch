@@ -1,0 +1,23 @@
+{
+    "comment": "This query finds interaction similar to the ones in drug complex 2F80",
+    "sites": [
+        {
+            "residueName": "ASP",
+            "atomName": "N",
+	    "num": "1"
+        },
+        {
+            "residueName": "017",
+            "atomName": "O28",
+	    "num": "2"
+        }
+   ],
+    "interactions": [
+        {
+            "res1": "1",
+            "res2": "2",
+            "distanceMin": "28",
+            "distanceMax": "30"
+        }
+     ]
+}

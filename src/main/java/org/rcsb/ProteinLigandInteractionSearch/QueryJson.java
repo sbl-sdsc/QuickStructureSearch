@@ -134,7 +134,7 @@ public class QueryJson {
 						" AND D1.distance <="+ dist2[0]+" AND D2.res1=" + Pro[1]+" AND D2.res2=" + Lig[1] + " AND D2.atom1="+ 
 						atom1[1]+" AND D2.atom2=" + atom2[1] + " AND D2.distance >="+  dist1[1]+ " AND D2.distance <=" + dist2[1]+
 						" AND D1.chainId1=D2.chainId1 AND D1.Rnum1=D2.Rnum1 AND D1.Ins1=D2.Ins1"+
-						" AND D1.chainId2=D2.chainId2 AND D1.Rnum2=D2.Rnum2 AND D1.Ins2=D2.Ins2");// 1a 1b
+						" AND D1.chainId2=D2.chainId2 AND D1.Rnum2=D2.Rnum2 AND D1.Ins2=D2.Ins2");
 			}	
 			else if (pnum[0].equalsIgnoreCase("'1'") && pnum[1].equalsIgnoreCase("'1'") && lnum[0].equalsIgnoreCase("'2'") && lnum[1].equalsIgnoreCase("'3'")){
 				System.out.println("Case 7");
@@ -154,7 +154,7 @@ public class QueryJson {
 						" AND D1.distance <="+ dist2[0]+" AND D2.res1=" + Pro[1]+" AND D2.res2=" + Lig[1]+ " AND D2.atom1="+ 
 						atom1[1] +" AND D2.atom2=" + atom2[1] + " AND D2.distance >="+ dist1[1] + " AND D2.distance <=" + dist2[1]+
 						" AND D1.chainId1=D2.chainId1 AND D1.Rnum1=D2.Rnum1 AND D1.Ins1=D2.Ins1"+
-						" AND D1.chainId2=D2.chainId2 AND D1.Rnum2=D2.Rnum2 AND D1.Ins2=D2.Ins2");// 2a 2b
+						" AND D1.chainId2=D2.chainId2 AND D1.Rnum2=D2.Rnum2 AND D1.Ins2=D2.Ins2");
 			}	
 			else {
 				System.out.println("NOT FOUND!");
@@ -241,7 +241,7 @@ public class QueryJson {
 						" AND D1.distance <=" + dist2[0]+" AND D2.res1=" + Pro[1]+" AND D2.res2="+ Lig[1]+ " AND D2.element1="+ 
 						elemnt1[1]+" AND D2.element2=" + elemnt2[1] + " AND D2.distance >="+ dist1[1]+ " AND D2.distance <=" + dist2[1]+
 						" AND D1.atom2<>D2.atom2 AND D1.atom1=D2.atom1"+" AND D1.chainId1=D2.chainId1 AND D1.Rnum1=D2.Rnum1 AND D1.Ins1=D2.Ins1"+
-						" AND D1.chainId2=D2.chainId2 AND D1.Rnum2=D2.Rnum2 AND D1.Ins2=D2.Ins2");// 2a 2b
+						" AND D1.chainId2=D2.chainId2 AND D1.Rnum2=D2.Rnum2 AND D1.Ins2=D2.Ins2");
 			}
 			else {
 				System.out.println("NOT FOUND!");
