@@ -1,11 +1,15 @@
 package org.rcsb.structuralAlignment;
 
 import java.io.Serializable;
+import java.util.Arrays;
 
 import javax.vecmath.Matrix3d;
 import javax.vecmath.Matrix4d;
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
+
+import org.apache.commons.math.stat.correlation.Covariance;
+import org.apache.commons.math3.stat.correlation.StorelessCovariance;
 
 
 /**
@@ -106,7 +110,7 @@ import javax.vecmath.Vector3d;
  *
  * @author Peter Rose (adopted to Java)
  */
-public final class SuperPositionQCP implements Serializable {
+public final class QCPUpdateable implements Serializable {
 	private static final long serialVersionUID = 1L;
 	private static final double EVE_PREC = 1E-6;
     private static final double EVAL_PREC = 1E-11;
@@ -120,18 +124,21 @@ public final class SuperPositionQCP implements Serializable {
     private Matrix4d transformation = new Matrix4d();
     private double rmsd = 0;
     private double upperBound;
+    private double g;
     private double Sxy, Sxz, Syx, Syz, Szx, Szy;
     private double SxxpSyy, Szz, mxEigenV, SyzmSzy,SxzmSzx, SxymSyx;
     private double SxxmSyy, SxypSyx, SxzpSzx;
     private double Syy, Sxx, SyzpSzy;
+    private double Cxx, Cxy, Cxz, Cyx, Cyy, Cyz, Czx, Czy, Czz, Cg; 
     private boolean rmsdCalculated = false;
     private boolean transformationCalculated = false;
     private boolean centered = false;
+    private int length;
     
     /**
      * Default constructor
      */
-    public SuperPositionQCP() {
+    public QCPUpdateable() {
     	this.centered = false;
     }
     /**
@@ -139,7 +146,7 @@ public final class SuperPositionQCP implements Serializable {
      * should be used if both coordinate input set have been centered at the origin.
      * @param centered if set true, the input coordinates are already centered at the origin
      */
-    public SuperPositionQCP(boolean centered) {
+    public QCPUpdateable(boolean centered) {
 		this.centered = centered;
 	}
 	/**
@@ -152,6 +159,7 @@ public final class SuperPositionQCP implements Serializable {
     	this.x = x;
     	this.y = y;
     	this.weight = null;
+    	this.length = x.length;
         rmsdCalculated = false;
         transformationCalculated = false;
     }
@@ -168,6 +176,7 @@ public final class SuperPositionQCP implements Serializable {
     	this.x = x;
     	this.y = y;
     	this.weight = weight;
+    	this.length = x.length;
         rmsdCalculated = false;
         transformationCalculated = false;
     }
@@ -187,17 +196,17 @@ public final class SuperPositionQCP implements Serializable {
     }
     
     /**
-     * Returns an approximate TM score.
+     * Fast approximate implementation of TM score.
      * Bioinf. (2012) 28, 1209-1215
      * @param rmsd
      * @return
      */
-	public double getfTmScore() {
+	public double getfTmScore(double rmsd) {
 		if (! rmsdCalculated) {
     		calcRmsd(x, y);
     	}
-		double d0 = 1.24 * Math.cbrt(x.length - 15) - 1.8;
-		return x.length / (x.length * (1 + (rmsd/d0)*(rmsd/d0)));
+		double d0 = 1.24 * Math.cbrt(length - 15) - 1.8;
+		return length / (length * (1 + (rmsd/d0)*(rmsd/d0)));
 	}
     
     /**
@@ -250,12 +259,62 @@ public final class SuperPositionQCP implements Serializable {
     		yCentroid = centroid(y);
     	}
     	if (weight == null) {
-    		innerProduct();
+//    		innerProduct();
+    		innerProductAlt();
     	} else {
     		innerProductWeighted();
     	}
     	calcRmsd(x.length);
     	rmsdCalculated = true;
+    }
+    
+    
+    /**
+     * Calculates the RMSD value for superposition of y onto x.
+     * @param x 3d points of reference coordinate set
+     * @param y 3d points of coordinate set for superposition
+     */
+    public void updateRmsd(Point3d px, Point3d py) {
+//    	long t1 = System.nanoTime();
+    	Sxx -=  Cxx;
+    	Sxy -=  Cxy;
+    	Sxz -=  Cxz;
+
+    	Syx -=  Cyx;
+    	Syy -=  Cyy;
+    	Syz -=  Cyz;
+
+    	Szx -=  Czx;
+    	Szy -=  Czy;
+    	Szz -=  Czz;
+    	
+    	g -= Cg;
+    	
+       length++;
+       xCentroid = updateCentroid(xCentroid, px);
+       yCentroid = updateCentroid(yCentroid, py);
+       
+    	if (weight == null) {
+    		updateInnerProduct(px, py);
+    	} 
+//    	long t2 = System.nanoTime();
+//    	long time = t2 - t1;
+  //  	System.out.println("Update inner product: " + time);
+    	
+ //   	t1 = System.nanoTime();
+    	calcRmsd(length);
+//    	t2 = System.nanoTime();
+//    	time = t2 - t1;
+//      	System.out.println("Update rmsd: " + time);
+    	rmsdCalculated = true;
+    }
+    
+    private Point3d updateCentroid(Point3d centroid, Point3d p) {
+    	Point3d p1 = new Point3d(p);
+    	p1.sub(centroid);
+        p1.scale(1.0/(length));
+    	p1.add(centroid);
+    	return p1;
     }
  
     /**
@@ -289,7 +348,7 @@ public final class SuperPositionQCP implements Serializable {
      * @return
      */
     private void innerProduct() {
-        double g = 0.0;
+        g = 0.0;
         
         Sxx = 0;
         Sxy = 0;
@@ -328,7 +387,114 @@ public final class SuperPositionQCP implements Serializable {
 
         upperBound = g * 0.5;
     }
+    
+    /** 
+     * Adds two points to the inner product matrix. It also
+     * calculates an upper bound of the most positive root of the key matrix.
+     * @return
+     */
+    private void updateInnerProduct(Point3d px, Point3d py) {
+    	initializeInterproductMatrix();
+    	
+    	double x1 = px.x;
+    	double y1 = px.y;
+    	double z1 = px.z;
 
+    	double x2 = py.x;
+    	double y2 = py.y;
+    	double z2 = py.z;
+    	
+        g += Cg + x1*x1 + y1*y1 + z1*z1 + x2*x2 + y2*y2 + z2*z2;
+
+        Sxx += Cxx + x1*x2;
+        Sxy += Cxy + x1*y2;
+        Sxz += Cxz + x1*z2;
+
+        Syx += Cyx + y1*x2;
+        Syy += Cyy + y1*y2;
+        Syz += Cyz + y1*z2;
+
+        Szx += Czx + z1*x2;
+        Szy += Czy + z1*y2;
+        Szz += Czz + z1*z2;  
+        
+        upperBound = g * 0.5;
+    }
+
+    
+    /** 
+     * Calculates the inner product between two coordinate sets x and y. It also
+     * calculates an upper bound of the most positive root of the key matrix.
+     * @return
+     */
+    private void innerProductAlt() {
+        initializeInterproductMatrix();
+    	Sxx =  Cxx;
+    	Sxy =  Cxy;
+    	Sxz =  Cxz;
+
+    	Syx =  Cyx;
+    	Syy =  Cyy;
+    	Syz =  Cyz;
+
+    	Szx =  Czx;
+    	Szy =  Czy;
+    	Szz =  Czz;
+    	
+    	g = Cg;
+        
+        for (int i = 0, n = x.length; i < n; i++)
+        { 
+        	double x1 = x[i].x;
+        	double y1 = x[i].y;
+        	double z1 = x[i].z;
+
+        	double x2 = y[i].x;
+        	double y2 = y[i].y;
+        	double z2 = y[i].z;
+ 
+            g += x1*x1 + y1*y1 + z1*z1 + x2*x2 + y2*y2 + z2*z2;
+
+        	Sxx +=  x1*x2;
+        	Sxy +=  x1*y2;
+        	Sxz +=  x1*z2;
+
+        	Syx +=  y1*x2;
+        	Syy +=  y1*y2;
+        	Syz +=  y1*z2;
+
+        	Szx +=  z1*x2;
+        	Szy +=  z1*y2;
+        	Szz +=  z1*z2;  	
+        }
+
+        upperBound = g * 0.5;
+    }
+    
+	private void initializeInterproductMatrix() {
+		Cxx = -xCentroid.x*yCentroid.x*length;
+    	Cxy = -xCentroid.x*yCentroid.y*length;
+    	Cxz = -xCentroid.x*yCentroid.z*length;
+
+    	Cyx = -xCentroid.y*yCentroid.x*length;
+    	Cyy = -xCentroid.y*yCentroid.y*length;
+    	Cyz = -xCentroid.y*yCentroid.z*length;
+
+    	Czx = -xCentroid.z*yCentroid.x*length;
+    	Czy = -xCentroid.z*yCentroid.y*length;
+    	Czz = -xCentroid.z*yCentroid.z*length;
+    	
+    	double xx1 = -xCentroid.x*xCentroid.x;
+       	double yy1 = -xCentroid.y*xCentroid.y;
+       	double zz1 = -xCentroid.z*xCentroid.z;
+       	
+    	double xx2 = -yCentroid.x*yCentroid.x;
+       	double yy2 = -yCentroid.y*yCentroid.y;
+       	double zz2 = -yCentroid.z*yCentroid.z;
+
+        Cg = (xx1 + yy1 + zz1 + xx2 + yy2 + zz2) * length;
+	}
+    
     /** 
      * Calculates the inner product between two weighted coordinate sets x and y. It also
      * calculates an upper bound of the most positive root of the key matrix.
@@ -376,6 +542,10 @@ public final class SuperPositionQCP implements Serializable {
 		upperBound = (g1 + g2) * 0.5;
 	}
 
+	public double getUpperBoundRmsd() {
+		return Math.sqrt(Math.abs(2.0 * upperBound/length));
+	}
+	
 	/**
 	 * Calculates the RMSD value by determining the most positive root of the key matrix
 	 * using the Newton-Raphson method.
@@ -585,24 +755,5 @@ public final class SuperPositionQCP implements Serializable {
             sum += x[i].distanceSquared(y[i]);
         }
         return (double)Math.sqrt(sum/x.length);
-    }
-    
-    /**
-     * Returns the TM-Score for two superimposed sets of coordinates
-     * Yang Zhang and Jeffrey Skolnick, PROTEINS: Structure, Function, and Bioinformatics 57:702–710 (2004)
-     * @param x coordinate set 1
-     * @param y coordinate set 2
-     * @return
-     */
-    public static double TMScore(Point3d[] x, Point3d[] y) {   
-        double d0 = 1.24 * Math.cbrt(x.length - 15.0) - 1.8;
-        double d0Sq = d0*d0;
-        
-        double sum = 0;
-        for(int i = 0; i < x.length; i++) {
-        	sum += 1.0/(1.0 + x[i].distanceSquared(y[i])/d0Sq);
-        }
-        
-        return sum/x.length;
     }
 }

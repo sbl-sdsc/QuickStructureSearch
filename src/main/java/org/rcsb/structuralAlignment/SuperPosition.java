@@ -2,8 +2,6 @@ package org.rcsb.structuralAlignment;
 
 
 
-import java.util.Arrays;
-
 import javax.vecmath.AxisAngle4d;
 import javax.vecmath.Matrix4d;
 import javax.vecmath.Point3d;
