@@ -46,8 +46,7 @@ public class WriteSeqFile {
 	private static String allUrl = "http://www.rcsb.org/pdb/rest/getCurrent/";
 /**
  * 
- * @param args ?? no parameter?
- * @throws IOException ??
+ * @throws IOException 
  */
 	public static void main(String[] args) throws IOException {
 		String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
@@ -58,18 +57,9 @@ public class WriteSeqFile {
 				+ ".seq";
 
 		Set<String> pdbIds = getAll();
-		List <String> subset= new ArrayList <>(pdbIds);
-		subset = subset.subList(1, 50);
-		subset.clear();
-		subset.add("2R8P");
-		subset.add("2R80");
-		subset.add("3D7K");
-		subset.add("3FZN");
 		StructureIO.setAtomCache(cache);
 		cache.setPath("/Users/hina/DistanceData/");
-
 		long start = System.nanoTime();
-
 		SequenceFile.Writer writer = null;
 		int failure = 0;
 		int success = 0;
@@ -82,7 +72,7 @@ public class WriteSeqFile {
 					SequenceFile.Writer.valueClass(Text.class),
 					SequenceFile.Writer.compression(SequenceFile.CompressionType.BLOCK, new BZip2Codec()));	
 
-			for (String pdbId: subset) {
+			for (String pdbId: pdbIds) {
 				Set<String> mySet =new HashSet<String>();
 				System.out.println(pdbId);
 				Structure s = null;
@@ -95,16 +85,13 @@ public class WriteSeqFile {
 					failure++;
 					continue;
 				}
-
 				if (s == null) {
 					System.err.println("structure null: " + pdbId);
 					continue;
 				}
-
 				if (s.getChains().size() == 0) {
 					continue;
 				}
-
 				List<Group> hetgroups= new ArrayList<Group>();
 				List<Group> proteingroups= new ArrayList<Group>();
 				List<Chain> chains1 = s.getChains();
@@ -112,12 +99,9 @@ public class WriteSeqFile {
 					List<Group> groups = c.getAtomGroups();
 					for (Group group : groups) {
 						if (group.getType().equals(GroupType.HETATM) && !group.isWater()) {
-							//System.out.println("type: "+ group.getType()); 
 							hetgroups.add(group);
 						}
-
 						if (group.getType().equals(GroupType.AMINOACID)) {
-							//System.out.println("type: "+ group.getType()); 
 							proteingroups.add(group);
 						}
 					}
@@ -127,21 +111,17 @@ public class WriteSeqFile {
 				Character inscode2= null;
 				for (Group g1: proteingroups){
 					for (Atom atom1: g1.getAtoms()) {
-						if (!(atom1.getElement().equals(Element.C) ||  atom1.getElement().equals(Element.H)) ){
-							//System.out.println("    " + aa);
+						if (!(atom1.getElement().equals(Element.C) ||  atom1.getElement().equals(Element.H)) ){ // Ignore Carbon and Hydrogen atoms in proteins
 							Point3d p1= new Point3d (atom1.getCoords());
 							for (Group g2 : hetgroups) { 
 								for (Atom atom2: g2.getAtoms()) {
-									if (!(atom2.getElement().equals(Element.C) ||  atom2.getElement().equals(Element.H))){
-										//System.out.println("    " + b);
+									if (!(atom2.getElement().equals(Element.C) ||  atom2.getElement().equals(Element.H))){ // Ignore Carbon and Hydrogen atoms in Ligands
 										Point3d p2= new Point3d (atom2.getCoords());
 										double d=p1.distance(p2);
 										int idist= (int) Math.round(d*10);
 										if (idist<=50){
 											ResidueNumber r = g1.getResidueNumber();
-											//System.out.println(r.getChainId() + "-" + r.getSeqNum() + "-" + r.getInsCode());
 											ResidueNumber r2 = g2.getResidueNumber();
-											//System.out.println(r.getChainId() + "-" + r.getSeqNum() + "-" + r.getInsCode());
 											if(r.getInsCode() == null) {
 												inscode=' ';
 											}
@@ -154,15 +134,10 @@ public class WriteSeqFile {
 											else{
 												inscode2=r.getInsCode();
 											}
-											String label=r.getChainId() + "," + r2.getChainId() + "," + r.getSeqNum() + "," + 
+											String label=r.getChainId() + "," + r2.getChainId() + "," + r.getSeqNum() + "," +  // store the eight selected features as a string for each protein-ligand pair
 											r2.getSeqNum() + "," + inscode+ "," + inscode2+ ","+g1.getChemComp().getId()+ "," +
 											g2.getChemComp().getId()+ "," + atom1.getName()+ "," + atom2.getName()+ ","
 											+ atom1.getElement()+ "," + atom2.getElement()+ ","+ idist;
-											System.out.println(label);   
-											//System.out.println("Seq #1 :"+r.getSeqNum());
-											//System.out.println("Seq #2 :"+r2.getSeqNum());
-											System.out.println("Atom2 name :"+atom2.getName());
-											System.out.println("Element1 name :"+atom1.getElement());
 											mySet.add(label);
 										}
 
@@ -173,8 +148,7 @@ public class WriteSeqFile {
 					}
 				}
 
-				for (String temp: mySet){
-					//System.out.println("Key value: "+temp+ "  " +pdbId);	
+				for (String temp: mySet){	
                     Text key = new Text(temp);
             		Text value = new Text(pdbId);
 					writer.append(key, value);
@@ -199,7 +173,6 @@ public class WriteSeqFile {
 	 */
 	public static SortedSet<String> getAll() {
 		SortedSet<String> representatives = new TreeSet<String>();
-
 		try {
 
 			URL u = new URL(allUrl);
@@ -219,7 +192,6 @@ public class WriteSeqFile {
 					}
 				}
 			}
-
 		} catch (Exception e) {
 			e.printStackTrace();
 		}
@@ -240,7 +212,6 @@ public class WriteSeqFile {
 		params.setLoadChemCompInfo(true);
 		params.setCreateAtomBonds(false);
 		cache.setFileParsingParams(params);
-		//ChemCompGroupFactory.setChemCompProvider(new AllChemCompProvider());
 		ChemCompGroupFactory.setChemCompProvider(new DownloadChemCompProvider());
 		return cache;
 	}

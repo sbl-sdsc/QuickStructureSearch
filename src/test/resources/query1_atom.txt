@@ -1,0 +1,34 @@
+{
+    "comment": "This query finds interaction similar to the ones in drug complex 1T3R",
+    "sites": [
+        {
+            "residueName": "ASP",
+            "atomName": "OD2",
+            "num": "1"
+        },
+        {
+            "residueName": "017",
+            "atomName": "O18",
+            "num": "3"
+        },
+        {
+            "residueName": "ASP",
+            "atomName": "OD1",
+            "num": "2"
+        }
+    ],
+    "interactions": [
+        {
+            "res1": "1",
+            "res2": "2",
+            "distanceMin": "24",
+            "distanceMax": "26"
+        },
+        {
+            "res1": "3",
+            "res2": "2",
+            "distanceMin": "25",
+            "distanceMax": "27"
+        }
+    ]
+}
