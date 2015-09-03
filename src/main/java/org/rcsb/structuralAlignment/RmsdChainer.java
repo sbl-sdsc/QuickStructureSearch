@@ -24,7 +24,7 @@ import scala.Tuple2;
 
 /**
  * This class creates structural alignments between random protein chain pairs 
- * using jFatCAT and scores the alignments with the TM score
+ * using a new algorithm based on the alignment for chain segments
  * 
  * @author  Peter Rose
  */
