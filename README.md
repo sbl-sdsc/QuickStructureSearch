@@ -1,2 +1,2 @@
 # QuickStructureSearch
-Methods for fast structural database searches and clustering
+Student projects around methods for fast structural database searches and clustering

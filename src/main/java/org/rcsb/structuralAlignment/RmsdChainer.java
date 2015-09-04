@@ -32,22 +32,20 @@ public class RmsdChainer implements Serializable {
 	private static final long serialVersionUID = 2779213801755875110L;
 	private static int NUM_THREADS = 4;
 	private static int NUM_TASKS_PER_THREAD = 3; // Spark recommends 2-3 tasks per thread
-	private static int BATCH_SIZE = 100000;
 
 	public static void main(String[] args ) throws FileNotFoundException
 	{
 		String sequenceFileName = args[0]; 
-		String outputFileName = args[1];
-		int nPairs = Integer.parseInt(args[2]);
-		int seed = Integer.parseInt(args[3]);
+		int nPairs = Integer.parseInt(args[1]);
+		int seed = Integer.parseInt(args[2]);
 		
 		long t1 = System.nanoTime();
 		RmsdChainer creator = new RmsdChainer();
-		creator.run(sequenceFileName, outputFileName, nPairs, seed);
+		creator.run(sequenceFileName, nPairs, seed);
 		System.out.println("Time: " + ((System.nanoTime()-t1)/1E9) + " s");
 	}
 
-	private void run(String path, String outputFileName, int nPairs, int seed) throws FileNotFoundException {
+	private void run(String path, int nPairs, int seed) throws FileNotFoundException {
 		// setup spark
 		SparkConf conf = new SparkConf()
 				.setMaster("local[" + NUM_THREADS + "]")
@@ -71,7 +69,7 @@ public class RmsdChainer implements Serializable {
 		//		.mapToPair(new ChainSmootherMapper(new SavitzkyGolay7PointSmoother(1))) // add new chain smoother here ...
 				.collect();
 
-		// Step 2.  broadcast feature vectors to all nodes
+		// Step 2.  broadcast chains to all nodes
 		final Broadcast<List<Tuple2<String,Point3d[]>>> chainsBc = sc.broadcast(chains);
 		int nChains = chains.size();
 
