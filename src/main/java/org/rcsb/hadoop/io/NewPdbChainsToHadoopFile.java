@@ -17,16 +17,20 @@ import java.util.TreeSet;
 
 import javax.vecmath.Point3d;
 
+import me.lemire.integercompression.BinaryPacking;
 import me.lemire.integercompression.Composition;
 import me.lemire.integercompression.DeltaZigzagBinaryPacking;
 import me.lemire.integercompression.DeltaZigzagVariableByte;
 import me.lemire.integercompression.FastPFOR;
 import me.lemire.integercompression.FastPFOR128;
+import me.lemire.integercompression.IntCompressor;
 import me.lemire.integercompression.IntegerCODEC;
+import me.lemire.integercompression.Kamikaze;
 import me.lemire.integercompression.NewPFD;
 import me.lemire.integercompression.NewPFDS16;
 import me.lemire.integercompression.OptPFDS16;
 import me.lemire.integercompression.Simple16;
+import me.lemire.integercompression.SkippableComposition;
 import me.lemire.integercompression.SkippableIntegerCODEC;
 import me.lemire.integercompression.VariableByte;
 import me.lemire.integercompression.differential.IntegratedIntCompressor;
@@ -59,6 +63,9 @@ import org.rcsb.compress.CombinedTransform;
 import org.rcsb.compress.Delta4Transform;
 import org.rcsb.compress.DeltaReverseTransform;
 import org.rcsb.compress.DeltaTransform;
+import org.rcsb.compress.HarrWavelet;
+import org.rcsb.compress.HorizontalDeltaTransform;
+import org.rcsb.compress.IntCompressorTransform;
 import org.rcsb.compress.IntegerTransform;
 import org.rcsb.compress.LeGallWavelet;
 import org.rcsb.compress.NullOpTransform;
@@ -66,7 +73,9 @@ import org.rcsb.compress.PFORTransform;
 import org.rcsb.compress.PythagoreanTransform;
 import org.rcsb.compress.UnsignedDeltaTransform;
 import org.rcsb.compress.UnsignedPythagoreanTransform;
+import org.rcsb.compress.UnsignedRefDeltaTransform;
 import org.rcsb.compress.UnsignedTransform;
+import org.rcsb.compress.XorTransform;
 import org.rcsb.structuralSimilarity.IntArrayWritable;
 
 /**
@@ -84,7 +93,7 @@ import org.rcsb.structuralSimilarity.IntArrayWritable;
  * 
  * @author  Peter Rose
  */
-public class PdbChainsToHadoopFile {
+public class NewPdbChainsToHadoopFile {
 	private static AtomCache cache = initializeCache();
 	private static String allUrl = "http://www.rcsb.org/pdb/rest/getCurrent/";
 
@@ -108,6 +117,7 @@ public class PdbChainsToHadoopFile {
 
 		// create a subset
 		List<String> subset = new ArrayList<>(getAll());
+//		List<String> pdbIds = subset.subList(0, 100);
 		List<String> pdbIds = subset.subList(0, 100);
 
 
@@ -127,6 +137,10 @@ public class PdbChainsToHadoopFile {
 		int failure = 0;
 		int success = 0;
 		int chains = 0;
+		int[] metrics = new int[2];
+		long start = 0;
+		long end = 0;
+		long time = 0;
 
 		try (SequenceFile.Writer writer = SequenceFile.createWriter(new Configuration(),
 				SequenceFile.Writer.file(new Path(fileName)),
@@ -160,7 +174,9 @@ public class PdbChainsToHadoopFile {
 					continue;
 				}
 
-				chains += append(writer, pdbId, s);
+				start = System.nanoTime();
+				chains += append(writer, pdbId, s, metrics);
+				time += System.nanoTime() - start;
 			}
 			IOUtils.closeStream(writer);
 				}
@@ -170,12 +186,77 @@ public class PdbChainsToHadoopFile {
 			System.out.println("Success: " + success);
 			System.out.println("Failure: " + failure);
 			System.out.println("Chains: " + chains);
+			System.out.println("Size: " + metrics[0]);
+			System.out.println("Time: " + metrics[1]/1E6);
 		}
 	}
 
-	private static int append(SequenceFile.Writer writer, String pdbId, Structure s)
+	private static int append(SequenceFile.Writer writer, String pdbId, Structure s, int[] metrics)
 			throws IOException {
 
+//       IntegerTransform transform = new IntCompressorTransform(new SkippableComposition(new BinaryPacking(), new VariableByte())); // 109K size: 35045
+//		IntegerTransform transform = new IntCompressorTransform(new SkippableComposition(new FastPFOR(), new VariableByte())); // 110K size: 33520 Time: 62.954806 (forward Time: 30.78215)
+		IntegerTransform transform = new PFORTransform(new Composition(new DeltaZigzagVariableByte(), new VariableByte())); // 80K size: 26548 Time: 44.758336 Time: 54.547389 (forward: Time: 19.477541)
+//		IntegerTransform transform = new PFORTransform(new Composition(new FastPFOR(), new DeltaZigzagVariableByte())); // 100K size: 30175
+//		IntegerTransform transform = new IntCompressorTransform(new SkippableComposition(new Simple16(), new VariableByte())); // fail
+//		IntegerTransform transform = new IntCompressorTransform(new SkippableComposition(new NewPFD(), new VariableByte())); // fail
+//		IntegerTransform transform = new IntCompressorTransform(new Simple16()); // fail
+//		IntegerTransform transform = new IntCompressorTransform(new NewPFD()); // fail
+//		IntegerTransform transform = new IntCompressorTransform(new VariableByte()); // fail
+//		IntegerTransform transform = new IntCompressorTransform(new BinaryPacking()); // fail
+//		IntegerTransform transform = new IntCompressorTransform(new FastPFOR()); // fail
+    //    IntegerTransform transform = new IntCompressorTransform(new Kamikaze()); // fail
+//		IntegerTransform transform = new DeltaTransform(); // 80K, size: 59613
+//		IntegerTransform transform = new HorizontalDeltaTransform(); //
+//		IntegerTransform transform = new NullOpTransform(); // 100K size: 59613
+//		IntegerTransform transform = new UnsignedDeltaTransform(); // 80K
+//		IntegerTransform transform = new UnsignedRefDeltaTransform(); // 80K
+//		IntegerTransform transform = new XorTransform(); // 88K
+//		IntegerTransform transform = new CombinedTransform(new DeltaTransform(), new HorizontalDeltaTransform()); // 84K
+//		IntegerTransform transform1 = new CombinedTransform(new DeltaTransform(), new HorizontalDeltaTransform());
+//		IntegerTransform transform = new CombinedTransform(transform1, new PFORTransform(new DeltaZigzagVariableByte())); // 88K
+//		IntegerTransform transform = new PFORTransform(new DeltaZigzagVariableByte()); // 80K size: 26548
+//		IntegerTransform transform = new PFORTransform(new Composition(new NewPFDS16(),new VariableByte())); // 113K Size: 35016
+//		IntegerTransform transform = new PFORTransform(new Composition(new Kamikaze(),new VariableByte())); // fail
+//		IntegerTransform transform = new AncientEgyptianDecomposition(new LeGallWavelet()); // 88K
+//		IntegerTransform transform = new AncientEgyptianDecomposition(new HarrWavelet()); // 105K
+//		IntegerTransform transform = new CombinedTransform(new DeltaTransform(), new AncientEgyptianDecomposition(new HarrWavelet())); // 95K
+//		IntegerTransform transform1 = new AncientEgyptianDecomposition(new HarrWavelet()); 
+//		IntegerTransform transform = new CombinedTransform(transform1, new PFORTransform(new DeltaZigzagVariableByte())); // 103 Size: 29882
+//		IntegerTransform transform = new CombinedTransform(new AncientEgyptianDecomposition(new LeGallWavelet()), new PFORTransform(new DeltaZigzagVariableByte())); // 91K Size: 27645 Time: 57.734268
+//		IntegerTransform transform = new AncientEgyptianDecomposition(new PFORTransform(new DeltaZigzagVariableByte())); // index out of bounds
+//		IntegerTransform transform = new AncientEgyptianDecomposition(new DeltaTransform()); // 81K
+//		IntegerTransform transform = new AncientEgyptianDecomposition(new PFORTransform(new FastPFOR())); // fail, arrays need to be the same length
+//		IntegerTransform transform = new CombinedTransform(new DeltaTransform(), new PythagoreanTransform()); // reverse not implemented // 78K
+//		IntegerTransform transform1 = new CombinedTransform(new DeltaTransform(), new PythagoreanTransform());
+//		IntegerTransform transform = new CombinedTransform(transform1, new PFORTransform(new DeltaZigzagVariableByte())); // size: 27274
+//		IntegerTransform transform = new CombinedTransform(new UnsignedDeltaTransform(), new PFORTransform(new Composition(new FastPFOR(),new VariableByte()))); // 86K Size: 24441
+//		IntegerTransform transform = new CombinedTransform(new DeltaTransform(), new PFORTransform(new Composition(new FastPFOR(),new VariableByte())));
+//		IntegerTransform transform = new UnsignedTransform();
+//		IntegerTransform transform = new PFORTransform(new DeltaZigzagVariableByte());
+//		IntegerTransform transform = new PFORTransform(new DeltaZigzagBinaryPacking()); // no match?
+//		IntegerTransform transform = new CombinedTransform(new UnsignedDeltaTransform(),new AncientEgyptianDecomposition(new LeGallWavelet()));
+//		IntegerTransform transform = new CombinedTransform(new UnsignedDeltaTransform(), new PFORTransform(new FastPFOR()));
+//		IntegerTransform transform = new CombinedTransform(new UnsignedDeltaTransform(), new PFORTransform(new FastPFOR()));
+//		IntegerTransform transform = new CombinedTransform(new UnsignedTransform(), new PFORTransform(new FastPFOR()));
+//		IntegerTransform transform1 = new CombinedTransform(new DeltaTransform(), new PythagoreanTransform());
+
+//		IntegerTransform transform1 = new CombinedTransform(new DeltaTransform(), new UnsignedPythagoreanTransform());
+//		IntegerTransform transform = new CombinedTransform(transform1, new PFORTransform(new FastPFOR()));
+//		IntegerTransform transform = new Delta4Transform();
+//		IntegerTransform transform = new DeltaReverseTransform();
+//		IntegerTransform transform = new CombinedTransform(new AncientEgyptianDecomposition(new LeGallWavelet()), new PFORTransform(new Simple16()));
+//		IntegerTransform transform = new PFORTransform(new VariableByte());
+//		IntegerTransform transform = new UnsignedDeltaTransform();
+//		IntegerTransform transform = new PFORTransform(new Composition(new FastPFOR(),new VariableByte()));
+//		IntegerTransform transform1 = new PFORTransform(new VariableByte());
+//		IntegerTransform transform = new CombinedTransform(new UnsignedDeltaTransform(), transform1);
+//		IntegerTransform transform = new CombinedTransform(new DeltaTransform(), new PFORTransform(new Composition(new NewPFDS16(),new VariableByte()))); // 90K Size: 58506
+//		IntegerTransform transform = new AncientEgyptianDecomposition(new LeGallWavelet());
+//		IntegerTransform transform1 = new AncientEgyptianDecomposition(new LeGallWavelet());
+//		IntegerTransform transform = new CombinedTransform(transform1, new PFORTransform(new DeltaZigzagVariableByte())); // 91K Size: 27645
+//		IntegerTransform transform = new CombinedTransform(new DeltaTransform(), new AncientEgyptianDecomposition(new LeGallWavelet()));
+		
 		int chainCount = 0;
 
 		for (Chain c: s.getChains()) {
@@ -196,7 +277,8 @@ public class PdbChainsToHadoopFile {
 			int unknownResidues = 0;
 
 			Point3d[] coords = new Point3d[groups.size()];	
-			Integer[] sequence = new Integer[groups.size()];	
+	//		Integer[] sequence = new Integer[groups.size()];
+			StringBuilder sb = new StringBuilder();		
 
 			int gaps = 0;
 
@@ -206,7 +288,8 @@ public class PdbChainsToHadoopFile {
 				if (code == 'X') {
 					unknownResidues++;
 				}
-				sequence[i] = (int)code;
+				sb.append(code);
+	//			sequence[i] = (int)code;
 
 				PolymerType p = g.getChemComp().getPolymerType();
 				if (p.equals(PolymerType.peptide)) {
@@ -274,8 +357,13 @@ public class PdbChainsToHadoopFile {
 
 			Text key1 = new Text(pdbId + "." + c.getChainID());
 			ArrayWritable value1 = new IntArrayWritable();	
-			value1.set(SimplePolymerChainCodec.encodePolymerChain(polymerType.ordinal(), coords, sequence, gaps));
+//			value1.set(SimplePolymerChainCodec.encodePolymerChain(polymerType.ordinal(), coords, sequence, gaps));
+			long start = System.nanoTime();
+			value1.set(SimplePolymerChainCDF53Codec.encodePolymerChain(polymerType.ordinal(), coords, sb.toString(), transform));
+		    metrics[1] += System.nanoTime() - start;
 			writer.append(key1, value1);
+			
+			metrics[0] += value1.get().length;
 		}
 		return chainCount;
 	}
