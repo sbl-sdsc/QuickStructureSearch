@@ -13,8 +13,8 @@ import org.rcsb.compress.IntegerTransform;
 
 public class SimplePolymerChainCDF53Codec implements Serializable {
 	private static final long serialVersionUID = 1L;
-	private static final int SCALE = 1000; 
-	private static final double INVERSE_SCALE = 0.001;
+	private static final int SCALE = 10; 
+	private static final double INVERSE_SCALE = 0.1;
 //	private static final int SCALE = 10; 
 //	private static final double INVERSE_SCALE = 0.1; 
 	
