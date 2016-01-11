@@ -1,45 +1,26 @@
 package org.rcsb.hadoop.io;
 
 import java.io.BufferedReader;
-import java.io.IOException;
+import java.io.File;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collection;
 import java.util.List;
-import java.util.Set;
 import java.util.SortedSet;
 import java.util.TreeSet;
 
 import javax.vecmath.Point3d;
 
-import me.lemire.integercompression.Composition;
-import me.lemire.integercompression.DeltaZigzagBinaryPacking;
-import me.lemire.integercompression.DeltaZigzagVariableByte;
-import me.lemire.integercompression.FastPFOR;
-import me.lemire.integercompression.FastPFOR128;
-import me.lemire.integercompression.IntegerCODEC;
-import me.lemire.integercompression.NewPFD;
-import me.lemire.integercompression.NewPFDS16;
-import me.lemire.integercompression.OptPFDS16;
-import me.lemire.integercompression.Simple16;
-import me.lemire.integercompression.SkippableIntegerCODEC;
-import me.lemire.integercompression.VariableByte;
-import me.lemire.integercompression.differential.IntegratedIntCompressor;
-
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.compress.BZip2Codec;
-import org.apache.hadoop.io.compress.GzipCodec;
-import org.apache.hadoop.io.compress.Lz4Codec;
 import org.biojava.nbio.structure.AminoAcidImpl;
 import org.biojava.nbio.structure.Atom;
 import org.biojava.nbio.structure.Chain;
@@ -54,91 +35,74 @@ import org.biojava.nbio.structure.io.FileParsingParameters;
 import org.biojava.nbio.structure.io.mmcif.AllChemCompProvider;
 import org.biojava.nbio.structure.io.mmcif.ChemCompGroupFactory;
 import org.biojava.nbio.structure.io.mmcif.chem.PolymerType;
-import org.rcsb.compress.AncientEgyptianDecomposition;
 import org.rcsb.compress.CombinedTransform;
-import org.rcsb.compress.Delta4Transform;
-import org.rcsb.compress.DeltaReverseTransform;
+import org.rcsb.compress.D4Wavelet;
 import org.rcsb.compress.DeltaTransform;
+import org.rcsb.compress.IntegerToByteTransform;
+import org.rcsb.compress.IntegerToByteTransformer;
 import org.rcsb.compress.IntegerTransform;
-import org.rcsb.compress.LeGallWavelet;
-import org.rcsb.compress.NullOpTransform;
-import org.rcsb.compress.PFORTransform;
 import org.rcsb.compress.PythagoreanTransform;
-import org.rcsb.compress.UnsignedDeltaTransform;
-import org.rcsb.compress.UnsignedPythagoreanTransform;
-import org.rcsb.compress.UnsignedTransform;
-import org.rcsb.structuralSimilarity.IntArrayWritable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 /**
  * This class creates a Hadoop sequence file for protein chains in the PDB. The Hadoop sequence file
  * uses a delta encoding of the PDB coordinates as well as BZIP2 block level compression.
  * 
- * Example run:
- * Jan. 20 PDB release
- * Total structures: 105906
- * Success: 105899
- * Failure: 7
- * Chains: 280565
- * Time: 50605.43170881 sec.
- * Size: 341 MB
  * 
  * @author  Peter Rose
  */
-public class PdbChainsToHadoopFile {
+public class SimplePolymerChainsToHadoopFile {
+	private static final Logger logger = LoggerFactory.getLogger(SimplePolymerChainsToHadoopFile.class);
 	private static AtomCache cache = initializeCache();
 	private static String allUrl = "http://www.rcsb.org/pdb/rest/getCurrent/";
+	
 
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws Exception {
 		String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
 
-//		String uri = args[0] 
-//				+ "_"
-//				+ timeStamp 
-//				+ ".seq";
-		
 		String uri = args[0] 
 				+ "_"
-				+ "latest" 
+				+ timeStamp 
 				+ ".seq";
-
-		//		List<String> dna = Arrays.asList("4RNK","4RO4","4RO7");
-//		List<String> protein = Arrays.asList("1STP");
-//		List<String> pdbIds = protein;
-//		Set<String> pdbIds = getAll();
-
-		// create a subset
+		
 		List<String> subset = new ArrayList<>(getAll());
+//		List<String> pdbIds = subset;
 		List<String> pdbIds = subset.subList(0, 100);
-
 
 		StructureIO.setAtomCache(cache);
 		cache.setPath("/Users/peter/Data/PDB/");
 
 		long start = System.nanoTime();
-		toSequenceFile(uri, pdbIds, true);
+		
+//		IntegerToByteTransform transform = new IntegerDeltaZigzagVariableByte();
+		IntegerTransform t1 = new CombinedTransform(new DeltaTransform(), new PythagoreanTransform());
+		IntegerToByteTransform transform = new IntegerToByteTransformer(new CombinedTransform(t1, new D4Wavelet()));
+		
+		toSequenceFile(uri, pdbIds, transform, true);
+	
 		long end = System.nanoTime();
 
 		System.out.println("Time: " + (end - start)/1E9 + " sec.");
 	}
 
-	public static void toSequenceFile(String fileName, Collection<String> pdbIds, boolean verbose)
-			throws IOException {
+	public static long toSequenceFile(String fileName, Collection<String> pdbIds, IntegerToByteTransform transform, boolean verbose)
+			throws Exception {
 
 		int failure = 0;
 		int success = 0;
 		int chains = 0;
+		int[] metrics = new int[2];
 
 		try (SequenceFile.Writer writer = SequenceFile.createWriter(new Configuration(),
 				SequenceFile.Writer.file(new Path(fileName)),
 				SequenceFile.Writer.keyClass(Text.class),
-				SequenceFile.Writer.valueClass(IntArrayWritable.class),
+				SequenceFile.Writer.valueClass(SimplePolymerChain.class),
 				SequenceFile.Writer.compression(SequenceFile.CompressionType.BLOCK, new BZip2Codec()));		
 				) 
 				{
 			for (String pdbId: pdbIds) {
-				if (verbose) {
-					System.out.println(pdbId);
-				}
+				logger.info(pdbId);
 
 				Structure s = null;
 				try {
@@ -146,13 +110,13 @@ public class PdbChainsToHadoopFile {
 					success++;
 				} catch (Exception e) {
 					// some files can't be read. Let's just skip those!
-					e.printStackTrace();
+					logger.error(pdbId, e);
 					failure++;
 					continue;
 				}
 
 				if (s == null) {
-					System.err.println("structure null: " + pdbId);
+					logger.error(pdbId + " structure object is null");
 					continue;
 				}
 
@@ -160,29 +124,38 @@ public class PdbChainsToHadoopFile {
 					continue;
 				}
 
-				chains += append(writer, pdbId, s);
+				chains += append(writer, pdbId, s, transform, metrics);
 			}
 			IOUtils.closeStream(writer);
 				}
 
+		File f = new File(fileName);
+		long length = f.length();
+		
 		if (verbose) {
 			System.out.println("Total structures: " + pdbIds.size());
 			System.out.println("Success: " + success);
 			System.out.println("Failure: " + failure);
+			System.out.println("File size: " + length);
 			System.out.println("Chains: " + chains);
+			System.out.println("Size: " + metrics[0]);
+			System.out.println("Time: " + metrics[1]/1E6);
 		}
+		
+		return length;
 	}
 
-	private static int append(SequenceFile.Writer writer, String pdbId, Structure s)
-			throws IOException {
-
+	private static int append(SequenceFile.Writer writer, String pdbId, Structure s, IntegerToByteTransform transform, int[] metrics)
+			throws Exception {
+		
+		long start = System.nanoTime();
 		int chainCount = 0;
 
 		for (Chain c: s.getChains()) {
-			List<Group> groups = c.getSeqResGroups(GroupType.AMINOACID);
-//			System.out.println("seq len: " + c.getSeqResSequence().length());
-//			System.out.println("seqresgroups.size(): " + c.getSeqResGroups(GroupType.AMINOACID).size());
-			List<Group> nAcids = c.getSeqResGroups(GroupType.NUCLEOTIDE);
+			List<Group> groups = c.getAtomGroups(GroupType.AMINOACID);
+			List<Group> nAcids = c.getAtomGroups(GroupType.NUCLEOTIDE);
+//			List<Group> groups = c.getSeqResGroups(GroupType.AMINOACID);
+//			List<Group> nAcids = c.getSeqResGroups(GroupType.NUCLEOTIDE);
 
 			boolean aminoAcid = true;
 			if (nAcids.size() > groups.size()) {
@@ -195,8 +168,9 @@ public class PdbChainsToHadoopFile {
 			int dPeptide = 0;
 			int unknownResidues = 0;
 
-			Point3d[] coords = new Point3d[groups.size()];	
-			Integer[] sequence = new Integer[groups.size()];	
+			List<Point3d> coords = new ArrayList<>(groups.size());	
+
+			StringBuilder sb = new StringBuilder();		
 
 			int gaps = 0;
 
@@ -206,7 +180,7 @@ public class PdbChainsToHadoopFile {
 				if (code == 'X') {
 					unknownResidues++;
 				}
-				sequence[i] = (int)code;
+				sb.append(code);
 
 				PolymerType p = g.getChemComp().getPolymerType();
 				if (p.equals(PolymerType.peptide)) {
@@ -219,9 +193,6 @@ public class PdbChainsToHadoopFile {
 					rna++;
 				}
 
-//				for (Atom a: g.getAtoms()) {
-//					System.out.println(a.toPDB());
-//				}
 				Atom atom = null;
 				if (aminoAcid) {
 					atom = ((AminoAcidImpl)g).getCA();
@@ -231,7 +202,7 @@ public class PdbChainsToHadoopFile {
 				if (atom == null) {
 					gaps++;
 				} else {
-					coords[i] = new Point3d(atom.getCoords());
+					coords.add(new Point3d(atom.getCoords()));
 				}
 			}
 
@@ -242,16 +213,16 @@ public class PdbChainsToHadoopFile {
 			}
 
 			if (unknownResidues > (groups.size()-gaps)/2) {
-				System.err.println("Polymer with many unknown residues ignored: " + pdbId + c.getChainID());
+				logger.info(pdbId + ": Polymer with many unknown residues ignored: " + pdbId + c.getChainID());
 				continue;
 			}
 			// ignore any mixed polymer types
 			if (dPeptide > 0) {
-				System.err.println("d-peptide ignored: " + pdbId + c.getChainID());
+				logger.info(pdbId  + c.getChainID() + ": d-peptide ignored");
 				continue;
 			}
 			if (dna > 0 && rna > 0) {
-				System.err.println("DNA/RNA hybrid ignored: " + pdbId + c.getChainID());
+				logger.info(pdbId + c.getChainID() + ": DNA/RNA hybrid ignored");
 				continue;
 			}
 
@@ -259,23 +230,29 @@ public class PdbChainsToHadoopFile {
 			SimplePolymerType polymerType = null;
 			if (peptide > 0) {
 				polymerType = SimplePolymerType.PROTEIN;
-				//				System.out.println("PROTEIN: " + dna);
 			} else if (dna > 0) {
 				polymerType = SimplePolymerType.DNA;
-				//				System.out.println("DNA: " + dna);
 			} else if (rna > 0) {
 				polymerType = SimplePolymerType.RNA;
-				//				System.out.println("RNA: " + rna);
 			} else {
 				continue;
 			}
 
+			Point3d[] coordinates = coords.toArray(new Point3d[coords.size()]);
 			chainCount++;
 
-			Text key1 = new Text(pdbId + "." + c.getChainID());
-			ArrayWritable value1 = new IntArrayWritable();	
-			value1.set(SimplePolymerChainCodec.encodePolymerChain(polymerType.ordinal(), coords, sequence, gaps));
-			writer.append(key1, value1);
+			Text key = new Text(pdbId + "." + c.getChainID());
+			
+			SimplePolymerChain value = new SimplePolymerChain(transform);
+//			SimplePolymerChain value = new SimplePolymerChain();
+			value.setPolymerType(polymerType.ordinal());
+			value.setCoordinates(coordinates);
+			value.setSequence(sb.toString());
+			
+			writer.append(key, value);
+			
+			metrics[0] += value.size();
+		    metrics[1] += System.nanoTime() - start;
 		}
 		return chainCount;
 	}
@@ -320,12 +297,11 @@ public class PdbChainsToHadoopFile {
 		FileParsingParameters params = cache.getFileParsingParams();
 		params.setStoreEmptySeqRes(true);
 		params.setAlignSeqRes(true);
-		params.setParseCAOnly(true);
+//		params.setParseCAOnly(true); // can't use CA only since we need to read DNA/RNA
 		params.setLoadChemCompInfo(true);
 		params.setCreateAtomBonds(false);
 		cache.setFileParsingParams(params);
 		ChemCompGroupFactory.setChemCompProvider(new AllChemCompProvider());
-		//		ChemCompGroupFactory.setChemCompProvider(new DownloadChemCompProvider());
 		return cache;
 	}
 }

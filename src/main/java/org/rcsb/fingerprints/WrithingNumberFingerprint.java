@@ -1,11 +1,9 @@
 package org.rcsb.fingerprints;
 
 import java.io.Serializable;
-import java.util.Arrays;
 
 import javax.vecmath.Point3d;
 import javax.vecmath.Vector3d;
-import java.lang.*;
 
 
 /**

@@ -3,7 +3,6 @@ package org.rcsb.project1;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Random;
@@ -11,12 +10,12 @@ import java.util.Set;
 
 import javax.vecmath.Point3d;
 
-import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
-import org.rcsb.hadoop.io.HadoopToSimpleChainMapper;
+import org.rcsb.hadoop.io.HadoopToSimplePolymerChainMapper;
+import org.rcsb.hadoop.io.SimplePolymerChain;
 import org.rcsb.structuralSimilarity.GapFilter;
 import org.rcsb.structuralSimilarity.LengthFilter;
 
@@ -53,9 +52,9 @@ public class RandomAfpCreator {
 		
 		// Step 1. calculate <pdbId.chainId, feature vector> pairs
         List<Tuple2<String, Point3d[]>> chains = sc
-				.sequenceFile(path, Text.class, ArrayWritable.class, NUM_THREADS)  // read protein chains
+				.sequenceFile(path, Text.class, SimplePolymerChain.class, NUM_THREADS)  // read protein chains
 				.sample(false, 0.1, 123456) // use only a random fraction, i.e., 10%
-				.mapToPair(new HadoopToSimpleChainMapper()) // convert input to <pdbId.chainId, protein sequence> pairs
+				.mapToPair(new HadoopToSimplePolymerChainMapper()) // convert input to <pdbId.chainId, protein sequence> pairs
 				.filter(t -> t._2.isProtein())
 				.mapToPair(t -> new Tuple2<String, Point3d[]>(t._1, t._2.getCoordinates()))
 				.filter(new GapFilter(0, 0)) // keep protein chains with gap size <= 0 and 0 gaps

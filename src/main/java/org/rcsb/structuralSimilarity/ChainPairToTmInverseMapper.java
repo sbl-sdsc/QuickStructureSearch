@@ -6,7 +6,6 @@ import javax.vecmath.Point3d;
 
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
-import org.apache.spark.mllib.linalg.Vector;
 
 import scala.Tuple2;
 

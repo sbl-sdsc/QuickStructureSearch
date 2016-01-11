@@ -3,18 +3,14 @@ package org.rcsb.compress;
 import java.io.Serializable;
 import java.util.Arrays;
 
-import me.lemire.integercompression.FastPFOR;
+import me.lemire.integercompression.DeltaZigzagVariableByte;
 import me.lemire.integercompression.IntWrapper;
-import me.lemire.integercompression.IntegerCODEC;
 
 public class PFORTransform implements IntegerTransform, Serializable {
 	private static final long serialVersionUID = 1L;
-	private IntegerCODEC codec;
+	private DeltaZigzagVariableByte codec;
 	
-	public PFORTransform(IntegerCODEC codec) {
-		this.codec = codec;
-	}
-	
+
 	@Override
 	public int[] forward(int[] data) {
 		int[] out = compress(data);
@@ -30,7 +26,6 @@ public class PFORTransform implements IntegerTransform, Serializable {
 	}
 	
 	private int[] compress(int[] data) {
-//		System.out.println("compress length: " + data.length);
 		int[] outBuf = new int[data.length + 1024];
 		IntWrapper inPos = new IntWrapper();
 		IntWrapper outPos = new IntWrapper();

@@ -1,8 +1,5 @@
 package org.rcsb.project5;
 
-//import java.io.BufferedReader;
-//import java.io.FileReader;
-//import java.io.IOException;
 import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.util.ArrayList;
@@ -13,21 +10,17 @@ import java.util.Map.Entry;
 
 import javax.vecmath.Point3d;
 
-import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
-/* Spark Java programming APIs. It contains the 
- * RDD classes used for Java, as well as the
- * StorageLevels and SparkContext for java.
- */
+
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.mllib.clustering.PowerIterationClustering;
 import org.apache.spark.mllib.clustering.PowerIterationClusteringModel;
 import org.biojava.nbio.structure.symmetry.geometry.SuperPositionQCP;
-import org.rcsb.hadoop.io.HadoopToSimpleChainMapper;
+import org.rcsb.hadoop.io.HadoopToSimplePolymerChainMapper;
 import org.rcsb.hadoop.io.SimplePolymerChain;
 import org.rcsb.hadoop.io.SimplePolymerType;
 import org.rcsb.utils.BlastClustReader;
@@ -914,8 +907,8 @@ public class SequenceToStructureClusterer {
 	 */
 	private static JavaPairRDD<String, SimplePolymerChain> getPolymerChains(String hadoopSequenceFileName, JavaSparkContext sc) {
 		JavaPairRDD<String, SimplePolymerChain> chains = sc
-				.sequenceFile(hadoopSequenceFileName, Text.class, ArrayWritable.class,NUM_THREADS*NUM_TASKS_PER_THREAD)
-				.mapToPair(new HadoopToSimpleChainMapper())
+				.sequenceFile(hadoopSequenceFileName, Text.class, SimplePolymerChain.class,NUM_THREADS*NUM_TASKS_PER_THREAD)
+				.mapToPair(new HadoopToSimplePolymerChainMapper())
 				//		.filter(new GapFilterSPC(0, 0)) // keep protein chains with gap size <= 0 and 0 gaps
 				.filter(t -> t._2 != null)
 				.filter(t -> t._2.isProtein());

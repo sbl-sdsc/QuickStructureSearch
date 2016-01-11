@@ -1,21 +1,10 @@
 package org.rcsb.structuralSimilarity;
 
 import java.io.ByteArrayOutputStream;
-import java.io.IOException;
-import java.math.BigInteger;
-import java.util.Arrays;
-import java.util.BitSet;
 import java.util.zip.GZIPOutputStream;
 
 
 public class NormalizedCompressionDistance {
-	// http://en.wikipedia.org/wiki/Levenshtein_distance
-
-	
-	public static void main(String[] args) {
-		int[] v1 = {1,2,3,4,5,6,7,8,9};
-		int[] v2 = {2,3,4,6};
-	}
 	
 	public static double distance(int[] s, int[] t)
 	{

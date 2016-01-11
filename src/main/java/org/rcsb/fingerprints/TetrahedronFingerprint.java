@@ -1,17 +1,10 @@
 package org.rcsb.fingerprints;
 
 import java.io.Serializable;
-import java.util.ArrayList;
 import java.util.Arrays;
-import java.util.Comparator;
 import java.util.List;
-import java.util.Map;
-import java.util.Map.Entry;
-import java.util.TreeMap;
 
 import javax.vecmath.Point3d;
-
-import scala.Tuple2;
 
 /**
  * This class generates a fingerprint (signature) for protein chains based quartets

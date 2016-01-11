@@ -1,6 +1,5 @@
 package org.rcsb.structuralSimilarity;
 
-import java.util.Arrays;
 import java.util.List;
 
 import org.apache.spark.api.java.function.PairFunction;

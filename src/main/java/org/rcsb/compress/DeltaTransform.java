@@ -12,7 +12,6 @@ public class DeltaTransform implements IntegerTransform, Serializable {
 		for (int i = out.length-1; i > 0; i--) {
 			out[i] = out[i] - out[i-1];
 		}
-		
 		return out;
 	}
 
@@ -26,15 +25,4 @@ public class DeltaTransform implements IntegerTransform, Serializable {
 		
 		return out;
 	}
-	
-	private static void printPattern(int[] data) {
-		int len = data.length/3;
-		if (3*len == data.length) {
-		int c = 2000;
-		for (int i = 0; i < len; i++) {
-			System.out.println(data[i]/c + "\t" + data[i+len]/c + "\t" + data[i+len+len]/c);
-		}
-		}
-	}
-	
 }

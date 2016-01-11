@@ -1,7 +1,6 @@
 package org.rcsb.compress;
 
 import java.io.Serializable;
-import java.util.Arrays;
 
 public class LeGallWavelet implements IntegerTransform, Serializable {
 	private static final long serialVersionUID = 1L;
@@ -16,16 +15,6 @@ public class LeGallWavelet implements IntegerTransform, Serializable {
 	 * @author Peter Rose (adopted to IntegerTransform)
 	 */
 
-	public static void main(String[] args) {
-		int[] data = {11225, 7789, 6238, 2515, 1510, -2120, -389, -209, 435, 804, 708, 1724, 10215, 8596, 5209, 4532, 868, 586};
-	//	int[] data = {11225, 7789, 6238, 2515, 1510, -2120, -389, -209, 435, 804, 708, 1724, 10215, 8596, 5209, 4532};
-		System.out.println(Arrays.toString(data));
-		
-		IntegerTransform t = new AncientEgyptianDecomposition(new DeltaTransform());
-		int[] out = t.forward(data);
-		out = t.reverse(out);
-		System.out.println(Arrays.toString(out));
-	}
 	public int[] forward(int[] in) {
 		int[] out = new int[in.length];
 		System.arraycopy(in, 0,  out,  0,  in.length);

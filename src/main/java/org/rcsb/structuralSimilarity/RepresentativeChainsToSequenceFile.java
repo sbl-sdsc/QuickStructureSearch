@@ -10,14 +10,8 @@ import java.util.Set;
 
 import javax.vecmath.Point3d;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.ArrayWritable;
-import org.apache.hadoop.io.IntWritable;
-import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.Writable;
-import org.apache.hadoop.io.compress.BZip2Codec;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
@@ -36,7 +30,6 @@ import scala.Tuple2;
 public class RepresentativeChainsToSequenceFile {
 	private static int NUM_THREADS = 8;
 	private static int NUM_TASKS_PER_THREAD = 3; // Spark recommends 2-3 tasks per thread
-	private static final int SCALE = 1000; // Factor to convert PDB coordinates to integer values. Do not change this value!
 
 	public static void main(String[] args) throws IOException {
 		RepresentativeChainsToSequenceFile rep = new RepresentativeChainsToSequenceFile();

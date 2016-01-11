@@ -9,11 +9,10 @@ import java.util.function.Consumer;
 
 import javax.vecmath.Point3d;
 
-import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.rcsb.hadoop.io.HadoopToSimpleChainMapper;
+import org.rcsb.hadoop.io.HadoopToSimplePolymerChainMapper;
 import org.rcsb.hadoop.io.SimplePolymerChain;
 import org.rcsb.project3.SequenceFeatureInterface;
 
@@ -54,9 +53,9 @@ public class FingerprintMapperTest2 {
 				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		List<Tuple2<String, SimplePolymerChain>> list = sc
-				.sequenceFile(path, Text.class, ArrayWritable.class, NUM_THREADS * NUM_TASKS_PER_THREAD)
+				.sequenceFile(path, Text.class, SimplePolymerChain.class, NUM_THREADS * NUM_TASKS_PER_THREAD)
 				.sample(false, 0.02, 2346)// sample
-				.mapToPair(new HadoopToSimpleChainMapper())
+				.mapToPair(new HadoopToSimplePolymerChainMapper())
 				// .filter(new GapFilter(0, 0)) // filter chains with zero gap length and zero gaps
 				.filter(t -> t._2.isProtein())// filter test
 				.collect();
@@ -78,9 +77,9 @@ public class FingerprintMapperTest2 {
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		long start = System.nanoTime();
 		List<Tuple2<String, SimplePolymerChain>> list = sc
-				.sequenceFile(path, Text.class, ArrayWritable.class, NUM_THREADS * NUM_TASKS_PER_THREAD)
+				.sequenceFile(path, Text.class, SimplePolymerChain.class, NUM_THREADS * NUM_TASKS_PER_THREAD)
 				.sample(false, 0.002, 2345)// sample
-				.mapToPair(new HadoopToSimpleChainMapper())
+				.mapToPair(new HadoopToSimplePolymerChainMapper())
 				// .filter(new GapFilter(0, 0)) // filter chains with zero gap length and zero gaps
 				.filter(t -> t._2.isProtein())// filter test
 				.collect();

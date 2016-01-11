@@ -4,18 +4,15 @@ import java.io.FileNotFoundException;
 import java.io.PrintWriter;
 import java.io.UnsupportedEncodingException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.List;
 
 import javax.vecmath.Point3d;
 
-import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.rcsb.hadoop.io.Demo;
-import org.rcsb.hadoop.io.HadoopToSimpleChainMapper;
-
+import org.rcsb.hadoop.io.HadoopToSimplePolymerChainMapper;
+import org.rcsb.hadoop.io.SimplePolymerChain;
 import org.rcsb.structuralAlignment.SuperPositionQCP;
 import org.rcsb.structuralSimilarity.GapFilter;
 import org.rcsb.structuralSimilarity.LengthFilter;
@@ -50,16 +47,16 @@ public class Library
 		String path = "/Users/grantsummers/Desktop/School/Internship/main/QuickStructureSearch/src/main/java/org/rcsb/project1/protein_chains_All_20150629_002251.seq";
 
 		SparkConf conf = new SparkConf().setMaster("local[" + NUM_THREADS + "]")
-				.setAppName(Demo.class.getSimpleName())
+				.setAppName(Library.class.getSimpleName())
 				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		
 		long start = System.nanoTime();
 
 		List<Tuple2<String, Point3d[]>> chains = sc
-				.sequenceFile(path, Text.class, ArrayWritable.class,NUM_THREADS*NUM_TASKS_PER_THREAD)
+				.sequenceFile(path, Text.class, SimplePolymerChain.class,NUM_THREADS*NUM_TASKS_PER_THREAD)
 				.sample(false, 0.003, 123)
-				.mapToPair(new HadoopToSimpleChainMapper()) 
+				.mapToPair(new HadoopToSimplePolymerChainMapper()) 
 				.filter(t -> t._2.isProtein())
 				.mapToPair(t -> new Tuple2<String, Point3d[]>(t._1, t._2.getCoordinates()))
 				.filter(new GapFilter(0, 0)) 

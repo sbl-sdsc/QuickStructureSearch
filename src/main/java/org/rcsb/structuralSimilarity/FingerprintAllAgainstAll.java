@@ -11,11 +11,7 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.mllib.linalg.Vector;
-import org.rcsb.fingerprints.DCT1DFingerprint;
 import org.rcsb.fingerprints.DCT1DLinearFingerprint;
-import org.rcsb.fingerprints.DCT1DOptFingerprint;
-import org.rcsb.fingerprints.EndToEndDistanceFingerprint;
-import org.rcsb.fingerprints.TetrahedronFingerprint;
 
 import scala.Tuple2;
 

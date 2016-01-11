@@ -15,7 +15,6 @@ import org.apache.spark.sql.SaveMode;
 import org.apache.spark.sql.types.DataTypes;
 import org.apache.spark.sql.types.StructField;
 import org.apache.spark.sql.types.StructType;
-import org.rcsb.hadoop.io.HadoopToParquetFile;
 
 import scala.Tuple2;
 /**
@@ -83,7 +82,7 @@ public class HadoopToParquet {
 	private static JavaSparkContext getSparkContext() {
 		SparkConf conf = new SparkConf()
 		.setMaster("local[" + NUM_THREADS + "]")
-		.setAppName(HadoopToParquetFile.class.getSimpleName());
+		.setAppName(HadoopToParquet.class.getSimpleName());
 		JavaSparkContext sc = new JavaSparkContext(conf);	
 		return sc;
 	}

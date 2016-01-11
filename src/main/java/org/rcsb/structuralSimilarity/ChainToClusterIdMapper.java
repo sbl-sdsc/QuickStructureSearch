@@ -2,8 +2,6 @@ package org.rcsb.structuralSimilarity;
 
 import java.util.Map;
 
-import javax.vecmath.Point3d;
-
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
 

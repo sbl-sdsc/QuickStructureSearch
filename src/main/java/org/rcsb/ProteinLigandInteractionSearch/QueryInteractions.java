@@ -13,7 +13,6 @@ import org.apache.spark.sql.DataFrame;
 import org.apache.spark.sql.Row;
 import org.apache.spark.sql.SQLContext;
 import org.apache.spark.sql.SaveMode;
-import org.rcsb.hadoop.io.HadoopToParquetFile;
 
 public class QueryInteractions {
 
@@ -106,7 +105,7 @@ public class QueryInteractions {
 	private static JavaSparkContext getSparkContext() {
 		SparkConf conf = new SparkConf()
 		.setMaster("local[" + NUM_THREADS + "]")
-		.setAppName(HadoopToParquetFile.class.getSimpleName())
+		.setAppName(QueryInteractions.class.getSimpleName())
 		.set("spark.driver.maxResultSize", "2g");
 
 		JavaSparkContext sc = new JavaSparkContext(conf);	

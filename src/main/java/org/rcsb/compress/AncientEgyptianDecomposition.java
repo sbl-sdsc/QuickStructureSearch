@@ -1,7 +1,6 @@
 package org.rcsb.compress;
 
 import java.io.Serializable;
-import java.util.Arrays;
 
 /**
  * Code obtained from https://github.com/cscheiblich/JWave and adopted to

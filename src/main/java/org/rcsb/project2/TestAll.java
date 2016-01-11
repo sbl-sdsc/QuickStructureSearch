@@ -14,12 +14,12 @@ import java.util.Set;
 
 import javax.vecmath.Point3d;
 
-import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.rcsb.hadoop.io.HadoopToSimpleChainMapper;
+import org.rcsb.hadoop.io.HadoopToSimplePolymerChainMapper;
+import org.rcsb.hadoop.io.SimplePolymerChain;
 import org.rcsb.structuralSimilarity.ChainSmootherMapper;
 import org.rcsb.structuralSimilarity.GapFilter;
 import org.rcsb.structuralSimilarity.SavitzkyGolay7PointSmoother;
@@ -84,8 +84,8 @@ public class TestAll {
 				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		JavaPairRDD<String, Point3d[]> jprdd = sc
-				.sequenceFile(path, Text.class, ArrayWritable.class, NUM_THREADS * NUM_TASKS_PER_THREAD).//
-				mapToPair(new HadoopToSimpleChainMapper())// map to hadoop
+				.sequenceFile(path, Text.class, SimplePolymerChain.class, NUM_THREADS * NUM_TASKS_PER_THREAD).//
+				mapToPair(new HadoopToSimplePolymerChainMapper())// map to hadoop
 				.filter(a -> a._2.isProtein())// only proteins
 				.filter(a -> a._2.getCoordinates().length > 50)// only length > 50
 				.filter(t -> needed.contains(t._1))// names in the set

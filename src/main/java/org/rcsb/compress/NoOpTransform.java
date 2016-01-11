@@ -2,7 +2,7 @@ package org.rcsb.compress;
 
 import java.io.Serializable;
 
-public class NullOpTransform implements IntegerTransform, Serializable {
+public class NoOpTransform implements IntegerTransform, Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Override

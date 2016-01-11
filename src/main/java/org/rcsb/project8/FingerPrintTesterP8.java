@@ -10,32 +10,22 @@ import java.util.Set;
 
 import javax.vecmath.Point3d;
 
-import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
-import org.rcsb.hadoop.io.HadoopToSimpleChainMapper;
-import org.rcsb.project3.AngleHadoopToCAMapper;
-import org.rcsb.project3.AngleSequenceFingerprint;
+import org.rcsb.hadoop.io.HadoopToSimplePolymerChainMapper;
+import org.rcsb.hadoop.io.SimplePolymerChain;
 import org.rcsb.project3.ChainToSequenceFeatureVectorMapper;
-import org.rcsb.project3.DCT1DSequenceFingerprint;
 import org.rcsb.project3.EndToEndDistanceDoubleSequenceFingerprint;
-import org.rcsb.project3.EndToEndDistanceSequenceFingerprint;
-import org.rcsb.project3.JaccardScoreMapperP3;
-import org.rcsb.project3.LevenshteinMapperP3;
 import org.rcsb.project3.SequenceFeatureInterface;
 import org.rcsb.project3.SmithWatermanGotohP3;
-import org.rcsb.project3.SmithWatermanIterativeApproach;
-import org.rcsb.project3.StructuralAlphabetFingerprint;
 import org.rcsb.structuralSimilarity.ChainIdFilter;
 import org.rcsb.structuralSimilarity.ChainIdPairFilter;
 import org.rcsb.structuralSimilarity.ChainIdToIndexMapper;
-import org.rcsb.structuralSimilarity.ChainSmootherMapper;
 import org.rcsb.structuralSimilarity.GapFilter;
 import org.rcsb.structuralSimilarity.LengthFilter;
-import org.rcsb.structuralSimilarity.SavitzkyGolay7PointSmoother;
 import org.rcsb.structuralSimilarity.SplitAtComma;
 
 import scala.Tuple2;
@@ -137,8 +127,8 @@ public class FingerPrintTesterP8 {
 		writer2.flush();
 		
 		JavaPairRDD<String, Point3d[]> proteinChains = sc
-				.sequenceFile(sequenceFile, Text.class, ArrayWritable.class, NUM_THREADS*NUM_TASKS_PER_THREAD)  // read protein chains
-				.mapToPair(new HadoopToSimpleChainMapper()) // convert input to <pdbId.chainId, protein sequence> pairs
+				.sequenceFile(sequenceFile, Text.class, SimplePolymerChain.class, NUM_THREADS*NUM_TASKS_PER_THREAD)  // read protein chains
+				.mapToPair(new HadoopToSimplePolymerChainMapper()) // convert input to <pdbId.chainId, protein sequence> pairs
 				.filter(t -> t._2.isProtein())
 				.mapToPair(t -> new Tuple2<String, Point3d[]>(t._1, t._2.getCoordinates()))
 //				.mapToPair(new AngleHadoopToCAMapper())

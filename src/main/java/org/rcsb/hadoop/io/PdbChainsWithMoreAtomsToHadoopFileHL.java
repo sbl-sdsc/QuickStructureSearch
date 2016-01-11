@@ -1,7 +1,6 @@
 package org.rcsb.hadoop.io;
 
 import java.io.BufferedReader;
-import java.io.IOException;
 import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URL;
@@ -17,7 +16,6 @@ import javax.vecmath.Point3d;
 
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
@@ -36,7 +34,6 @@ import org.biojava.nbio.structure.io.FileParsingParameters;
 import org.biojava.nbio.structure.io.mmcif.AllChemCompProvider;
 import org.biojava.nbio.structure.io.mmcif.ChemCompGroupFactory;
 import org.biojava.nbio.structure.io.mmcif.chem.PolymerType;
-import org.rcsb.structuralSimilarity.IntArrayWritable;
 
 /**
  * This class creates a Hadoop sequence file for protein chains in the PDB. The Hadoop sequence file
@@ -44,13 +41,13 @@ import org.rcsb.structuralSimilarity.IntArrayWritable;
  * 
  * Add CA, N and C atoms, the output file is used for the StructuralAlphabetFingerprint.
  * 
- * @author  Peter Rose, Chirs Li
+ * @author  Peter Rose, Chris Li
  */
 public class PdbChainsWithMoreAtomsToHadoopFileHL {
 	private static AtomCache cache = initializeCache();
 	private static String allUrl = "http://www.rcsb.org/pdb/rest/getCurrent/";
 
-	public static void main(String[] args) throws IOException {
+	public static void main(String[] args) throws Exception {
 		String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
 
 		String uri = args[0] 
@@ -71,7 +68,7 @@ public class PdbChainsWithMoreAtomsToHadoopFileHL {
 	}
 
 	public static void toSequenceFile(String fileName, Collection<String> pdbIds, boolean verbose)
-			throws IOException {
+			throws Exception {
 
 		int failure = 0;
 		int success = 0;
@@ -80,7 +77,7 @@ public class PdbChainsWithMoreAtomsToHadoopFileHL {
 		try (SequenceFile.Writer writer = SequenceFile.createWriter(new Configuration(),
 				SequenceFile.Writer.file(new Path(fileName)),
 				SequenceFile.Writer.keyClass(Text.class),
-				SequenceFile.Writer.valueClass(IntArrayWritable.class),
+				SequenceFile.Writer.valueClass(SimplePolymerChain.class),
 				SequenceFile.Writer.compression(SequenceFile.CompressionType.BLOCK, new BZip2Codec()));	
 				) 
 				{
@@ -123,7 +120,7 @@ public class PdbChainsWithMoreAtomsToHadoopFileHL {
 	}
 
 	private static int append(SequenceFile.Writer writer, String pdbId, Structure s)
-			throws IOException {
+			throws Exception {
 
 		int chainCount = 0;
 
@@ -144,8 +141,8 @@ public class PdbChainsWithMoreAtomsToHadoopFileHL {
 			int dPeptide = 0;
 			int unknownResidues = 0;
 
-			Point3d[] coords = new Point3d[groups.size()*3];	
-			Integer[] sequence = new Integer[groups.size()];
+			Point3d[] coords = new Point3d[groups.size()*3];
+			StringBuilder sb = new StringBuilder();
 
 			int gaps = 0;
 
@@ -155,7 +152,7 @@ public class PdbChainsWithMoreAtomsToHadoopFileHL {
 				if (code == 'X') {
 					unknownResidues++;
 				}
-				sequence[i] = (int)code;
+				sb.append(code);
 
 				PolymerType p = g.getChemComp().getPolymerType();
 				if (p.equals(PolymerType.peptide)) {
@@ -224,10 +221,12 @@ public class PdbChainsWithMoreAtomsToHadoopFileHL {
 
 			chainCount++;
 
-			Text key1 = new Text(pdbId + "." + c.getChainID());
-			ArrayWritable value1 = new IntArrayWritable();	
-			value1.set(SimplePolymerChainCodecHL.encodePolymerChain(polymerType.ordinal(), coords, sequence, gaps));
-			writer.append(key1, value1);
+			Text key = new Text(pdbId + "." + c.getChainID());
+			SimplePolymerChain value = new SimplePolymerChain();	
+			value.setPolymerType(polymerType.ordinal());
+			value.setCoordinates(coords);
+			value.setSequence(sb.toString());
+			writer.append(key, value);
 		}
 		return chainCount;
 	}
@@ -272,12 +271,10 @@ public class PdbChainsWithMoreAtomsToHadoopFileHL {
 		FileParsingParameters params = cache.getFileParsingParams();
 		params.setStoreEmptySeqRes(true);
 		params.setAlignSeqRes(true);
-		//params.setParseCAOnly(true);
 		params.setLoadChemCompInfo(true);
 		params.setCreateAtomBonds(false);
 		cache.setFileParsingParams(params);
 		ChemCompGroupFactory.setChemCompProvider(new AllChemCompProvider());
-		//		ChemCompGroupFactory.setChemCompProvider(new DownloadChemCompProvider());
 		return cache;
 	}
 }

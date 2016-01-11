@@ -9,7 +9,6 @@ import javax.vecmath.Point3d;
 import org.apache.spark.api.java.function.PairFunction;
 import org.apache.spark.broadcast.Broadcast;
 import org.rcsb.structuralAlignment.AfpDistanceRmsd;
-import org.rcsb.structuralAlignment.DistanceRmsd;
 import org.rcsb.structuralAlignment.SuperPositionQCP;
 
 import scala.Tuple2;

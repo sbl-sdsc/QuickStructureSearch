@@ -33,7 +33,7 @@ public class DataFrameExample {
 		// This is the default 2 line structure for spark programs in java
 		// The spark.executor.memory can only take the maximum java heapspace set by -Xmx
 		SparkConf conf = new SparkConf().setMaster("local[1]")
-				.setAppName(Demo.class.getSimpleName())
+				.setAppName(DataFrameExample.class.getSimpleName())
 				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
 
 		JavaSparkContext sc = new JavaSparkContext(conf);
@@ -46,10 +46,9 @@ public class DataFrameExample {
 
 		// Generate the schema based on the string of schema
 		List<StructField> fields = new ArrayList<StructField>();
-			fields.add(DataTypes.createStructField("name", DataTypes.StringType, true));
-//			fields.add(DataTypes.createStructField("age", DataTypes.StringType, true));
-			fields.add(DataTypes.createStructField("age", DataTypes.createArrayType(DataTypes.IntegerType), false));
-//		}
+		fields.add(DataTypes.createStructField("name", DataTypes.StringType, true));
+		fields.add(DataTypes.createStructField("age", DataTypes.createArrayType(DataTypes.IntegerType), false));
+
 		StructType schema = DataTypes.createStructType(fields);
 
 		// Convert records of the RDD (people) to Rows.
@@ -76,19 +75,23 @@ public class DataFrameExample {
 
 		// SQL can be run over RDDs that have been registered as tables.
 		DataFrame results = sqlContext.sql("SELECT name,age FROM people");
-		
+
 		results.write().mode(SaveMode.Append).save("/Users/peter/Data/ExampleFiles/Fruits.parquet");
-//		results.write().json("/Users/peter/Data/ExampleFiles/Fruits.json");
-//		results.write().mode(SaveMode.Append).json("/Users/peter/Data/ExampleFiles/Fruits.json");
+		//		results.write().json("/Users/peter/Data/ExampleFiles/Fruits.json");
+		//		results.write().mode(SaveMode.Append).json("/Users/peter/Data/ExampleFiles/Fruits.json");
 		DataFrame data = sqlContext.read().format("parquet").load("/Users/peter/Data/ExampleFiles/Fruits.parquet");
 		System.out.println("data read;" + data.toString());
 
 		// The results of SQL queries are DataFrames and support all the normal RDD operations.
 		// The columns of a row in the result can be accessed by ordinal.
 		List<String> names = results.javaRDD().map(new Function<Row, String>() {
+			private static final long serialVersionUID = 1L;
+
 			public String call(Row row) {
 				return "Name: " + row.getString(0);
 			}
 		}).collect();
+		
+		System.out.println(names);
 	}
 }

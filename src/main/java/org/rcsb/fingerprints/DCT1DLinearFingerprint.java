@@ -210,6 +210,7 @@ public class DCT1DLinearFingerprint implements LinearFingerprint, Serializable {
 	 * @param index
 	 * @return
 	 */
+	@SuppressWarnings("unused")
 	private double[] getLpNormPairs(Point3d[] coords, int index, double[] distances) {
 		for (int i = 0; i < distancePairs.length; i++){
 			int j = distancePairs[i][0] + index;

@@ -16,7 +16,8 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.mllib.regression.LabeledPoint;
-import org.rcsb.hadoop.io.HadoopToSimpleChainMapper;
+import org.rcsb.hadoop.io.HadoopToSimplePolymerChainMapper;
+import org.rcsb.hadoop.io.SimplePolymerChain;
 import org.rcsb.structuralSimilarity.GapFilter;
 import org.rcsb.structuralSimilarity.LengthFilter;
 
@@ -52,16 +53,16 @@ public class RmsdChainer implements Serializable {
 				.setAppName(this.getClass().getSimpleName())
 				.set("spark.driver.maxResultSize", "2g")
 				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
-				.registerKryoClasses(new Class[]{HadoopToSimpleChainMapper.class});
+				.registerKryoClasses(new Class[]{HadoopToSimplePolymerChainMapper.class});
 
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		
 		
 		// read sequence file and retrieve tuples of PDBId.ChainId, CA Coordinate arrays
 		List<Tuple2<String, Point3d[]>> chains = sc
-				.sequenceFile(path, Text.class, ArrayWritable.class,NUM_THREADS*NUM_TASKS_PER_THREAD)
+				.sequenceFile(path, Text.class, SimplePolymerChain.class,NUM_THREADS*NUM_TASKS_PER_THREAD)
 				.sample(false, 0.1, 123456) // use only 10% of the data
-				.mapToPair(new HadoopToSimpleChainMapper())
+				.mapToPair(new HadoopToSimplePolymerChainMapper())
 				.filter(t -> t._2.isProtein())
 				.map(t -> new Tuple2<String, Point3d[]>(t._1, t._2.getCoordinates()))
 				.filter(new GapFilter(0, 0)) // filter out chains with gaps

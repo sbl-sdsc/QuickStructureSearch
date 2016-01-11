@@ -2,7 +2,6 @@ package org.rcsb.structuralSimilarity;
 
 import java.util.Arrays;
 import java.util.Collection;
-import java.util.List;
 import java.util.Set;
 
 import org.apache.spark.api.java.function.Function;

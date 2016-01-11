@@ -10,11 +10,12 @@ import java.util.Set;
 
 import javax.vecmath.Point3d;
 
-import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
+import org.rcsb.compress.IntegerToByteTransform;
+import org.rcsb.hadoop.io.SimplePolymerChain;
 
 import scala.Tuple2;
 
@@ -25,7 +26,7 @@ import scala.Tuple2;
  * @author  Peter Rose
  */
 public class TestSetCreator { 
-	private static int NUM_THREADS = 8;
+	private static int NUM_THREADS = 4;
 	private static int NUM_TASKS_PER_THREAD = 3; // Spark recommends 2-3 tasks per thread
 	private static int BATCH_SIZE = 1000;
 
@@ -47,16 +48,20 @@ public class TestSetCreator {
 		SparkConf conf = new SparkConf()
 				.setMaster("local[" + NUM_THREADS + "]")
 				.setAppName("1" + this.getClass().getSimpleName())
-				.set("spark.driver.maxResultSize", "2g");
-//				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
-
+				.set("spark.driver.maxResultSize", "2g")
+				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
+		
+		Class<?>[] classes = {SimplePolymerChain.class, IntegerToByteTransform.class};
+		conf.registerKryoClasses(classes);
+		
 		JavaSparkContext sc = new JavaSparkContext(conf);
 		
 		// Step 1. calculate <pdbId.chainId, feature vector> pairs
         List<Tuple2<String, Point3d[]>> chains = sc
-				.sequenceFile(path, Text.class, ArrayWritable.class, NUM_THREADS)  // read protein chains
-			//	.sample(false, 0.1, 123456) // use only a random fraction, i.e., 10%
-				.mapToPair(new SeqToChainMapper()) // convert input to <pdbId.chainId, CA coordinate> pairs
+        		.sequenceFile(path, Text.class, SimplePolymerChain.class,NUM_THREADS*NUM_TASKS_PER_THREAD)
+        		.filter(t -> t._2.isProtein())
+        	//	.sample(false, 0.1, 123456) // use only a random fraction, i.e., 10%
+				.mapToPair(t -> new Tuple2<String, Point3d[]>(t._1.toString(), t._2.getCoordinates()) )	// convert input to <pdbId.chainId, CA coordinate> pairs
 				.filter(new GapFilter(0, 0)) // keep protein chains with gap size <= 0 and 0 gaps
 				.filter(new LengthFilter(50,500)) // keep protein chains with 50 - 500 residues
 				.collect(); // return results to master node

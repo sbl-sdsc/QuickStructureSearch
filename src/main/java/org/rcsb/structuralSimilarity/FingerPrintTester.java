@@ -15,13 +15,10 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
 import org.apache.spark.mllib.linalg.Vector;
-import org.rcsb.fingerprints.AngleVectorFingerprint;
 import org.rcsb.fingerprints.CombinationFingerprint;
-import org.rcsb.fingerprints.DCT1DFingerprint;
 import org.rcsb.fingerprints.DCT1DLinearFingerprint;
 import org.rcsb.fingerprints.DCT1DOptFingerprint;
 import org.rcsb.fingerprints.GenericFingerprint;
-import org.rcsb.fingerprints.PointToPointDistanceFingerprint;
 import org.rcsb.fingerprints.WrithingNumberFingerprint;
 
 import scala.Tuple2;

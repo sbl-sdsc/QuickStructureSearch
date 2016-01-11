@@ -8,13 +8,13 @@ import java.util.Set;
 
 import javax.vecmath.Point3d;
 
-import org.apache.hadoop.io.ArrayWritable;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
-import org.rcsb.hadoop.io.HadoopToSimpleChainMapper;
+import org.rcsb.hadoop.io.HadoopToSimplePolymerChainMapper;
+import org.rcsb.hadoop.io.SimplePolymerChain;
 import org.rcsb.structuralSimilarity.ChainIdFilter;
 import org.rcsb.structuralSimilarity.ChainIdPairFilter;
 import org.rcsb.structuralSimilarity.ChainIdToIndexMapper;
@@ -89,8 +89,8 @@ public class FingerPrintTesterWithHadoop {
         
 		// calculate <chainId, feature vector> pairs
         JavaPairRDD<String, SequenceFeatureInterface<?>> features = sc
-				.sequenceFile(path, Text.class, ArrayWritable.class, NUM_THREADS*NUM_TASKS_PER_THREAD)  // read protein chains
-				.mapToPair(new HadoopToSimpleChainMapper()) // convert input to <pdbId.chainId, protein sequence> pairs
+				.sequenceFile(path, Text.class, SimplePolymerChain.class, NUM_THREADS*NUM_TASKS_PER_THREAD)  // read protein chains
+				.mapToPair(new HadoopToSimplePolymerChainMapper()) // convert input to <pdbId.chainId, protein sequence> pairs
 				.filter(t -> t._2.isProtein())
 				.mapToPair(t -> new Tuple2<String, Point3d[]>(t._1, t._2.getCoordinates()))				
 				.filter(new GapFilter(0, 0)) // keep protein chains with gap size <= 3 and <= 5 gaps

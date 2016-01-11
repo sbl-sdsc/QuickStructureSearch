@@ -5,6 +5,7 @@ import java.io.FileReader;
 import java.util.ArrayList;
 import java.util.Iterator;
 import java.util.List;
+
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.api.java.function.Function;
@@ -14,7 +15,6 @@ import org.apache.spark.sql.SQLContext;
 import org.json.simple.JSONArray;
 import org.json.simple.JSONObject;
 import org.json.simple.parser.JSONParser;
-import org.rcsb.hadoop.io.HadoopToParquetFile;
 /**
  * 
  * @author Hinna Shabir
@@ -355,7 +355,7 @@ public class QueryJson {
 	private static JavaSparkContext getSparkContext() {
 		SparkConf conf = new SparkConf()
 		.setMaster("local[" + NUM_THREADS + "]")
-		.setAppName(HadoopToParquetFile.class.getSimpleName())
+		.setAppName(QueryJson.class.getSimpleName())
 		.set("spark.driver.maxResultSize", "2g");
 		JavaSparkContext sc = new JavaSparkContext(conf);	
 		return sc;
