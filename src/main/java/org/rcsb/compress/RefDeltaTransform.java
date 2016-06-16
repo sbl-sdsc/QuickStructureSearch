@@ -7,6 +7,11 @@ public class RefDeltaTransform implements IntegerTransform, Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Override
+	public String toString() {
+		return this.getClass().getSimpleName();
+	}
+	
+	@Override
 	public int[] forward(int[] data) {
 		int[] out = new int[data.length+1];
 		System.arraycopy(data, 0, out, 1, data.length);
@@ -19,7 +24,6 @@ public class RefDeltaTransform implements IntegerTransform, Serializable {
 		for (int i = out.length-1; i > 1; i--) {
 			out[i] = out[i] - min;
 		}
-		System.out.println("out: " + Arrays.toString(out));
 		
 		return out;
 	}

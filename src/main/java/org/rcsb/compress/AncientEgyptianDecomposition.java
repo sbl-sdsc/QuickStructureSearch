@@ -55,6 +55,11 @@ public class AncientEgyptianDecomposition implements IntegerTransform, Serializa
 	public AncientEgyptianDecomposition(IntegerTransform transform) {
 		this.transform = transform;
 	}
+	
+	@Override
+	public String toString() {
+		return this.getClass().getSimpleName() + "->" + this.transform.toString();
+	}
 
 	/**
 	 * This forward method decomposes the given array of arbitrary length to sub

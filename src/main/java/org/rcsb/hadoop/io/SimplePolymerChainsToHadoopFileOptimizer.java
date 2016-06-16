@@ -39,10 +39,17 @@ import org.rcsb.compress.AncientEgyptianDecomposition;
 import org.rcsb.compress.CombinedTransform;
 import org.rcsb.compress.DeltaTransform;
 import org.rcsb.compress.FastWaveletTransform;
+import org.rcsb.compress.IntegerDeltaZigzagVariableByte;
 import org.rcsb.compress.IntegerToByteTransform;
 import org.rcsb.compress.IntegerToByteTransformer;
 import org.rcsb.compress.IntegerTransform;
-import org.rcsb.compress.SphericalCoordinateTransform;
+import org.rcsb.compress.UnsignedDeltaTransform;
+import org.rcsb.compress.dev.ByteQuadrupleToByteTransform;
+import org.rcsb.compress.dev.ByteQuadrupleTransform;
+import org.rcsb.compress.dev.DeltaHalfTransform;
+import org.rcsb.compress.dev.DeltaToShortTransform;
+import org.rcsb.compress.dev.PythagoreanQuadrupleTransform;
+import org.rcsb.compress.dev.SphericalCoordinateTransform;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -70,7 +77,7 @@ public class SimplePolymerChainsToHadoopFileOptimizer {
 		
 		List<String> subset = new ArrayList<>(getAll());
 //		List<String> pdbIds = subset;
-		List<String> pdbIds = subset.subList(0, 100);
+		List<String> pdbIds = subset.subList(90000, 91000);
 
 		StructureIO.setAtomCache(cache);
 		cache.setPath("/Users/peter/Data/PDB/");
@@ -79,6 +86,20 @@ public class SimplePolymerChainsToHadoopFileOptimizer {
 		// 82157
 //		IntegerTransform t1 = new DeltaTransform();
 		
+		//
+//		IntegerTransform t1 = new DeltaHalfTransform();
+		
+		// 82151
+//		IntegerTransform t1 = new UnsignedDeltaTransform();
+		
+		
+//		IntegerTransform t1 = new CombinedTransform(new DeltaTransform(), new PythagoreanQuadrupleTransform());
+		
+//		IntegerTransform t1 = new CombinedTransform(new DeltaTransform(), new ByteQuadrupleTransform());
+		
+		IntegerToByteTransform transform = new ByteQuadrupleToByteTransform(); // 1,321,934
+//		IntegerToByteTransform transform = new DeltaToShortTransform();
+
 
 		// 59157 ??? there are NaN in the output!!
 //		IntegerTransform t0 = new CombinedTransform(new RefDeltaTransform(), new SphericalCoordinateTransform());
@@ -89,8 +110,8 @@ public class SimplePolymerChainsToHadoopFileOptimizer {
 //		IntegerTransform t1 = new CombinedTransform(t0, new AncientEgyptianDecomposition(new FastWaveletTransform("Legendre 3")));
 		
 		// 71875
-		IntegerTransform t0 = new CombinedTransform(new DeltaTransform(), new SphericalCoordinateTransform());
-		IntegerTransform t1 = new CombinedTransform(t0, new AncientEgyptianDecomposition(new FastWaveletTransform("Legendre 3")));
+//		IntegerTransform t0 = new CombinedTransform(new DeltaTransform(), new SphericalCoordinateTransform());
+//		IntegerTransform t1 = new CombinedTransform(t0, new AncientEgyptianDecomposition(new FastWaveletTransform("Legendre 3")));
 
 		// 72677
 //		IntegerTransform t0 = new CombinedTransform(new NoOpTransform(), new SphericalCoordinateTransform());
@@ -132,7 +153,7 @@ public class SimplePolymerChainsToHadoopFileOptimizer {
 		//		IntegerTransform t1 = new DeltaTransform();
 		//		IntegerTransform t1 = new CombinedTransform(new NoOpTransform(), new AncientEgyptianDecomposition(new FastWaveletTransform("Daubechies 10")));
 		
-		IntegerToByteTransform transform = new IntegerToByteTransformer(t1);
+//		IntegerToByteTransform transform = new IntegerToByteTransformer(t1);
 		
 		toSequenceFile(uri, pdbIds, transform, true);
 	
@@ -194,6 +215,7 @@ public class SimplePolymerChainsToHadoopFileOptimizer {
 			System.out.println("File size: " + length);
 			System.out.println("Chains: " + chains);
 			System.out.println("Size: " + metrics[0]);
+			System.out.println("Compression: "+  metrics[0]/(float) length);
 			System.out.println("Time: " + metrics[1]/1E6);
 		}
 		
@@ -202,8 +224,7 @@ public class SimplePolymerChainsToHadoopFileOptimizer {
 
 	private static int append(SequenceFile.Writer writer, String pdbId, Structure s, IntegerToByteTransform transform, int[] metrics)
 			throws Exception {
-		
-		long start = System.nanoTime();
+
 		int chainCount = 0;
 
 		for (Chain c: s.getChains()) {
@@ -297,17 +318,20 @@ public class SimplePolymerChainsToHadoopFileOptimizer {
 			chainCount++;
 
 			Text key = new Text(pdbId + "." + c.getChainID());
+			System.out.println(key);
 			
+			
+			long start = System.nanoTime();
 			SimplePolymerChain value = new SimplePolymerChain(transform);
 //			SimplePolymerChain value = new SimplePolymerChain();
 			value.setPolymerType(polymerType.ordinal());
 			value.setCoordinates(coordinates);
 			value.setSequence(sb.toString());
+		    metrics[1] += System.nanoTime() - start;
 			
 			writer.append(key, value);
 			
 			metrics[0] += value.size();
-		    metrics[1] += System.nanoTime() - start;
 		}
 		return chainCount;
 	}

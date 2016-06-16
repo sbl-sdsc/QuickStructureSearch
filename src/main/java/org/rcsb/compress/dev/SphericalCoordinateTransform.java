@@ -1,11 +1,18 @@
-package org.rcsb.compress;
+package org.rcsb.compress.dev;
 
 import java.io.Serializable;
+
+import org.rcsb.compress.IntegerTransform;
 
 public class SphericalCoordinateTransform implements IntegerTransform, Serializable {
 	private static final long serialVersionUID = 1L;
 	private static final double scale = 2048;
 
+	@Override
+	public String toString() {
+		return this.getClass().getSimpleName();
+	}
+	
 	@Override
 	public int[] forward(int[] data) {
 		int[] out = new int[data.length];

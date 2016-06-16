@@ -24,8 +24,8 @@ import scala.Tuple2;
  */
 public class HadoopToParquet {
 
-	private static int NUM_THREADS = 8;
-	private static int NUM_TASKS_PER_THREAD = 3; // Spark recommends 2-3 tasks per thread
+	private static int NUM_THREADS = 4;
+	private static int NUM_TASKS_PER_THREAD = 1; // Spark recommends 2-3 tasks per thread
 /**
  * 
  * @param args Path of the hadoop sequence file
@@ -69,9 +69,12 @@ public class HadoopToParquet {
 
 		// Apply the schema to the RDD.
 		DataFrame dataFrame = sqlContext.createDataFrame(rowRDD, schema);
-		dataFrame.coalesce(1).write().mode(SaveMode.Overwrite)
+//		dataFrame.coalesce(1).write().mode(SaveMode.Overwrite)
+//		.partitionBy("index")
+//		.parquet("/Users/peter/Data/PLInteractions/seq.parquet");
+		dataFrame.write().mode(SaveMode.Overwrite)
 		.partitionBy("index")
-		.parquet("/Users/hina/Data/ExampleFiles/seq.parquet");
+		.parquet("/Users/peter/Data/PLInteractions/seq.parquet");
 		sc.close();
 		System.out.println("Time: " + (System.nanoTime() - start)/1E9 + " sec.");
 	}

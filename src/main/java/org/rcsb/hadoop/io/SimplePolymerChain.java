@@ -11,6 +11,7 @@ import javax.vecmath.Point3d;
 import org.apache.hadoop.io.Writable;
 import org.rcsb.compress.IntegerDeltaZigzagVariableByte;
 import org.rcsb.compress.IntegerToByteTransform;
+import org.rcsb.compress.dev.DeltaToShortTransform;
 
 public class SimplePolymerChain implements Writable, Serializable {
 	private static final long serialVersionUID = 1L;
@@ -18,6 +19,7 @@ public class SimplePolymerChain implements Writable, Serializable {
 	private static final double INVERSE_SCALE = 1.0/SCALE;
 	
 	private IntegerToByteTransform transform = new IntegerDeltaZigzagVariableByte();
+//	private IntegerToByteTransform transform = new DeltaToShortTransform();
 	
 	private byte polymerType;
 	private int coordinateLength;
@@ -77,8 +79,11 @@ public class SimplePolymerChain implements Writable, Serializable {
 			intCoordinates[i+coordinateLength*2] = (int)Math.round(coordinates[i].z*SCALE);
 		}
 		
+//		System.out.println("f: " + Arrays.toString(intCoordinates));
 		encodedCoordinates = transform.forward(intCoordinates);
+//		System.out.println("e: " + Arrays.toString(encodedCoordinates));
 //		int[] outCoordinates = transform.reverse(encodedCoordinates);
+//		System.out.println("r: " + Arrays.toString(outCoordinates));
 //		
 //		if (outCoordinates.length != intCoordinates.length) {
 //			throw new Exception("mismatch: " + intCoordinates.length + " - " + outCoordinates.length);

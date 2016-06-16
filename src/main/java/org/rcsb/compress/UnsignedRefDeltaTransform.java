@@ -6,6 +6,11 @@ public class UnsignedRefDeltaTransform implements IntegerTransform, Serializable
 	private static final long serialVersionUID = 1L;
 
 	@Override
+	public String toString() {
+		return this.getClass().getSimpleName();
+	}
+	
+	@Override
 	public int[] forward(int[] data) {
 		int[] out = new int[data.length+1];
 		System.arraycopy(data, 0, out, 1, data.length);

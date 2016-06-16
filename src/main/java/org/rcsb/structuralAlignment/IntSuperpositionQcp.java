@@ -77,54 +77,26 @@ import javax.vecmath.Vector3d;
  *
  * pliu24@its.jnj.com
  * 
- * The following notice is from the original C source code:
- * 
- * Copyright (c) 2009-2013 Pu Liu and Douglas L. Theobald
- * All rights reserved.
- * Redistribution and use in source and binary forms, with or without modification, are permitted
- * provided that the following conditions are met:
- *
- *  * Redistributions of source code must retain the above copyright notice, this list of
- *    conditions and the following disclaimer.
- *  * Redistributions in binary form must reproduce the above copyright notice, this list
- *    of conditions and the following disclaimer in the documentation and/or other materials
- *    provided with the distribution.
- *  * Neither the name of the <ORGANIZATION> nor the names of its contributors may be used to
- *    endorse or promote products derived from this software without specific prior written
- *    permission.
- *
- *  THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS
- *  "AS IS" AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT
- *  LIMITED TO, THE IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A
- *  PARTICULAR PURPOSE ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT
- *  HOLDER OR CONTRIBUTORS BE LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL,
- *  SPECIAL, EXEMPLARY, OR CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT
- *  LIMITED TO, PROCUREMENT OF SUBSTITUTE GOODS OR SERVICES; LOSS OF USE,
- *  DATA, OR PROFITS; OR BUSINESS INTERRUPTION) HOWEVER CAUSED AND ON ANY
- *  THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
- *  (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE
- *  OF THIS SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE. 
- *
  * @author Peter Rose (adopted to Java)
  */
-public final class SuperPositionQCP implements Serializable {
+public final class IntSuperpositionQcp implements Serializable {
 	private static final long serialVersionUID = 1L;
 	private static final double EVE_PREC = 1E-6;
     private static final double EVAL_PREC = 1E-11;
     
-    private Point3d[] x;
-    private Point3d[] y;
-    private double[] weight;
+    private int[] x;
+    private int[] y;
     
-    private Point3d xCentroid;
-    private Point3d yCentroid; 
+    private int[] xCentroid;
+    private int[] yCentroid; 
     private Matrix4d transformation = new Matrix4d();
     private double rmsd = 0;
-    private double upperBound;
-    private double Sxy, Sxz, Syx, Syz, Szx, Szy;
-    private double SxxpSyy, Szz, mxEigenV, SyzmSzy,SxzmSzx, SxymSyx;
-    private double SxxmSyy, SxypSyx, SxzpSzx;
-    private double Syy, Sxx, SyzpSzy;
+    private long upperBound;
+    private long Sxy, Sxz, Syx, Syz, Szx, Szy;
+    private long SxxpSyy, Szz, SyzmSzy,SxzmSzx, SxymSyx;
+    private long SxxmSyy, SxypSyx, SxzpSzx;
+    private long Syy, Sxx, SyzpSzy;
+    private double mxEigenV;
     private boolean rmsdCalculated = false;
     private boolean transformationCalculated = false;
     private boolean centered = false;
@@ -132,7 +104,7 @@ public final class SuperPositionQCP implements Serializable {
     /**
      * Default constructor
      */
-    public SuperPositionQCP() {
+    public IntSuperpositionQcp() {
     	this.centered = false;
     }
     /**
@@ -140,7 +112,7 @@ public final class SuperPositionQCP implements Serializable {
      * should be used if both coordinate input set have been centered at the origin.
      * @param centered if set true, the input coordinates are already centered at the origin
      */
-    public SuperPositionQCP(boolean centered) {
+    public IntSuperpositionQcp(boolean centered) {
 		this.centered = centered;
 	}
 	/**
@@ -149,26 +121,9 @@ public final class SuperPositionQCP implements Serializable {
      * @param x 3d points of reference coordinate set
      * @param y 3d points of coordinate set for superposition
      */
-    public void set(Point3d[] x, Point3d[] y) {
+    public void set(int[] x, int[] y) {
     	this.x = x;
     	this.y = y;
-    	this.weight = null;
-        rmsdCalculated = false;
-        transformationCalculated = false;
-    }
-    
-    /**
-     * Sets the two input coordinate arrays and weight array. 
-     * All input arrays must be of equal length. 
-     * Input coordinates are not modified.
-     * @param x 3d points of reference coordinate set
-     * @param y 3d points of coordinate set for superposition
-     * @param weight a weight in the inclusive range [0,1] for each point
-     */
-    public void set(Point3d[] x, Point3d[] y, double[] weight) {
-    	this.x = x;
-    	this.y = y;
-    	this.weight = weight;
         rmsdCalculated = false;
         transformationCalculated = false;
     }
@@ -193,93 +148,95 @@ public final class SuperPositionQCP implements Serializable {
      * @param rmsd
      * @return
      */
-	public double getfTmScore() {
-		if (! rmsdCalculated) {
-    		calcRmsd(x, y);
-    	}
-		double d0 = 1.24 * Math.cbrt(x.length - 15) - 1.8;
-		return x.length / (x.length * (1 + (rmsd/d0)*(rmsd/d0)));
-	}
+//	public double getfTmScore() {
+//		if (! rmsdCalculated) {
+//    		calcRmsd(x, y);
+//    	}
+//		double d0 = 1.24 * Math.cbrt(x.length - 15) - 1.8;
+//		return x.length / (x.length * (1 + (rmsd/d0)*(rmsd/d0)));
+//	}
     
     /**
      * Returns a 4x4 transformation matrix that transforms the y coordinates onto the x coordinates.
      * The calculation is performed "lazy", meaning calculations are only performed if necessary.
      * @return 4x4 transformation matrix to transform y coordinates onto x
      */
-    public Matrix4d getTransformationMatrix() {
-    	if (! transformationCalculated) {
-    		if (! rmsdCalculated) {
-    			calcRmsd(x, y);
-    		}
-    		Matrix3d rotmat = calcRotationMatrix();
-    		if (! centered) {
-    			calcTransformation(rotmat);
-    		} else {
-    			transformation.setIdentity();
-    			transformation.set(rotmat);
-    		}
-    		transformationCalculated = true;
-    	}
-    	return transformation; 	
-    }
+//    public Matrix4d getTransformationMatrix() {
+//    	if (! transformationCalculated) {
+//    		if (! rmsdCalculated) {
+//    			calcRmsd(x, y);
+//    		}
+//    		Matrix3d rotmat = calcRotationMatrix();
+//    		if (! centered) {
+//    			calcTransformation(rotmat);
+//    		} else {
+//    			transformation.setIdentity();
+//    			transformation.set(rotmat);
+//    		}
+//    		transformationCalculated = true;
+//    	}
+//    	return transformation; 	
+//    }
     
-    public AxisAngle4d getAxisAngle4d() {
-    	getTransformationMatrix();
-//    	Quat4d q = new Quat4d(); 
-//    	transformation.get(q);
-    	AxisAngle4d axisAngle = new AxisAngle4d();
-    	axisAngle.set(transformation);
-//    	axisAngle.set(q);
-
-    	Vector3d axis = new Vector3d(axisAngle.x, axisAngle.y, axisAngle.z);
-    	if (axis.lengthSquared() < 1.0E-6) {
-    		//       	System.err.println("Error: SuperPosition.superposeAtOrigin: axis vector undefined!");
-    		axisAngle.x = 0;
-    		axisAngle.y = 0;
-    		axisAngle.z = 1;
-    		axisAngle.angle = 0;
-    	} else {
-    		axis.normalize();
-    		axisAngle.x = axis.x;
-    		axisAngle.y = axis.y;
-    		axisAngle.z = axis.z;
-    	}
-    	return axisAngle;
-    }
-    
+//    public AxisAngle4d getAxisAngle4d() {
+//    	getTransformationMatrix();
+////    	Quat4d q = new Quat4d(); 
+////    	transformation.get(q);
+//    	AxisAngle4d axisAngle = new AxisAngle4d();
+//    	axisAngle.set(transformation);
+////    	axisAngle.set(q);
+//
+//    	Vector3d axis = new Vector3d(axisAngle.x, axisAngle.y, axisAngle.z);
+//    	if (axis.lengthSquared() < 1.0E-6) {
+//    		//       	System.err.println("Error: SuperPosition.superposeAtOrigin: axis vector undefined!");
+//    		axisAngle.x = 0;
+//    		axisAngle.y = 0;
+//    		axisAngle.z = 1;
+//    		axisAngle.angle = 0;
+//    	} else {
+//    		axis.normalize();
+//    		axisAngle.x = axis.x;
+//    		axisAngle.y = axis.y;
+//    		axisAngle.z = axis.z;
+//    	}
+//    	return axisAngle;
+//    }
+//    
     /**
      * Returns the transformed (superposed) y coordinates
      * @return transformed y coordinates
      */
-    public Point3d[] getTransformedCoordinates() {
-    	Matrix4d matrix = getTransformationMatrix();
-    	Point3d[] points = new Point3d[y.length];
-    	for (int i = 0; i < y.length; i++) {
-    		points[i] = new Point3d(y[i]);
-    		matrix.transform(points[i]);
-    	}
-    	return points;
-    }
+//    public Point3d[] getTransformedCoordinates() {
+//    	Matrix4d matrix = getTransformationMatrix();
+//    	Point3d[] points = new Point3d[y.length];
+//    	for (int i = 0; i < y.length; i++) {
+//    		points[i] = new Point3d(y[i]);
+//    		matrix.transform(points[i]);
+//    	}
+//    	return points;
+//    }
     
     /**
      * Calculates the RMSD value for superposition of y onto x.
      * @param x 3d points of reference coordinate set
      * @param y 3d points of coordinate set for superposition
      */
-    private void calcRmsd(Point3d[] x, Point3d[] y) {
+    private void calcRmsd(int[] x, int[] y) {
     	if (centered) {
-        	xCentroid = new Point3d(0,0,0);
-        	yCentroid = new Point3d(0,0,0);
+        	xCentroid = new int[3];
+        	yCentroid = new int[3];
     	} else {
     		xCentroid = centroid(x);
     		yCentroid = centroid(y);
     	}
-    	if (weight == null) {
-    		innerProduct();
-    	} else {
-    		innerProductWeighted();
-    	}
+//		long t1 = System.nanoTime();
+    	innerProduct();
+    
+//		long t2 = System.nanoTime();
+ //   	long t3 = System.nanoTime();
     	calcRmsd(x.length);
+//    	long t4 = System.nanoTime();
+//    	System.out.println("ip: " + (t2-t1) + " rmsd: " + (t4-t3));
     	rmsdCalculated = true;
     }
  
@@ -287,26 +244,26 @@ public final class SuperPositionQCP implements Serializable {
      * Calculates a 4x4 transformation matrix to superpose coordinate set y onto x
      * @param rotmat rotation matrix for superposition
      */
-    private void calcTransformation(Matrix3d rotmat) {
-    	// set rotation
-    	transformation.setIdentity();
-        transformation.set(rotmat);
-
-        // combine with y -> origin translation
-        Matrix4d trans = new Matrix4d();
-        trans.setIdentity();
-        Vector3d yv = new Vector3d(yCentroid);
-        yv.negate();
-        trans.setTranslation(yv);
-        transformation.mul(transformation, trans);
-        
-        // combine with origin -> x translation  
-        Matrix4d transInverse = new Matrix4d(); 
-        transInverse.setIdentity();    
-        Vector3d xv = new Vector3d(xCentroid);
-        transInverse.setTranslation(xv);
-        transformation.mul(transInverse, transformation);
-    }
+//    private void calcTransformation(Matrix3d rotmat) {
+//    	// set rotation
+//    	transformation.setIdentity();
+//        transformation.set(rotmat);
+//
+//        // combine with y -> origin translation
+//        Matrix4d trans = new Matrix4d();
+//        trans.setIdentity();
+//        Vector3d yv = new Vector3d(yCentroid);
+//        yv.negate();
+//        trans.setTranslation(yv);
+//        transformation.mul(transformation, trans);
+//        
+//        // combine with origin -> x translation  
+//        Matrix4d transInverse = new Matrix4d(); 
+//        transInverse.setIdentity();    
+//        Vector3d xv = new Vector3d(xCentroid);
+//        transInverse.setTranslation(xv);
+//        transformation.mul(transInverse, transformation);
+//    }
     
     /** 
      * Calculates the inner product between two coordinate sets x and y. It also
@@ -314,7 +271,7 @@ public final class SuperPositionQCP implements Serializable {
      * @return
      */
     private void innerProduct() {
-        double g = 0.0;
+        long g = 0;
         
         Sxx = 0;
         Sxy = 0;
@@ -326,15 +283,16 @@ public final class SuperPositionQCP implements Serializable {
         Szy = 0;
         Szz = 0; 
 
-        for (int i = 0, n = x.length; i < n; i++)
+        for (int i = 0, c = 0, n = x.length/3; i < n; i++)
         { 
-        	double x1 = x[i].x - xCentroid.x;
-        	double y1 = x[i].y - xCentroid.y;
-        	double z1 = x[i].z - xCentroid.z;
-
-        	double x2 = y[i].x - yCentroid.x;
-        	double y2 = y[i].y - yCentroid.y;
-        	double z2 = y[i].z - yCentroid.z;
+        	int x1 = x[c++] - xCentroid[0];
+        	int y1 = x[c++] - xCentroid[1];
+        	int z1 = x[c++] - xCentroid[2];
+            
+        	c -= 3;
+        	int x2 = y[c++] - yCentroid[0];
+        	int y2 = y[c++] - yCentroid[1];
+        	int z2 = y[c++] - yCentroid[2];
 
         	g += x1*x1 + y1*y1 + z1*z1 + x2*x2 + y2*y2 + z2*z2;
 
@@ -351,55 +309,8 @@ public final class SuperPositionQCP implements Serializable {
         	Szz +=  z1*z2;  
         }
 
-        upperBound = g * 0.5;
+        upperBound = g / 2;
     }
-
-    /** 
-     * Calculates the inner product between two weighted coordinate sets x and y. It also
-     * calculates an upper bound of the most positive root of the key matrix.
-     */
-	private void innerProductWeighted() {
-		double g1 = 0.0;
-		double g2 = 0.0;
-
-		Sxx = 0;
-		Sxy = 0;
-		Sxz = 0;
-		Syx = 0;
-		Syy = 0;
-		Syz = 0;
-		Szx = 0;
-		Szy = 0;
-		Szz = 0;
-
-		for (int i = 0, n = x.length; i < n; i++) {
-			double x1 = weight[i] * (x[i].x - xCentroid.x);
-			double y1 = weight[i] * (x[i].y - xCentroid.y);
-			double z1 = weight[i] * (x[i].z - xCentroid.z);
-
-			g1 += x1 * (x[i].x - xCentroid.x) + y1 * (x[i].y - xCentroid.y) + z1 * (x[i].z - xCentroid.z);
-
-			double x2 = y[i].x - yCentroid.x;
-			double y2 = y[i].y - yCentroid.y;
-			double z2 = y[i].z - yCentroid.z;
-
-			g2 += weight[i] * (x2 * x2 + y2 * y2 + z2 * z2);
-
-			Sxx += x1 * x2;
-			Sxy += x1 * y2;
-			Sxz += x1 * z2;
-
-			Syx += y1 * x2;
-			Syy += y1 * y2;
-			Syz += y1 * z2;
-
-			Szx += z1 * x2;
-			Szy += z1 * y2;
-			Szz += z1 * z2;
-		}
-
-		upperBound = (g1 + g2) * 0.5;
-	}
 
 	/**
 	 * Calculates the RMSD value by determining the most positive root of the key matrix
@@ -407,23 +318,23 @@ public final class SuperPositionQCP implements Serializable {
 	 * @param len length of the input coordinate arrays
 	 */
     private void calcRmsd(int len) {     
-        double Sxx2 = Sxx * Sxx;
-        double Syy2 = Syy * Syy;
-        double Szz2 = Szz * Szz;
+        long Sxx2 = Sxx * Sxx;
+        long Syy2 = Syy * Syy;
+        long Szz2 = Szz * Szz;
 
-        double Sxy2 = Sxy * Sxy;
-        double Syz2 = Syz * Syz;
-        double Sxz2 = Sxz * Sxz;
+        long Sxy2 = Sxy * Sxy;
+        long Syz2 = Syz * Syz;
+        long Sxz2 = Sxz * Sxz;
 
-        double Syx2 = Syx * Syx;
-        double Szy2 = Szy * Szy;
-        double Szx2 = Szx * Szx;
+        long Syx2 = Syx * Syx;
+        long Szy2 = Szy * Szy;
+        long Szx2 = Szx * Szx;
 
-        double SyzSzymSyySzz2 = 2.0*(Syz*Szy - Syy*Szz);
-        double Sxx2Syy2Szz2Syz2Szy2 = Syy2 + Szz2 - Sxx2 + Syz2 + Szy2;
+        long SyzSzymSyySzz2 = 2 * (Syz*Szy - Syy*Szz);
+        long Sxx2Syy2Szz2Syz2Szy2 = Syy2 + Szz2 - Sxx2 + Syz2 + Szy2;
 
-        double c2 = -2.0 * (Sxx2 + Syy2 + Szz2 + Sxy2 + Syx2 + Sxz2 + Szx2 + Syz2 + Szy2);
-        double c1 = 8.0 * (Sxx*Syz*Szy + Syy*Szx*Sxz + Szz*Sxy*Syx - Sxx*Syy*Szz - Syz*Szx*Sxy - Szy*Syx*Sxz);
+        long c2 = -2 * (Sxx2 + Syy2 + Szz2 + Sxy2 + Syx2 + Sxz2 + Szx2 + Syz2 + Szy2);
+        long c1 = 8 * (Sxx*Syz*Szy + Syy*Szx*Sxz + Szz*Sxy*Syx - Sxx*Syy*Szz - Syz*Szx*Sxy - Szy*Syx*Sxz);
 
         SxzpSzx = Sxz + Szx;
         SyzpSzy = Syz + Szy;
@@ -434,9 +345,9 @@ public final class SuperPositionQCP implements Serializable {
         SxxpSyy = Sxx + Syy;
         SxxmSyy = Sxx - Syy;
         
-        double Sxy2Sxz2Syx2Szx2 = Sxy2 + Sxz2 - Syx2 - Szx2;
+        long Sxy2Sxz2Syx2Szx2 = Sxy2 + Sxz2 - Syx2 - Szx2;
 
-        double c0 = Sxy2Sxz2Syx2Szx2 * Sxy2Sxz2Syx2Szx2
+        long c0 = Sxy2Sxz2Syx2Szx2 * Sxy2Sxz2Syx2Szx2
              + (Sxx2Syy2Szz2Syz2Szy2 + SyzSzymSyySzz2) * (Sxx2Syy2Szz2Syz2Szy2 - SyzSzymSyySzz2)
              + (-(SxzpSzx)*(SyzmSzy)+(SxymSyx)*(SxxmSyy-Szz)) * (-(SxzmSzx)*(SyzpSzy)+(SxymSyx)*(SxxmSyy+Szz))
              + (-(SxzpSzx)*(SyzpSzy)-(SxypSyx)*(SxxpSyy-Szz)) * (-(SxzmSzx)*(SyzmSzy)-(SxypSyx)*(SxxpSyy+Szz))
@@ -577,19 +488,34 @@ public final class SuperPositionQCP implements Serializable {
         return rotmat;
 	}
 	
-    public static Point3d centroid(Point3d[] x) {
-        Point3d center = new Point3d();
-        for (Point3d p: x) {
-            center.add(p);
-        }
-        center.scale(1.0/x.length);
-        return center;
-    }
+	public static int[] centroid(int[] x) {
+
+		int c0 = 0;
+		int c1 = 0;
+		int c2 = 0;
+		
+		int n = x.length/3;
+		for (int i = 0, c = 0; i < n; i++) {
+			c0 += x[c++];
+			c1 += x[c++];
+			c2 += x[c++];
+		}
+		int[] center = new int[3];
+		center[0] = Math.round(c0 / (float) n);
+		center[1] = Math.round(c1 / (float) n);
+		center[2] = Math.round(c2 / (float) n);
+		return center;
+	}
     
-    public static void center(Point3d[] x) {
-        Point3d center = centroid(x);
-        center.negate();
-        translate(center, x);
+    public static void center(int[] x) {
+        int[] center = centroid(x);
+        
+		int n = x.length/3;
+		for (int i = 0, c = 0; i < n; i++) {
+			x[c++] -= center[0];
+			x[c++] -= center[1];
+			x[c++] -= center[2];
+		}
     }
     
     public static void translate(Point3d trans, Point3d[] x) {

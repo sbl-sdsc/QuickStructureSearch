@@ -1,4 +1,4 @@
-package org.rcsb.hadoop.io;
+package org.rcsb.compress.dev;
 
 import java.io.BufferedReader;
 import java.io.File;
@@ -15,15 +15,13 @@ import java.util.TreeSet;
 
 import javax.vecmath.Point3d;
 
+import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
 import org.apache.hadoop.conf.Configuration;
 import org.apache.hadoop.fs.Path;
 import org.apache.hadoop.io.IOUtils;
 import org.apache.hadoop.io.SequenceFile;
 import org.apache.hadoop.io.Text;
 import org.apache.hadoop.io.compress.BZip2Codec;
-import org.apache.hadoop.io.compress.GzipCodec;
-import org.apache.hadoop.io.compress.Lz4Codec;
-import org.apache.parquet.hadoop.codec.SnappyCodec;
 import org.biojava.nbio.structure.AminoAcidImpl;
 import org.biojava.nbio.structure.Atom;
 import org.biojava.nbio.structure.Chain;
@@ -38,8 +36,23 @@ import org.biojava.nbio.structure.io.FileParsingParameters;
 import org.biojava.nbio.structure.io.mmcif.AllChemCompProvider;
 import org.biojava.nbio.structure.io.mmcif.ChemCompGroupFactory;
 import org.biojava.nbio.structure.io.mmcif.chem.PolymerType;
+import org.rcsb.compress.AncientEgyptianDecomposition;
+import org.rcsb.compress.CombinedTransform;
+import org.rcsb.compress.DeltaTransform;
+import org.rcsb.compress.FastWaveletTransform;
 import org.rcsb.compress.IntegerDeltaZigzagVariableByte;
 import org.rcsb.compress.IntegerToByteTransform;
+import org.rcsb.compress.IntegerToByteTransformer;
+import org.rcsb.compress.IntegerTransform;
+import org.rcsb.compress.UnsignedDeltaTransform;
+import org.rcsb.compress.dev.ByteQuadrupleToByteTransform;
+import org.rcsb.compress.dev.ByteQuadrupleTransform;
+import org.rcsb.compress.dev.DeltaHalfTransform;
+import org.rcsb.compress.dev.DeltaToShortTransform;
+import org.rcsb.compress.dev.PythagoreanQuadrupleTransform;
+import org.rcsb.compress.dev.SphericalCoordinateTransform;
+import org.rcsb.hadoop.io.SimplePolymerChain;
+import org.rcsb.hadoop.io.SimplePolymerType;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -50,8 +63,8 @@ import org.slf4j.LoggerFactory;
  * 
  * @author  Peter Rose
  */
-public class SimplePolymerChainsToHadoopFile {
-	private static final Logger logger = LoggerFactory.getLogger(SimplePolymerChainsToHadoopFile.class);
+public class DeltaCodingAnalyzer {
+	private static final Logger logger = LoggerFactory.getLogger(DeltaCodingAnalyzer.class);
 	private static AtomCache cache = initializeCache();
 	private static String allUrl = "http://www.rcsb.org/pdb/rest/getCurrent/";
 	
@@ -64,92 +77,82 @@ public class SimplePolymerChainsToHadoopFile {
 				+ timeStamp 
 				+ ".seq";
 		
+		
 		List<String> subset = new ArrayList<>(getAll());
 //		List<String> pdbIds = subset;
-		List<String> pdbIds = subset.subList(0, 100);
+		List<String> pdbIds = subset.subList(90000, 91000);
 
 		StructureIO.setAtomCache(cache);
 		cache.setPath("/Users/peter/Data/PDB/");
 
 		long start = System.nanoTime();
 		
-		IntegerToByteTransform transform = new IntegerDeltaZigzagVariableByte();
-		
-//		IntegerTransform t1 = new CombinedTransform(new DeltaTransform(), new PythagoreanTransform());
-//		IntegerToByteTransform transform = new IntegerToByteTransformer(new CombinedTransform(t1, new D4Wavelet()));
-		
-//		IntegerToByteTransform transform = new IntegerToByteTransformer(new CombinedTransform(new DeltaMaskTransform(), new NoOpTransform()));
-		toSequenceFile(uri, pdbIds, transform, true);
+		process(uri, pdbIds, true);
 	
 		long end = System.nanoTime();
 
 		System.out.println("Time: " + (end - start)/1E9 + " sec.");
 	}
 
-	public static long toSequenceFile(String fileName, Collection<String> pdbIds, IntegerToByteTransform transform, boolean verbose)
-			throws Exception {
+	public static void process(String fileName,
+			Collection<String> pdbIds,
+			boolean verbose) throws Exception {
 
 		int failure = 0;
 		int success = 0;
 		int chains = 0;
 		int[] metrics = new int[2];
 
-		try (SequenceFile.Writer writer = SequenceFile.createWriter(new Configuration(),
-				SequenceFile.Writer.file(new Path(fileName)),
-				SequenceFile.Writer.keyClass(Text.class),
-				SequenceFile.Writer.valueClass(SimplePolymerChain.class));
-//				SequenceFile.Writer.compression(SequenceFile.CompressionType.BLOCK, new BZip2Codec()));	
-//				SequenceFile.Writer.compression(SequenceFile.CompressionType.BLOCK, new SnappyCodec()));
-				) 
-				{
-			for (String pdbId: pdbIds) {
-				logger.info(pdbId);
+		DescriptiveStatistics xStats = new DescriptiveStatistics();
+		DescriptiveStatistics yStats = new DescriptiveStatistics();
+		DescriptiveStatistics zStats = new DescriptiveStatistics();
+		DescriptiveStatistics aStats = new DescriptiveStatistics();
+			
 
-				Structure s = null;
-				try {
-					s = StructureIO.getStructure(pdbId);
-					success++;
-				} catch (Exception e) {
-					// some files can't be read. Let's just skip those!
-					logger.error(pdbId, e);
-					failure++;
-					continue;
-				}
+		for (String pdbId : pdbIds) {
+			logger.info(pdbId);
 
-				if (s == null) {
-					logger.error(pdbId + " structure object is null");
-					continue;
-				}
-
-				if (s.getChains().size() == 0) {
-					continue;
-				}
-
-				chains += append(writer, pdbId, s, transform, metrics);
+			Structure s = null;
+			try {
+				s = StructureIO.getStructure(pdbId);
+				success++;
+			} catch (Exception e) {
+				// some files can't be read. Let's just skip those!
+				logger.error(pdbId, e);
+				failure++;
+				continue;
 			}
-			IOUtils.closeStream(writer);
-				}
 
-		File f = new File(fileName);
-		long length = f.length();
-		
-		if (verbose) {
-			System.out.println("Total structures: " + pdbIds.size());
-			System.out.println("Success: " + success);
-			System.out.println("Failure: " + failure);
-			System.out.println("File size: " + length);
-			System.out.println("Chains: " + chains);
-			System.out.println("Size: " + metrics[0]);
-			System.out.println("Time: " + metrics[1]/1E6);
+			if (s == null) {
+				logger.error(pdbId + " structure object is null");
+				continue;
+			}
+
+			if (s.getChains().size() == 0) {
+				continue;
+			}
+			append(s, pdbId, xStats, yStats, zStats, aStats);
 		}
+		System.out.println("x-values -------------");
+		printStatistics(xStats);
+		System.out.println("y-values -------------");
+		printStatistics(yStats);
+		System.out.println("z-values -------------");
+		printStatistics(zStats);
+		System.out.println("a-values -------------");
+		printStatistics(aStats);
 		
-		return length;
+	}
+	
+	private static void printStatistics(DescriptiveStatistics stats) {
+		System.out.println(stats.toString());
+		for (int i = 10; i <= 100; i+=10) {
+			System.out.println(stats.getPercentile(i));
+		}
 	}
 
-	private static int append(SequenceFile.Writer writer, String pdbId, Structure s, IntegerToByteTransform transform, int[] metrics)
-			throws Exception {
-		
-		long start = System.nanoTime();
+	private static int append(Structure s, String pdbId, DescriptiveStatistics xStats, DescriptiveStatistics yStats, DescriptiveStatistics zStats, DescriptiveStatistics aStats) throws Exception {
+
 		int chainCount = 0;
 
 		for (Chain c: s.getChains()) {
@@ -233,29 +236,42 @@ public class SimplePolymerChainsToHadoopFile {
 				polymerType = SimplePolymerType.PROTEIN;
 			} else if (dna > 0) {
 				polymerType = SimplePolymerType.DNA;
+				continue;
 			} else if (rna > 0) {
 				polymerType = SimplePolymerType.RNA;
+				continue;
 			} else {
 				continue;
 			}
 
-			Point3d[] coordinates = coords.toArray(new Point3d[coords.size()]);
-			chainCount++;
+	        for (int i = 0, dx = 0, dy = 0, dz = 0; i < coords.size(); i++) {
+	        	Point3d p = coords.get(i);
+	        	int x = (int) Math.round(p.x*1000);
+	        	int y = (int) Math.round(p.y*1000);
+	        	int z = (int) Math.round(p.z*1000);
+	        	dx = x - dx;
+	        	dy = y - dy;
+	        	dz = z - dz;
+	        	if (i > 0 && Math.abs(dx) < 4000 && Math.abs(dy) < 4000 && Math.abs(dz) < 4000) {
+	        			xStats.addValue(dx);
+	        			yStats.addValue(dy);
+	        			zStats.addValue(dz);	
+	        		aStats.addValue(Math.sqrt(dx*dx + dy*dy + dz*dz));
+//	        		aStats.addValue(dy);
+//	        		aStats.addValue(dz);
+	        	}
+	 //       	System.out.println("dxyz: " + dx + "," + dy + "," + dz + " ds: " + (dx+dy+dz));
+	        	dx = x;
+	        	dy = y;
+	        	dz = z;
 
-			Text key = new Text(pdbId + "." + c.getChainID());
-			
-			SimplePolymerChain value = new SimplePolymerChain(transform);
-//			SimplePolymerChain value = new SimplePolymerChain();
-			value.setPolymerType(polymerType.ordinal());
-			value.setCoordinates(coordinates);
-			value.setSequence(sb.toString());
-			
-			writer.append(key, value);
-			
-			metrics[0] += value.size();
-		    metrics[1] += System.nanoTime() - start;
+	        }
+	
 		}
 		return chainCount;
+	}
+	private static int toUnsignedInt(final int n) {
+	    return (n << 1) ^ (n >> 31);
 	}
 
 	/**
@@ -303,7 +319,6 @@ public class SimplePolymerChainsToHadoopFile {
 		params.setCreateAtomBonds(false);
 		cache.setFileParsingParams(params);
 		ChemCompGroupFactory.setChemCompProvider(new AllChemCompProvider());
-//		ChemCompGroupFactory.setChemCompProvider(new DownloadChemCompProvider());
 		return cache;
 	}
 }

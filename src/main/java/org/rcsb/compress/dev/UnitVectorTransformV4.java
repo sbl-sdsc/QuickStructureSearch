@@ -1,13 +1,21 @@
-package org.rcsb.compress;
+package org.rcsb.compress.dev;
 
 import java.io.Serializable;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 
+import org.rcsb.compress.CompressUnitVector8Bit;
+import org.rcsb.compress.IntegerTransform;
+
 public class UnitVectorTransformV4 implements IntegerTransform, Serializable {
 	private static final long serialVersionUID = 1L;
 
+	@Override
+	public String toString() {
+		return this.getClass().getSimpleName();
+	}
+	
 	@Override
 	public int[] forward(int[] data) {
 		int len = data.length/3 - 1;

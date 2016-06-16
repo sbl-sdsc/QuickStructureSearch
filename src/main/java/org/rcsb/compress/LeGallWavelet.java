@@ -15,6 +15,11 @@ public class LeGallWavelet implements IntegerTransform, Serializable {
 	 * @author Peter Rose (adopted to IntegerTransform)
 	 */
 
+	@Override
+	public String toString() {
+		return this.getClass().getSimpleName();
+	}
+	
 	public int[] forward(int[] in) {
 		int[] out = new int[in.length];
 		System.arraycopy(in, 0,  out,  0,  in.length);

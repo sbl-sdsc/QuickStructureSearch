@@ -7,6 +7,11 @@ public class CombinedTransform implements IntegerTransform, Serializable {
 	private IntegerTransform transform1;
 	private IntegerTransform transform2;
 	
+	@Override
+	public String toString() {
+		return this.transform1.toString() + "->" + this.transform2.toString();
+	}
+	
 	public CombinedTransform(IntegerTransform transform1, IntegerTransform transform2) {
 		this.transform1 = transform1;
 		this.transform2 = transform2;

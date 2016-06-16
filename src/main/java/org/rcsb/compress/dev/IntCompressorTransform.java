@@ -1,6 +1,8 @@
-package org.rcsb.compress;
+package org.rcsb.compress.dev;
 
 import java.io.Serializable;
+
+import org.rcsb.compress.IntegerTransform;
 
 import me.lemire.integercompression.IntCompressor;
 import me.lemire.integercompression.SkippableIntegerCODEC;
@@ -11,6 +13,11 @@ public class IntCompressorTransform implements IntegerTransform, Serializable {
 	
 	public IntCompressorTransform(SkippableIntegerCODEC codec) {
 		this.codec = new IntCompressor(codec);
+	}
+	
+	@Override
+	public String toString() {
+		return this.getClass().getSimpleName();
 	}
 	
 	@Override

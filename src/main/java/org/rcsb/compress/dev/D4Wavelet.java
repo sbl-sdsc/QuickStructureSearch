@@ -1,7 +1,10 @@
-package org.rcsb.compress;
+package org.rcsb.compress.dev;
 
 import java.io.Serializable;
 import java.util.Arrays;
+
+import org.rcsb.compress.AncientEgyptianDecomposition;
+import org.rcsb.compress.IntegerTransform;
 
 public class D4Wavelet implements IntegerTransform, Serializable {
 	private static final long serialVersionUID = 1L;
@@ -23,6 +26,12 @@ public class D4Wavelet implements IntegerTransform, Serializable {
 		System.out.println(Arrays.toString(out));
 	}
 	
+	@Override
+	public String toString() {
+		return this.getClass().getSimpleName();
+	}
+	
+	@Override
 	public int[] forward(int[] input) {
 	    Daub d4 = new Daub();
 	    double[] data = new double[input.length];
@@ -31,6 +40,7 @@ public class D4Wavelet implements IntegerTransform, Serializable {
 	    }
 	    	
 	    d4.daubTrans(data);
+	    System.out.println(Arrays.toString(data));
 	    
 	    int[] out = new int[input.length];
 	    for (int i = 0; i < input.length; i++) {
@@ -39,6 +49,7 @@ public class D4Wavelet implements IntegerTransform, Serializable {
 	    return out;
 	}
 
+	@Override
 	public int[] reverse(int[] input) {
 		Daub d4 = new Daub();
 	    double[] data = new double[input.length];

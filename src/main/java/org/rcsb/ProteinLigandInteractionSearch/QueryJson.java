@@ -22,8 +22,8 @@ import org.json.simple.parser.JSONParser;
  */
 public class QueryJson {
 
-	private static int NUM_THREADS = 8;
-	private static int NUM_TASKS_PER_THREAD = 3; // Spark recommends 2-3 tasks per thread	
+	private static int NUM_THREADS = 4;
+	private static int NUM_TASKS_PER_THREAD = 1; // Spark recommends 2-3 tasks per thread	
 	/**
 	 * 
 	 * @param args path of parquet file and protein-ligand query text file
@@ -71,6 +71,7 @@ public class QueryJson {
 			lnum[i]="'"+strng[9]+"'";
 			choice=Integer.parseInt(strng[10]);
 		}
+		System.out.println("choice: " + choice);
 
 		switch (choice) {
 		case 1: // query using atom name

@@ -6,14 +6,19 @@ public class ColToRowTransform implements IntegerTransform, Serializable {
 	private static final long serialVersionUID = 1L;
 
 	@Override
+	public String toString() {
+		return this.getClass().getSimpleName();
+	}
+
+	@Override
 	public int[] forward(int[] data) {
 		int[] out = new int[data.length];
-		int len = data.length/3;
+		int len = data.length / 3;
 		int n = 0;
 		for (int i = 0; i < len; i++) {
 			out[n++] = data[i];
-			out[n++] = data[i+len];
-			out[n++] = data[i+len+len];
+			out[n++] = data[i + len];
+			out[n++] = data[i + len + len];
 		}
 		return out;
 	}
@@ -21,7 +26,13 @@ public class ColToRowTransform implements IntegerTransform, Serializable {
 	@Override
 	public int[] reverse(int[] data) {
 		int[] out = new int[data.length];
-		
+		int len = data.length / 3;
+		int n = 0;
+		for (int i = 0; i < len; i++) {
+			out[i] = data[n++];
+			out[i + len] = data[n++];
+			out[i + len + len] = data[n++];
+		}
 		return out;
 	}
 }

@@ -1,7 +1,9 @@
-package org.rcsb.compress;
+package org.rcsb.compress.dev;
 
 import java.io.Serializable;
 import java.util.Arrays;
+
+import org.rcsb.compress.IntegerTransform;
 
 import me.lemire.integercompression.DeltaZigzagVariableByte;
 import me.lemire.integercompression.IntWrapper;
@@ -10,7 +12,11 @@ public class PFORTransform implements IntegerTransform, Serializable {
 	private static final long serialVersionUID = 1L;
 	private DeltaZigzagVariableByte codec;
 	
-
+	@Override
+	public String toString() {
+		return this.getClass().getSimpleName();
+	}
+	
 	@Override
 	public int[] forward(int[] data) {
 		int[] out = compress(data);

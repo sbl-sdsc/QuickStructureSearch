@@ -107,7 +107,7 @@ import javax.vecmath.Vector3d;
  *
  * @author Peter Rose (adopted to Java)
  */
-public final class SuperPositionQCP implements Serializable {
+public final class AbsSuperpositionQcp implements Serializable {
 	private static final long serialVersionUID = 1L;
 	private static final double EVE_PREC = 1E-6;
     private static final double EVAL_PREC = 1E-11;
@@ -132,7 +132,7 @@ public final class SuperPositionQCP implements Serializable {
     /**
      * Default constructor
      */
-    public SuperPositionQCP() {
+    public AbsSuperpositionQcp() {
     	this.centered = false;
     }
     /**
@@ -140,7 +140,7 @@ public final class SuperPositionQCP implements Serializable {
      * should be used if both coordinate input set have been centered at the origin.
      * @param centered if set true, the input coordinates are already centered at the origin
      */
-    public SuperPositionQCP(boolean centered) {
+    public AbsSuperpositionQcp(boolean centered) {
 		this.centered = centered;
 	}
 	/**
@@ -329,12 +329,18 @@ public final class SuperPositionQCP implements Serializable {
         for (int i = 0, n = x.length; i < n; i++)
         { 
         	double x1 = x[i].x - xCentroid.x;
+        	x1 = Math.sqrt(x1);
         	double y1 = x[i].y - xCentroid.y;
+        	y1 = Math.sqrt(y1);
         	double z1 = x[i].z - xCentroid.z;
+        	z1 = Math.sqrt(z1);
 
         	double x2 = y[i].x - yCentroid.x;
+        	x2 = Math.sqrt(x2);
         	double y2 = y[i].y - yCentroid.y;
+        	y2 = Math.sqrt(y2);
         	double z2 = y[i].z - yCentroid.z;
+        	z2 = Math.sqrt(z2);
 
         	g += x1*x1 + y1*y1 + z1*z1 + x2*x2 + y2*y2 + z2*z2;
 

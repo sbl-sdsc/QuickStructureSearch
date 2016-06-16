@@ -1,10 +1,16 @@
 package org.rcsb.compress;
 
 import java.io.Serializable;
+import java.util.Arrays;
 
 public class DeltaTransform implements IntegerTransform, Serializable {
 	private static final long serialVersionUID = 1L;
 
+	@Override
+	public String toString() {
+		return this.getClass().getSimpleName();
+	}
+	
 	@Override
 	public int[] forward(int[] data) {
 		int[] out = new int[data.length];
@@ -14,7 +20,7 @@ public class DeltaTransform implements IntegerTransform, Serializable {
 		}
 		return out;
 	}
-
+	
 	@Override
 	public int[] reverse(int[] data) {
 		int[] out = new int[data.length];

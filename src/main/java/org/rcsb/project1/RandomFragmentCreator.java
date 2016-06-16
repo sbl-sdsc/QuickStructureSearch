@@ -68,7 +68,7 @@ public class RandomFragmentCreator {
 		Random r = new Random(seed);
 
 		PrintWriter writer = new PrintWriter(outputFileName);
-		writer.println("PdbId.ChainId1, PdbId.ChainId2,start1,start2,cRMSD,dRMSD,adRMSD,deltacRMSDdRMSD,cRMSDTime,dRMSDTime,adRMSDTime,len1,len2,deltaLen");
+		writer.println("PdbId.ChainId1, PdbId.ChainId2,start1,start2,cRMSD,cRMSD2,dRMSD,adRMSD,deltacRMSDdRMSD,cRMSDTime,dRMSDTime,adRMSDTime,cRMSD2Time,len1,len2,deltaLen");
 		
 		for (int i = 0; i < nPairs; i+=BATCH_SIZE) {
 			List<Tuple2<Integer,Integer>> pairs = randomPairs(nChains, BATCH_SIZE, r.nextLong());

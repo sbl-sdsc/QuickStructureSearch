@@ -1,4 +1,4 @@
-package org.rcsb.ProteinLigandInteractionSearch;
+package org.rcsb.project9;
 
 import java.io.BufferedReader;
 import java.io.IOException;
@@ -42,33 +42,19 @@ import org.biojava.nbio.structure.io.mmcif.DownloadChemCompProvider;
 import com.sangupta.bloomfilter.BloomFilter;
 import com.sangupta.bloomfilter.impl.InMemoryBloomFilter;
 /**
- * This class creates a hadoop sequence file of protein-ligand interactions,
- * the file contains chain id, sequence number, insertion code, residue name, atom name and element name
- * @author Hinna Shabir
  *
  */
 
-public class CreateBloomFilter {
+public class InternalGeometryAnalyzer {
 	private static AtomCache cache = initializeCache();
 	private static String allUrl = "http://www.rcsb.org/pdb/rest/getCurrent/";
-	/**
-	 * 
-	 * @throws IOException 
-	 */
+	
 	public static void main(String[] args) throws IOException {
 		StructureIO.setAtomCache(cache);
 		long start = System.nanoTime();
 		int failure = 0;
 		int success = 0;
 		int chains = 0;
-		
-//	    int n = 1661777; // for entire PDB
-	    int n = 3000; // per structure
-	    double falsePositiveRate = 0.01;
-	    
-	    Map<String, BloomFilter<String>> bloomMap = new HashMap<>();
-	   
-//	    BloomFilter<String> filter = new InMemoryBloomFilter<String>(n, falsePositiveRate);
 
 
 		List<String> subset = new ArrayList<>(getAll());
@@ -76,10 +62,7 @@ public class CreateBloomFilter {
 //		List<String> pdbIds = subset.subList(0, 100);
 //			List<String> pdbIds = subset.subList(0, 1000);
 		List<String> pdbIds = subset.subList(105000, 106000); // 90-95K: 1719, 100-105K: 2095, 105-110K:2879
-//		List<String> pdbIds = subset;
 
-//		Set<String> mySet =new HashSet<String>();
-		int maxInteraction = 0;
 		for (String pdbId: pdbIds) {
 			Set<String> mySet =new HashSet<String>();
 			System.out.println(pdbId);
@@ -142,16 +125,6 @@ public class CreateBloomFilter {
 										else{
 											inscode2=r.getInsCode();
 										}
-								//		String label=idist + g1.getChemComp().getId() + g2.getChemComp().getId() + atom1.getName() + atom2.getName();
-										String label=idist + g2.getChemComp().getId() + atom1.getName() + atom2.getName();
-										mySet.add(label);
-	//									System.out.println(label);
-										BloomFilter<String> filter = bloomMap.get(g1.getChemComp().getId());
-										if (filter == null) {
-											filter = new InMemoryBloomFilter<String>(n, falsePositiveRate);
-											bloomMap.put(g1.getChemComp().getId(), filter);
-										}
-									    filter.add(label);
 									}
 								}
 							}
@@ -159,16 +132,10 @@ public class CreateBloomFilter {
 					}     
 				}
 			}
-			maxInteraction = Math.max(mySet.size(), maxInteraction);
+
 		} 
 
-		System.out.println("Total structures: " + pdbIds.size());
-	    System.out.println("BloomFilter nbits: " + bloomMap.get("ARG").getNumberOfBits());
-	    System.out.println("Maximal number of interactions per structure: " + maxInteraction);
-	    System.out.println("BloomFilter contains: 9ARGFMNNEO2P: " + bloomMap.get("ARG").contains("9FMNNEO2P"));
-	    System.out.println("BloomFilter contains: 1ARGFMNNEO2P: " + bloomMap.get("ARG").contains("1FMNNEO2P"));
-	    System.out.println("BloomFilter contains: 10CYSSF4SGFE2: " + bloomMap.get("CYS").contains("10SF4SGFE2"));
-	    System.out.println("BloomFilter contains: 9CYSSF4SGFE3: " + bloomMap.get("CYS").contains("9SF4SGFE3"));
+	
 		System.out.println("Success: " + success);
 		System.out.println("Failure: " + failure);
 		System.out.println("Chains: " + chains);
@@ -218,7 +185,7 @@ public class CreateBloomFilter {
 		params.setAlignSeqRes(true);
 		//params.setParseCAOnly(true);
 		params.setLoadChemCompInfo(true);
-		params.setCreateAtomBonds(false);
+		params.setCreateAtomBonds(true);
 		cache.setFileParsingParams(params);
 		ChemCompGroupFactory.setChemCompProvider(new DownloadChemCompProvider());
 		return cache;

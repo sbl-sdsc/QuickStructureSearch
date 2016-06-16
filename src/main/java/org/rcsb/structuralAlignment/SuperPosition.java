@@ -2,6 +2,8 @@ package org.rcsb.structuralAlignment;
 
 
 
+import java.io.Serializable;
+
 import javax.vecmath.AxisAngle4d;
 import javax.vecmath.Matrix4d;
 import javax.vecmath.Point3d;
@@ -14,7 +16,7 @@ import org.biojava.nbio.structure.jama.Matrix;
  *
  * @author Peter
  */
-public final class SuperPosition {
+public final class SuperPosition implements Serializable {
     
 	public static double calcRmsd(Point3d[] x, Point3d[] y) {
         Point3d[] xc = clonePoint3dArray(x);

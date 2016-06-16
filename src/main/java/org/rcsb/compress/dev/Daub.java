@@ -1,4 +1,4 @@
-package org.rcsb.compress;
+package org.rcsb.compress.dev;
 
 /**
 	  <p>
