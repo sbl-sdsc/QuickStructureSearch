@@ -197,10 +197,10 @@ public class TraceSmoother {
 		AtomCache cache = new AtomCache();
 		cache.setUseMmCif(true);
 		FileParsingParameters params = cache.getFileParsingParams();
-		params.setStoreEmptySeqRes(true);
+//		params.setStoreEmptySeqRes(true);
 		params.setAlignSeqRes(true);
 		params.setParseCAOnly(true);
-		params.setLoadChemCompInfo(true);
+//		params.setLoadChemCompInfo(true);
 		cache.setFileParsingParams(params);
 		ChemCompGroupFactory.setChemCompProvider(new DownloadChemCompProvider());
 		return cache;

@@ -220,10 +220,10 @@ public class PolySphericalCoordinateAnalyzer {
 		AtomCache cache = new AtomCache();
 		cache.setUseMmCif(true);
 		FileParsingParameters params = cache.getFileParsingParams();
-		params.setStoreEmptySeqRes(true);
+//		params.setStoreEmptySeqRes(true);
 		params.setAlignSeqRes(true);
 //		params.setParseCAOnly(true); // can't use CA only since we need to read DNA/RNA
-		params.setLoadChemCompInfo(true);
+//		params.setLoadChemCompInfo(true);
 		params.setCreateAtomBonds(true);
 		cache.setFileParsingParams(params);
 		DownloadChemCompProvider p = new DownloadChemCompProvider();
