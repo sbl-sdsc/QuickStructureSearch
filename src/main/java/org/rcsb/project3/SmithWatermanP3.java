@@ -1,6 +1,7 @@
 package org.rcsb.project3;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.vecmath.Point3d;
 
@@ -19,7 +20,7 @@ import scala.Tuple2;
 public class SmithWatermanP3 implements AlignmentAlgorithmInterface {
 
 	private static final long serialVersionUID = 1L;
-	private Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences = null;
+	private Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences = null;
     // score of indel
     private double indel = 1;
     // length of v1
@@ -37,7 +38,7 @@ public class SmithWatermanP3 implements AlignmentAlgorithmInterface {
     public SmithWatermanP3() {
 	}
     
-    public SmithWatermanP3(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences) {
+    public SmithWatermanP3(Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences) {
 		this.sequences = sequences;
 	}
     
@@ -46,26 +47,24 @@ public class SmithWatermanP3 implements AlignmentAlgorithmInterface {
      * @param data
      * @param traceback
      */
-	public SmithWatermanP3(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences, int traceback) {
+	public SmithWatermanP3(Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences, int traceback) {
 		this.sequences = sequences;
 		this.traceback = traceback;
 	}
 	
+	public String getName() {
+		return "SmithWaterman";
+	}
+	
 	@Override
-	public Tuple2<String, Float> call(Tuple2<Integer, Integer> tuple) {
-		Tuple2<String,SequenceFeatureInterface<?>> t1 = this.sequences.getValue().get(tuple._1);
-		Tuple2<String,SequenceFeatureInterface<?>> t2 = this.sequences.getValue().get(tuple._2);
+	public Tuple2<String, Float> call(Tuple2<String, String> tuple) {
+		SequenceFeatureInterface<?> t1 = this.sequences.getValue().get(tuple._1);
+		SequenceFeatureInterface<?> t2 = this.sequences.getValue().get(tuple._2);
 		
-		StringBuilder key = new StringBuilder();
-		key.append(t1._1);
-		key.append(",");
-		key.append(t2._1);
+		String key = tuple._1 +"," + tuple._2;
 		
-		SequenceFeatureInterface<?> v1 = t1._2;
-		SequenceFeatureInterface<?> v2 = t2._2;
-		
-		v1length = v1.length();
-		v2length = v2.length();
+		v1length = t1.length();
+		v2length = t2.length();
 		score = new double[v1length+1][v2length+1];
 		score[0][0] = 0;
 		int[][] b = new int[v1length][v2length];
@@ -80,7 +79,7 @@ public class SmithWatermanP3 implements AlignmentAlgorithmInterface {
 		for (int i = 1; i <= v1length; i++) {
 		    for (int j = 1; j <= v2length; j++) {
 		    	// check every direction
-		    	double diagScore = score[i - 1][j - 1] + calSimilarity(v1,v2,i-1,j-1);
+		    	double diagScore = score[i - 1][j - 1] + calSimilarity(t1,t2,i-1,j-1);
 		    	double upScore = score[i][j - 1] + indel;
 		    	double leftScore = score[i - 1][j] + indel;
 		    	double maxScore = maximum(diagScore, upScore,leftScore, 0);
@@ -102,7 +101,7 @@ public class SmithWatermanP3 implements AlignmentAlgorithmInterface {
 		else value = value/v1length;
 		// Traceback
 		if (traceback > 0)  {
-			printTraceback(v1,v2,b);
+			printTraceback(t1,t2,b);
 			System.out.println("value: "+value + " v1length: "+ v1length + " v2length: " + v2length);
 			System.out.println();
 		}
@@ -206,7 +205,7 @@ public class SmithWatermanP3 implements AlignmentAlgorithmInterface {
 	}
 
 	@Override
-	public void setSequence(Broadcast<List<Tuple2<String, SequenceFeatureInterface<?>>>> sequences) {
+	public void setSequence(Broadcast<Map<String, SequenceFeatureInterface<?>>> sequences) {
 		this.sequences = sequences;
 	}
 

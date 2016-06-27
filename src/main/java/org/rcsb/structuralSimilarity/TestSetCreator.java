@@ -49,6 +49,7 @@ public class TestSetCreator {
 				.setMaster("local[" + NUM_THREADS + "]")
 				.setAppName("1" + this.getClass().getSimpleName())
 				.set("spark.driver.maxResultSize", "2g")
+				.set("spark.kryoserializer.buffer.max", "1g")
 				.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer");
 		
 		Class<?>[] classes = {SimplePolymerChain.class, IntegerToByteTransform.class};

@@ -1,4 +1,4 @@
-package org.rcsb.structuralSimilarity;
+package org.rcsb.project10;
 
 import java.io.Serializable;
 
@@ -10,13 +10,10 @@ import org.biojava.nbio.structure.AtomImpl;
 import org.biojava.nbio.structure.Chain;
 import org.biojava.nbio.structure.ChainImpl;
 import org.biojava.nbio.structure.Group;
-import org.biojava.nbio.structure.StructureException;
-import org.biojava.nbio.structure.align.StructureAlignment;
-import org.biojava.nbio.structure.align.StructureAlignmentFactory;
+import org.biojava.nbio.structure.ResidueNumber;
 import org.biojava.nbio.structure.align.fatcat.FatCatRigid;
-import org.biojava.nbio.structure.align.fatcat.calc.FatCatParameters;
 import org.biojava.nbio.structure.align.model.AFPChain;
-import org.biojava.nbio.structure.align.util.AFPChainScorer;
+import org.biojava.spark.function.AlignmentTools;
 
 public class TmScorer implements Serializable {
 	private static final long serialVersionUID = 1L;
@@ -29,21 +26,7 @@ public class TmScorer implements Serializable {
 		Atom[] ca1 = getCAAtoms(points1);
 		Atom[] ca2 = getCAAtoms(points2);
 		
-		FatCatParameters params = new FatCatParameters();
-		AFPChain afp = null;
-		try {
-			StructureAlignment algorithm  = StructureAlignmentFactory.getAlgorithm(FatCatRigid.algorithmName);
-			afp = algorithm.align(ca1,ca2,params);
-			double tmScore = AFPChainScorer.getTMScore(afp, ca1, ca2);
-			afp.setTMScore(tmScore);
-		} catch (StructureException e) {
-			e.printStackTrace();
-			return scores;
-		}  
-//		int[][] alignment = afp.getAfpIndex();
-//		for (int i = 0; i < alignment.length; i++) {
-//			System.out.println(alignment[i][0] + " - " + alignment[i][1]);
-//		}
+		AFPChain afp = AlignmentTools.getBiojavaAlignment(ca1, ca2, FatCatRigid.algorithmName);
 
 		scores[0] = (float) afp.getTMScore();
 		scores[1] = (float) afp.getTotalRmsdOpt();
@@ -61,8 +44,10 @@ public class TmScorer implements Serializable {
 				gaps++;
 			}
 		}
-		Chain c = new ChainImpl();
-//		c.setChainID("A");		
+	
+		Chain chain = new ChainImpl();
+		chain.setId("A");	
+		chain.setName("A");	
 
 		Atom[] atoms = new Atom[points.length-gaps];
 
@@ -70,11 +55,13 @@ public class TmScorer implements Serializable {
 			if (points[i] != null) {
 				atoms[j] = new AtomImpl();
 				atoms[j].setName(CA_NAME);
-				Group g = new AminoAcidImpl();
-				g.setPDBName(GROUP_NAME);
-				g.addAtom(atoms[j]);
-				c.addGroup(g);
-
+				Group group = new AminoAcidImpl();
+				group.setPDBName(GROUP_NAME);
+				ResidueNumber number = new ResidueNumber("A", j, ' ');
+				group.setResidueNumber(number);
+				chain.addGroup(group);
+				
+				group.addAtom(atoms[j]);
 				atoms[j].setX(points[i].x);
 				atoms[j].setY(points[i].y);
 				atoms[j].setZ(points[i].z);

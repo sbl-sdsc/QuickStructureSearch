@@ -1,6 +1,7 @@
 package org.rcsb.project3;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.vecmath.Point3d;
 
@@ -17,7 +18,7 @@ import scala.Tuple2;
  */
 public class LCSFeatureIndexP3 implements AlignmentAlgorithmInterface {
 	private static final long serialVersionUID = 1L;
-	private Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences = null;
+	private Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences = null;
 	// print traceback if it is greater than 0
 	private int traceback = 0;
 	
@@ -26,34 +27,31 @@ public class LCSFeatureIndexP3 implements AlignmentAlgorithmInterface {
 	/**
      * Constructor with traceback option
      */
-	public LCSFeatureIndexP3(Broadcast<List<Tuple2<String, SequenceFeatureInterface<?>>>> featureVectorsBc,int traceback) {
+	public LCSFeatureIndexP3(Broadcast<Map<String, SequenceFeatureInterface<?>>> featureVectorsBc,int traceback) {
 		this.sequences = featureVectorsBc;
 		this.traceback = traceback;
 	}
 	
-	public LCSFeatureIndexP3(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences) {
+	public LCSFeatureIndexP3(Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences) {
 		this.sequences = sequences;
+	}
+	
+	public String getName() {
+		return "LCSFeatureIndex";
 	}
 
 	/**
 	 * Returns <PdbId.Chain, LCS score> pairs.
 	 */
-	public Tuple2<String, Float> call(Tuple2<Integer, Integer> tuple) throws Exception {
-		Tuple2<String,SequenceFeatureInterface<?>> t1 = this.sequences.getValue().get(tuple._1);
-		Tuple2<String,SequenceFeatureInterface<?>> t2 = this.sequences.getValue().get(tuple._2);
+	public Tuple2<String, Float> call(Tuple2<String, String> tuple) throws Exception {
+		SequenceFeatureInterface<?> t1 = this.sequences.getValue().get(tuple._1);
+		SequenceFeatureInterface<?> t2 = this.sequences.getValue().get(tuple._2);
 		
-		StringBuilder key = new StringBuilder();
-		key.append(t1._1);
-		key.append(",");
-		key.append(t2._1);
-		
-		// get the 2 sequence
-		SequenceFeatureInterface<?> v1 = t1._2;
-		SequenceFeatureInterface<?> v2 = t2._2;
+		String key = tuple._1 + "," + tuple._1;
 		
 		// The longest common substring
-		float LCSres = (float)LCS(v1,v2);
-		float value = LCSres/(float)getLength(v1,v2);
+		float LCSres = (float)LCS(t1,t2);
+		float value = LCSres/(float)getLength(t1,t2);
         return new Tuple2<String, Float>(key.toString(), value);
     }
 	
@@ -184,8 +182,9 @@ public class LCSFeatureIndexP3 implements AlignmentAlgorithmInterface {
 	}
 
 	@Override
-	public void setSequence(Broadcast<List<Tuple2<String, SequenceFeatureInterface<?>>>> sequences) {
-		this.sequences = sequences;		
+	public void setSequence(Broadcast<Map<String, SequenceFeatureInterface<?>>> sequences) {
+		this.sequences = sequences;	
+		
 	}
 	
 	/**
@@ -193,5 +192,5 @@ public class LCSFeatureIndexP3 implements AlignmentAlgorithmInterface {
 	 */
 	@Override
 	public void setCoords(Broadcast<List<Tuple2<String, Point3d[]>>> sequence) {
-	}
+	}	
 }

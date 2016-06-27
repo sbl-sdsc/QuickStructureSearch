@@ -48,6 +48,12 @@ public class SimplePolymerChain implements Writable, Serializable {
 		this.encodedSequence = Arrays.copyOf(writable.encodedSequence, writable.encodedSequence.length);
 	}
 	
+	public SimplePolymerChain(String sequence, Point3d[] coordinates, int polymerTyper) {
+		this.setSequence(sequence);
+		this.setCoordinates(coordinates);
+		this.setPolymerType(polymerTyper);
+	}
+	
 	public void setPolymerType(int polymerType) {
 		this.polymerType = (byte)polymerType;
 	}
@@ -68,7 +74,7 @@ public class SimplePolymerChain implements Writable, Serializable {
 		return getPolymerType() == SimplePolymerType.RNA.ordinal();
 	}
 	
-	public void setCoordinates(Point3d[] coordinates) throws Exception {
+	public void setCoordinates(Point3d[] coordinates) {
 		int[] intCoordinates = new int[coordinates.length*3];
 		coordinateLength = coordinates.length;
 		

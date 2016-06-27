@@ -96,7 +96,7 @@ public class ChainsToSequenceFile {
 				}
 				
 				int gaps = 0;
-				Chain c = s.getChain(0);
+				Chain c = s.getChainByIndex(0);
 				List<Group> groups = c.getSeqResGroups(GroupType.AMINOACID);
 				// does this list include alternate locations?
 				List<Atom> cas = new ArrayList<>(groups.size());

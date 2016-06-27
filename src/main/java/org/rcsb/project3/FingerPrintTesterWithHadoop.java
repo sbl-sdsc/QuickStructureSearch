@@ -116,41 +116,41 @@ public class FingerPrintTesterWithHadoop {
 		long t2 = System.nanoTime();
 		
 		// calculate Jaccard Index and join with TM metrics
-	    List<Tuple2<String, Tuple2<Float, String>>> results = pairs
-				.filter(new ChainIdPairFilter(availableChainIdsBc)) // only keep pairs that have feature vectors available
-				.mapToPair(new ChainIdToIndexMapper(availableChainIdsBc)) // map chain ids to indices into feature vector
-//				.mapToPair(new LCSFeatureIndexP3(featureVectorsBc,0))
+//	    List<Tuple2<String, Tuple2<Float, String>>> results = pairs
+//				.filter(new ChainIdPairFilter(availableChainIdsBc)) // only keep pairs that have feature vectors available
+//				.mapToPair(new ChainIdToIndexMapper(availableChainIdsBc)) // map chain ids to indices into feature vector
+////				.mapToPair(new LCSFeatureIndexP3(featureVectorsBc,0))
 //				.mapToPair(new SmithWatermanP3(featureVectorsBc,0))
 //				.mapToPair(new SmithWatermanGotohP3(featureVectorsBc,0))
-				.mapToPair(new JaccardScoreMapperP3(featureVectorsBc))
+//				.mapToPair(new JaccardScoreMapperP3(featureVectorsBc))
 //				.mapToPair(new LevenshteinMapperP3(featureVectorsBc))
-				.join(trainingData) // join with TM metrics from the input file
-				.sortByKey()
-				.collect();
+//				.join(trainingData) // join with TM metrics from the input file
+//				.sortByKey()
+//				.collect();
 	    
 		sc.stop();
 		sc.close();
 
 		
-		int numPairs = results.size();
-		
-		// write results to .csv file
-		PrintWriter writer = new PrintWriter(outputFileName);
-		writeToCsv2(writer, results);
-		writer.close();
-		
-		printStatistics(results);
+//		int numPairs = results.size();
+//		
+//		// write results to .csv file
+//		PrintWriter writer = new PrintWriter(outputFileName);
+//		writeToCsv2(writer, results);
+//		writer.close();
+//		
+//		printStatistics(results);
 
 		long t3 = System.nanoTime();
 
 
-     	System.out.println("protein chains     : " + numVectors);
-		System.out.println("total pairs        : " + numPairs);
-		System.out.println();
-		System.out.println("calculate features : " + (t2-t1)/1E9 + " s");
-		System.out.println("compare pairs      : " + (t3-t2)/1E9 + " s");
-		System.out.println("total time         : " + (t3-t1)/1E9 + " s");
-		System.out.println("time per pair      : " + ((t3-t1)/numPairs)  + " ns");
+//     	System.out.println("protein chains     : " + numVectors);
+//		System.out.println("total pairs        : " + numPairs);
+//		System.out.println();
+//		System.out.println("calculate features : " + (t2-t1)/1E9 + " s");
+//		System.out.println("compare pairs      : " + (t3-t2)/1E9 + " s");
+//		System.out.println("total time         : " + (t3-t1)/1E9 + " s");
+//		System.out.println("time per pair      : " + ((t3-t1)/numPairs)  + " ns");
 	}
 	
 	/**

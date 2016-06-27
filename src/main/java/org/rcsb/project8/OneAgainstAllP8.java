@@ -113,7 +113,7 @@ public class OneAgainstAllP8 {
         List<Tuple2<String,SequenceFeatureInterface<?>>> featureVectors =  features.collect(); // return results to master node     
         final Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> featureVectorsBc = sc.broadcast(featureVectors);
 
-		alignmentAlgorithm.setSequence(featureVectorsBc);
+//		alignmentAlgorithm.setSequence(featureVectorsBc);
 		
 		// ready for pair parallelize
 		List<Integer> ChainIndex = new ArrayList<Integer>();
@@ -121,24 +121,26 @@ public class OneAgainstAllP8 {
 			ChainIndex.add(i);
 		}
 
+		
+		// TODO upgrade to new MMTF data structure
 		// 2nd step:
 		//		calculate alignment score
-	    List<Tuple2<String, Float>> results = sc
-	    		.parallelize(ChainIndex)
-				.mapToPair(i -> new Tuple2<Integer,Integer>(targetChain, i))
-				.mapToPair(alignmentAlgorithm)
-				.sortByKey()
-				.collect();
-		
+//	    List<Tuple2<String, Float>> results = sc
+//	    		.parallelize(ChainIndex)
+//				.mapToPair(i -> new Tuple2<Integer,Integer>(targetChain, i))
+//				.mapToPair(alignmentAlgorithm)
+//				.sortByKey()
+//				.collect();
+//		
 	    // 3rd step:
 	    //		use fingerprint filter to get reduce TM computation
-	    List<Integer> pass = new ArrayList<Integer>();
-	    for (Tuple2<String, Float> t: results) {
-	    	if (t._2 < fingerPrintFilter) {
-	    		String[] pros = t._1.split(",");
-	    		pass.add(ChainIds.indexOf(pros[1]));
-	    	}
-	    }
+//	    List<Integer> pass = new ArrayList<Integer>();
+//	    for (Tuple2<String, Float> t: results) {
+//	    	if (t._2 < fingerPrintFilter) {
+//	    		String[] pros = t._1.split(",");
+//	    		pass.add(ChainIds.indexOf(pros[1]));
+//	    	}
+//	    }
 	    
         // output fingerPrint result
 		PrintWriter writer = new PrintWriter(outputPath + "OneAgainstAll_" + targetProteinId + "_FingerPrint.csv");
@@ -148,7 +150,7 @@ public class OneAgainstAllP8 {
 		writer.print(",");
 		writer.println("Score");
 		writer.flush();
-	    writeFingerPrintResultToCsv(writer,results);
+//	    writeFingerPrintResultToCsv(writer,results);
 	    writer.close();
 		
 		PrintWriter writer2 = new PrintWriter(outputPath + "OneAgainstAll_" + targetProteinId + "_TM.csv");
@@ -164,28 +166,28 @@ public class OneAgainstAllP8 {
         // 4th step:
         //		calculate TM score using FatCat
         boolean flag = true;
-        while(flag) { 
+//        while(flag) { 
         	// run part of the pairs at each time
-			List<Tuple2<Integer,Integer>> pairs = generatePairs(pass, targetChain, BATCH_SIZE);
-			System.out.println(pass.size());
-			if (pairs.size() < BATCH_SIZE) {
-				flag = false;
-				if (pairs.size() == 0)
-					break;
-			}
+//			List<Tuple2<Integer,Integer>> pairs = generatePairs(pass, targetChain, BATCH_SIZE);
+//			System.out.println(pass.size());
+//			if (pairs.size() < BATCH_SIZE) {
+//				flag = false;
+//				if (pairs.size() == 0)
+//					break;
+//			}
 			
-			List<Tuple2<String, Float[]>> tmResults = sc
-					.parallelizePairs(pairs, NUM_THREADS*NUM_TASKS_PER_THREAD) // distribute data
-					.mapToPair(new ChainPairToTmMapper(sequence)) // maps pairs of chain id indices to chain id, TM score pairs
-					.collect();	// copy result to master node
-			
-			writeTmScoreToCsv(writer2,tmResults);
-        }
+//			List<Tuple2<String, Float[]>> tmResults = sc
+//					.parallelizePairs(pairs, NUM_THREADS*NUM_TASKS_PER_THREAD) // distribute data
+//					.mapToPair(new ChainPairToTmMapper(sequence)) // maps pairs of chain id indices to chain id, TM score pairs
+//					.collect();	// copy result to master node
+//			
+//			writeTmScoreToCsv(writer2,tmResults);
+//        }
 	    
-	    writer2.close();
-	    
-		sc.stop();
-		sc.close();
+//	    writer2.close();
+//	    
+//		sc.stop();
+//		sc.close();
 	}
 
 	/**

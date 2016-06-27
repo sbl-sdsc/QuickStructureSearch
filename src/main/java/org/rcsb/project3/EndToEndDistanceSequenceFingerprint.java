@@ -19,7 +19,8 @@ public class EndToEndDistanceSequenceFingerprint implements SequenceFingerprint,
 	 * Best default parameter combination: sensitivity: 0.948, specificity: 0.818
 	 */
     private int length = 8;
-    private double binSize = 3.6943572;
+//    private double binSize = 3.6943572;
+    private double binSize = 3.7;
  
     /**
      * Default constructor uses default parameters

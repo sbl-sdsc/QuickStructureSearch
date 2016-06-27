@@ -155,8 +155,9 @@ public class OneAgainstAllWithThreshold {
         List<Tuple2<String,SequenceFeatureInterface<?>>> featureVectors =  features.collect(); // return results to master node     
         final Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> featureVectorsBc = sc.broadcast(featureVectors);
 
+        // TODO upgrade to new data structure
         // set fingerprint
-		alignmentAlgorithm.setSequence(featureVectorsBc);
+//		alignmentAlgorithm.setSequence(featureVectorsBc);
 		
         final Broadcast<List<Tuple2<String,Point3d[]>>> sequence = sc.broadcast(Chains);
 
@@ -172,22 +173,22 @@ public class OneAgainstAllWithThreshold {
 		long st2 = System.nanoTime();
 		// 2nd step:
 		//		calculate alignment score
-	    List<Tuple2<String, Float>> results = sc
-	    		.parallelize(ChainIndex)
-				.mapToPair(i -> new Tuple2<Integer,Integer>(targetChain, i))
-				.mapToPair(alignmentAlgorithm)
-				.sortByKey()
-				.collect();
+//	    List<Tuple2<String, Float>> results = sc
+//	    		.parallelize(ChainIndex)
+//				.mapToPair(i -> new Tuple2<Integer,Integer>(targetChain, i))
+//				.mapToPair(alignmentAlgorithm)
+//				.sortByKey()
+//				.collect();
 		
 	    // 3rd step:
 	    //		use fingerprint filter to get reduce TM computation
-	    List<Integer> pass = new ArrayList<Integer>();
-	    for (Tuple2<String, Float> t: results) {
-	    	if (t._2 >= fingerPrintFilter) {
-	    		String[] pros = t._1.split(",");
-	    		pass.add(ChainIds.indexOf(pros[1]));
-	    	}
-	    }
+//	    List<Integer> pass = new ArrayList<Integer>();
+//	    for (Tuple2<String, Float> t: results) {
+//	    	if (t._2 >= fingerPrintFilter) {
+//	    		String[] pros = t._1.split(",");
+//	    		pass.add(ChainIds.indexOf(pros[1]));
+//	    	}
+//	    }
 	    
 	    long et1 = System.nanoTime();
 	    
@@ -215,25 +216,25 @@ public class OneAgainstAllWithThreshold {
 		long st = System.nanoTime();
 		
         boolean flag = true;
-        while(flag) { 
-        	// run part of the pairs at each time
-			List<Tuple2<Integer,Integer>> pairs = generatePairs(pass, targetChain, BATCH_SIZE);
-			System.out.println(pass.size());
-			if (pairs.size() < BATCH_SIZE) {
-				flag = false;
-				if (pairs.size() == 0)
-					break;
-			}
-			
-			List<Tuple2<String, Float[]>> tmResults = sc
-					.parallelizePairs(pairs, NUM_THREADS*NUM_TASKS_PER_THREAD) // distribute data
-					.mapToPair(new ChainPairToTmMapperP4(sequence)) // maps pairs of chain id indices to chain id, TM score pairs
-					.collect();	// copy result to master node
-			
-			writeTmScoreToCsv(writer2,tmResults, tmFilter);
-        }
-	    
-        System.out.println(pass.size());
+//        while(flag) { 
+//        	// run part of the pairs at each time
+//			List<Tuple2<Integer,Integer>> pairs = generatePairs(pass, targetChain, BATCH_SIZE);
+//			System.out.println(pass.size());
+//			if (pairs.size() < BATCH_SIZE) {
+//				flag = false;
+//				if (pairs.size() == 0)
+//					break;
+//			}
+//			
+//			List<Tuple2<String, Float[]>> tmResults = sc
+//					.parallelizePairs(pairs, NUM_THREADS*NUM_TASKS_PER_THREAD) // distribute data
+//					.mapToPair(new ChainPairToTmMapperP4(sequence)) // maps pairs of chain id indices to chain id, TM score pairs
+//					.collect();	// copy result to master node
+//			
+//			writeTmScoreToCsv(writer2,tmResults, tmFilter);
+//        }
+//	    
+//        System.out.println(pass.size());
         System.out.println("Fingerprint Time: " + ((st2 - st1) / 1E9) + " s");
         System.out.println("Alignment Time: " + ((et1 - st2) / 1E9) + " s");
         System.out.println("FatCat Time: " + ((System.nanoTime() - st) / 1E9) + " s");

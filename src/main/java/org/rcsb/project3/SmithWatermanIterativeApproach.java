@@ -6,6 +6,7 @@ import java.text.NumberFormat;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Locale;
+import java.util.Map;
 
 import javax.vecmath.Matrix4d;
 import javax.vecmath.Point3d;
@@ -33,7 +34,7 @@ import scala.Tuple2;
 public class SmithWatermanIterativeApproach implements AlignmentAlgorithmInterface {
 
 	private static final long serialVersionUID = 1L;
-	private Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences = null;
+	private Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences = null;
 	private Broadcast<List<Tuple2<String,Point3d[]>>> coords = null;
     /* With different open and extend penalty, this class could function the same as LCS or SmithWaterman
      * LCS: open = extend = 0;
@@ -50,8 +51,12 @@ public class SmithWatermanIterativeApproach implements AlignmentAlgorithmInterfa
     public SmithWatermanIterativeApproach() {
 	}
     
-    public SmithWatermanIterativeApproach(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences) {
+    public SmithWatermanIterativeApproach(Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences) {
 		this.sequences = sequences;
+	}
+    
+	public String getName() {
+		return "SmithWatermanIterative";
 	}
     
     /***
@@ -60,64 +65,45 @@ public class SmithWatermanIterativeApproach implements AlignmentAlgorithmInterfa
      * @param open
      * @param extend
      */
-    public SmithWatermanIterativeApproach(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences, double open, double extend) {
+    public SmithWatermanIterativeApproach(Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences, double open, double extend) {
 		this.sequences = sequences;
 		this.open = open;
 		this.extend = extend;
 	}
     
 	@Override
-	public void setSequence(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences) {
+	public void setSequence(Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences) {
 		this.sequences = sequences;
 	}
 	
 	@Override
-	public Tuple2<String, Float> call(Tuple2<Integer, Integer> tuple) throws FileNotFoundException {
-		Tuple2<String,SequenceFeatureInterface<?>> t1 = this.sequences.getValue().get(tuple._1);
-		Tuple2<String,SequenceFeatureInterface<?>> t2 = this.sequences.getValue().get(tuple._2);
+	public Tuple2<String, Float> call(Tuple2<String, String> tuple) throws FileNotFoundException {
+		SequenceFeatureInterface<?> t1 = this.sequences.getValue().get(tuple._1);
+		SequenceFeatureInterface<?> t2 = this.sequences.getValue().get(tuple._2);
 		
-		StringBuilder key = new StringBuilder();
-		key.append(t1._1);
-		key.append(",");
-		key.append(t2._1);
-			
-		SequenceFeatureInterface<?> v1 = t1._2;
-		SequenceFeatureInterface<?> v2 = t2._2;
+		String key = tuple._1 + "," + tuple._2;
+
+		Alignment<?> SWAlignment = getAlignment(t1, t2, open, extend);
 		
-		Alignment<?> SWAlignment = getAlignment(v1, v2, open, extend);
-		
-		Point3d[] c1 = this.coords.getValue().get(tuple._1)._2;
-		Point3d[] c2p = this.coords.getValue().get(tuple._2)._2;		
+		// TODO this needs to be refactored to use chain Id rather than indices
+		// Point3d[] c1 = this.coords.getValue().get(tuple._1)._2;
+		// Point3d[] c2p = this.coords.getValue().get(tuple._2)._2;	
+		Point3d[] c1 = new Point3d[0];
+		Point3d[] c2p = new Point3d[0];
 		// c2 may change due to the rotation
 		Point3d[] c2 = new Point3d[c2p.length];
 		for (int i = 0; i < c2p.length; i++)
 			c2[i] = c2p[i];
-		// print out the pdb file
-		// TODO: may delete if not need anymore
-//		if (t2._1.equals("1B0B.A")) {
-//			PrintWriter writer = new PrintWriter("/Users/Chris/Documents/RCSB/Data/pdb/4HHB.pdb");
-//			Atom[] atoms = getCAAtoms(c1);
-//			for (Atom a: atoms) {
-//				writer.print(toPdb(a).replaceAll("nullGLU", " GLU"));
-//			}
-//			writer.flush();
-//			writer.close();
-//			
-//			PrintWriter writer2 = new PrintWriter("/Users/Chris/Documents/RCSB/Data/pdb/1B0B.pdb");
-//			Atom[] atoms2 = getCAAtoms(c2p);
-//			for (Atom a: atoms2) {
-//				writer2.print(toPdb(a).replaceAll("nullGLU", " GLU"));
-//			}
-//			writer2.flush();
-//			writer2.close();
-//		}
+
 				
 		float value = 0;
 
 		// rotate and transform to overlap two chains
-		for (int trial = 0; trial < rotateTime; trial++) {
-			SWAlignment = iterativeApproach(SWAlignment, c1, c2, t1._1,t2._1, trial);
-		}
+		// TODO this needs to be refactored to use chain Id rather than indices
+		// for (int trial = 0; trial < rotateTime; trial++) {
+		//	SWAlignment = iterativeApproach(SWAlignment, c1, c2, t1._1,t2._1, trial);
+		//}
+		SWAlignment = null;
 
 		// FatCat score calculation
 		if (SWAlignment != null) {
@@ -142,8 +128,8 @@ public class SmithWatermanIterativeApproach implements AlignmentAlgorithmInterfa
 	
 			double sum = 0;
 			for (int i = 0; i < Laln; i++) {
-				double d = getDistance(lp1.get(i), lp2.get(i));
-				sum += 1./(1 + d * d / d0sq);
+				double dsq = lp1.get(i).distanceSquared(lp2.get(i));
+				sum += 1./(1 + dsq/ d0sq);
 			}
 			value = (float) (sum/Lmin);
 		}
@@ -162,20 +148,6 @@ public class SmithWatermanIterativeApproach implements AlignmentAlgorithmInterfa
 	@SuppressWarnings("unchecked")
 	private <T,K> Alignment<T> getAlignment(SequenceFeatureInterface<T> v1,SequenceFeatureInterface<K> v2,double o, double e) {
 		return SmithWatermanGotoh.align(v1, (SequenceFeatureInterface<T>)v2, o, e);
-	}
-	
-	/**
-	 * Get the distance between two atoms
-	 * @param a
-	 * @param b
-	 * @return
-	 */
-	public static double getDistance(Point3d a, Point3d b) {
-		double x = a.x - b.x;
-		double y = a.y - b.y;
-		double z = a.z - b.z;
-		double s  = x * x  + y * y + z * z;
-		return Math.sqrt(s);
 	}
 	
 	/**
@@ -246,7 +218,7 @@ public class SmithWatermanIterativeApproach implements AlignmentAlgorithmInterfa
 			}
 		}
 		Chain c = new ChainImpl();
-		c.setChainID("A");		
+		c.setId("A");	
 
 		Atom[] atoms = new Atom[points.length-gaps];
 
@@ -338,7 +310,7 @@ public class SmithWatermanIterativeApproach implements AlignmentAlgorithmInterfa
 		s.append(altLoc);
 		s.append(leftResName);
 		s.append(" ");
-		s.append(a.getGroup().getChain().getChainID());
+		s.append(a.getGroup().getChain().getId());
 		s.append(resseq);
 		s.append("   ");
 		s.append(x);

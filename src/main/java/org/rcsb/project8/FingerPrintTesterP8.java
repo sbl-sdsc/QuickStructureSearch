@@ -182,26 +182,28 @@ public class FingerPrintTesterP8 {
 					.keys()
 					.collect();
 			final Broadcast<List<String>> availableChainIdsBc = sc.broadcast(availableChainIds);
-						
+			
+			// TODO upgrade to new datastructure
+			
 			// calculate Jaccard Index and join with TM metrics
-		    List<Tuple2<String, Tuple2<Float, String>>> results = pairs
-					.filter(new ChainIdPairFilter(availableChainIdsBc)) // only keep pairs that have feature vectors available
-					.mapToPair(new ChainIdToIndexMapper(availableChainIdsBc)) // map chain ids to indices into feature vector
+//		    List<Tuple2<String, Tuple2<Float, String>>> results = pairs
+//					.filter(new ChainIdPairFilter(availableChainIdsBc)) // only keep pairs that have feature vectors available
+//					.mapToPair(new ChainIdToIndexMapper(availableChainIdsBc)) // map chain ids to indices into feature vector
 //					.mapToPair(new LCSFeatureIndexP3(featureVectorsBc,0))
 //					.mapToPair(new SmithWatermanP3(featureVectorsBc,0))
 //					.mapToPair(new SmithWatermanWithGeoComp(featureVectorsBc))
 //					.mapToPair(new JaccardScoreMapperP3(featureVectorsBc))
 //					.mapToPair(new LevenshteinMapperP3(featureVectorsBc))
-					.mapToPair(new SmithWatermanGotohP3(featureVectorsBc))
-					.join(trainingData) // join with TM metrics from the input file
-					.sortByKey()
-					.collect();
+//					.mapToPair(new SmithWatermanGotohP3(featureVectorsBc))
+//					.join(trainingData) // join with TM metrics from the input file
+//					.sortByKey()
+//					.collect();
 		    			
 			// write results to .csv file
-		    totalPairs += results.size();
-		    resultSet.addAll(results);
-			writeToCsv(writer, fingerPrintName, alignmentAlgorithm, inputFileName, results);
-			writeToCsv2(writer2, results);
+//		    totalPairs += results.size();
+//		    resultSet.addAll(results);
+//			writeToCsv(writer, fingerPrintName, alignmentAlgorithm, inputFileName, results);
+//			writeToCsv2(writer2, results);
 		}
 		writeToCsv(writer, fingerPrintName, alignmentAlgorithm, "All", resultSet);
 		writer.println("Total Pairs: " + totalPairs);

@@ -17,7 +17,7 @@ import org.apache.commons.lang.ArrayUtils;
 public class EndToEndDistanceSequenceFeature implements SequenceFeatureInterface<Integer>, Serializable {
 
 	private static final long serialVersionUID = 1L;
-	private int[] EndToEndSequence;
+	private int[] endToEndSequence;
 	private Point3d[] coords;
 	// Some setting for calculate similarity score 
 	private double match = 1;
@@ -29,11 +29,11 @@ public class EndToEndDistanceSequenceFeature implements SequenceFeatureInterface
      * @param EndToEndSequence
      */
 	public EndToEndDistanceSequenceFeature(int[] EndToEndSequence) {
-		this.EndToEndSequence = EndToEndSequence;
+		this.endToEndSequence = EndToEndSequence;
 	}
 	
 	public EndToEndDistanceSequenceFeature(int[] EndToEndSequence, Point3d[] coords) {
-		this.EndToEndSequence = EndToEndSequence;
+		this.endToEndSequence = EndToEndSequence;
 		this.coords = coords;
 	}
 	
@@ -45,7 +45,7 @@ public class EndToEndDistanceSequenceFeature implements SequenceFeatureInterface
 	 * @param mismatch
 	 */
 	public EndToEndDistanceSequenceFeature(int[] EndToEndSequence, double gap, double match, double mismatch) {
-		this.EndToEndSequence = EndToEndSequence;
+		this.endToEndSequence = EndToEndSequence;
 		this.gap = gap;
 		this.match = match;
 		this.mismatch = mismatch;
@@ -77,20 +77,20 @@ public class EndToEndDistanceSequenceFeature implements SequenceFeatureInterface
 
 	@Override
 	public Integer get(int index) {
-		if (Double.isNaN((double)EndToEndSequence[index]))
+		if (Double.isNaN((double)endToEndSequence[index]))
 			return null;
 		else
-			return EndToEndSequence[index];
+			return endToEndSequence[index];
 	}
 
 	@Override
 	public int length() {
-		return EndToEndSequence.length;
+		return endToEndSequence.length;
 	}
 
 	@Override
 	public Integer[] getSequence() {
-		return ArrayUtils.toObject(EndToEndSequence);
+		return ArrayUtils.toObject(endToEndSequence);
 	}
 
 	@Override

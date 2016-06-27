@@ -1,11 +1,7 @@
 package org.rcsb.ProteinLigandInteractionSearch;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
 import java.io.PrintWriter;
-import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -13,32 +9,23 @@ import java.util.Calendar;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.SortedSet;
 import java.util.TreeSet;
 
 import javax.vecmath.Point3d;
 
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IOUtils;
-import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.compress.BZip2Codec;
 import org.biojava.nbio.structure.Atom;
 import org.biojava.nbio.structure.Chain;
-import org.biojava.nbio.structure.Element;
 import org.biojava.nbio.structure.Group;
 import org.biojava.nbio.structure.GroupType;
 import org.biojava.nbio.structure.ResidueNumber;
 import org.biojava.nbio.structure.Structure;
 import org.biojava.nbio.structure.StructureIO;
 import org.biojava.nbio.structure.align.util.AtomCache;
-import org.biojava.nbio.structure.align.util.HTTPConnectionTools;
 import org.biojava.nbio.structure.io.FileParsingParameters;
 import org.biojava.nbio.structure.io.mmcif.AllChemCompProvider;
 import org.biojava.nbio.structure.io.mmcif.ChemCompGroupFactory;
-import org.biojava.nbio.structure.io.mmcif.DownloadChemCompProvider;
 import org.biojava.nbio.structure.io.mmcif.chem.ResidueType;
+import org.biojava.nbio.structure.rcsb.GetRepresentatives;
 /**
  * This class creates a hadoop sequence file of protein-ligand interactions,
  * the file contains chain id, sequence number, insertion code, residue name, atom name and element name
@@ -63,7 +50,7 @@ public class WriteLigLigSeqFile {
 
 		Set<String> exclusions = new HashSet<>(Arrays.asList("NAG", "UNL", "UNK", "ZN"));
 
-		Set<String> pdbIds = getAll();
+		Set<String> pdbIds = GetRepresentatives.getAll();
 		//		pdbIds.clear();
 		//		pdbIds.add("5HG4");
 		//		StructureIO.setAtomCache(cache);
@@ -136,8 +123,8 @@ public class WriteLigLigSeqFile {
 													resultSet.add(key);
 
 													String result = pdbId + "," + 
-															g1.getChemComp().getId() +"-" + r.getChainId() + "." +  r.getSeqNum() + "," + 
-															g2.getChemComp().getId() +"-" + r2.getChainId() + "." +  r2.getSeqNum()+ "," +
+															g1.getChemComp().getId() +"-" + r.getChainName() + "." +  r.getSeqNum() + "," + 
+															g2.getChemComp().getId() +"-" + r2.getChainName() + "." +  r2.getSeqNum()+ "," +
 															g1.getAtoms().size();
 													System.out.println(pdbId + ": " + result);
 													writer.println(result);
@@ -185,37 +172,37 @@ public class WriteLigLigSeqFile {
 		return true;
 	}
 
-	/**
-	 * Returns the current list of all PDB IDs.
-	 * @return representatives set of all PDB IDs.
-	 */
-	public static SortedSet<String> getAll() {
-		SortedSet<String> representatives = new TreeSet<String>();
-		try {
-
-			URL u = new URL(allUrl);
-
-			InputStream stream = HTTPConnectionTools.getInputStream(u, 60000);
-
-			if (stream != null) {
-				BufferedReader reader = new BufferedReader(
-						new InputStreamReader(stream));
-
-				String line = null;
-
-				while ((line = reader.readLine()) != null) {
-					int index = line.lastIndexOf("structureId=");
-					if (index > 0) {
-						representatives.add(line.substring(index + 13, index + 17));
-					}
-				}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		return representatives;
-	}
+//	/**
+//	 * Returns the current list of all PDB IDs.
+//	 * @return representatives set of all PDB IDs.
+//	 */
+//	public static SortedSet<String> getAll() {
+//		SortedSet<String> representatives = new TreeSet<String>();
+//		try {
+//
+//			URL u = new URL(allUrl);
+//
+//			InputStream stream = HTTPConnectionTools.getInputStream(u, 60000);
+//
+//			if (stream != null) {
+//				BufferedReader reader = new BufferedReader(
+//						new InputStreamReader(stream));
+//
+//				String line = null;
+//
+//				while ((line = reader.readLine()) != null) {
+//					int index = line.lastIndexOf("structureId=");
+//					if (index > 0) {
+//						representatives.add(line.substring(index + 13, index + 17));
+//					}
+//				}
+//			}
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//
+//		return representatives;
+//	}
 	/**
 	 * 
 	 * @return

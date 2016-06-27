@@ -1,6 +1,7 @@
 package org.rcsb.project3;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.vecmath.Point3d;
 
@@ -14,14 +15,21 @@ import scala.Tuple2;
  * 
  * @author Chris Li
  */
-public interface AlignmentAlgorithmInterface extends PairFunction<Tuple2<Integer,Integer>,String,Float>{
+public interface AlignmentAlgorithmInterface extends PairFunction<Tuple2<String,String>,String,Float>{
+	
 	/**
-	 * load sequence(fingerprint) data
+	 * Returns the name of the algorithm
+	 * @return algorihm name
+	 */
+	public String getName();
+	
+	/**
+	 * Sets sequence(fingerprint) data
 	 * @param sequences
 	 */
-	public void setSequence(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences);
+	public void setSequence(Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences);
 	/**
-	 * load coordinates
+	 * Sets coordinates
 	 * @param coords
 	 */
 	public void setCoords(Broadcast<List<Tuple2<String, Point3d[]>>> coords);

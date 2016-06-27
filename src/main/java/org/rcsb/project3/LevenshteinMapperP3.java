@@ -1,6 +1,7 @@
 package org.rcsb.project3;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.vecmath.Point3d;
 
@@ -15,37 +16,34 @@ import scala.Tuple2;
  */
 public class LevenshteinMapperP3 implements AlignmentAlgorithmInterface {
 	private static final long serialVersionUID = 1L;
-	private Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences = null;
+	private Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences = null;
 
 	public LevenshteinMapperP3() {
 	}
 
-	public LevenshteinMapperP3(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences) {
+	public LevenshteinMapperP3(Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences) {
 		this.sequences = sequences;
 	}
-
+	
+	public String getName() {
+		return "LevenshteinIndex";
+	}
+	
 	/**
 	 * Returns <PdbId.Chain, Levenshtein distance> pairs. 
 	 */
-	public Tuple2<String, Float> call(Tuple2<Integer, Integer> tuple) throws Exception {
-		Tuple2<String,SequenceFeatureInterface<?>> t1 = this.sequences.getValue().get(tuple._1);
-		Tuple2<String,SequenceFeatureInterface<?>> t2 = this.sequences.getValue().get(tuple._2);
+	public Tuple2<String, Float> call(Tuple2<String, String> tuple) throws Exception {
+		SequenceFeatureInterface<?> t1 = this.sequences.getValue().get(tuple._1);
+		SequenceFeatureInterface<?> t2 = this.sequences.getValue().get(tuple._2);
 		
-		StringBuilder key = new StringBuilder();
-		key.append(t1._1);
-		key.append(",");
-		key.append(t2._1);
-		
-		SequenceFeatureInterface<?> v1 = t1._2;
-		SequenceFeatureInterface<?> v2 = t2._2;
-
-		Float value = (float) LevenshteinDistanceP3.normalizedDistance(v1,  v2);
+		String key = tuple._1+  "," + tuple._2;
+		Float value = (float) LevenshteinDistanceP3.normalizedDistance(t1,  t2);
 		
         return new Tuple2<String, Float>(key.toString(), value);
     }
 
 	@Override
-	public void setSequence(Broadcast<List<Tuple2<String, SequenceFeatureInterface<?>>>> sequences) {
+	public void setSequence(Broadcast<Map<String, SequenceFeatureInterface<?>>> sequences) {
 		this.sequences = sequences;
 	}
 

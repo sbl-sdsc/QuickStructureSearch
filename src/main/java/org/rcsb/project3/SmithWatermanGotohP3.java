@@ -1,6 +1,7 @@
 package org.rcsb.project3;
 
 import java.util.List;
+import java.util.Map;
 
 import javax.vecmath.Point3d;
 
@@ -17,7 +18,7 @@ import scala.Tuple2;
 public class SmithWatermanGotohP3 implements AlignmentAlgorithmInterface {
 
 	private static final long serialVersionUID = 1L;
-	private Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences = null;
+	private Broadcast<Map<String,SequenceFeatureInterface<?>> >sequences = null;
     // print traceback if it is greater than 0
     private int traceback = 0;
     /* With different open and extend penalty, this class could function the same as LCS or SmithWaterman
@@ -32,8 +33,12 @@ public class SmithWatermanGotohP3 implements AlignmentAlgorithmInterface {
     public SmithWatermanGotohP3() {
 	}
     
-    public SmithWatermanGotohP3(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences) {
+    public SmithWatermanGotohP3(Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences) {
 		this.sequences = sequences;
+	}
+    
+	public String getName() {
+		return "SmithWatermanGotoh";
 	}
     
     /***
@@ -42,7 +47,7 @@ public class SmithWatermanGotohP3 implements AlignmentAlgorithmInterface {
      * @param open
      * @param extend
      */
-    public SmithWatermanGotohP3(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences, double open, double extend) {
+    public SmithWatermanGotohP3(Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences, double open, double extend) {
 		this.sequences = sequences;
 		this.open = open;
 		this.extend = extend;
@@ -53,40 +58,34 @@ public class SmithWatermanGotohP3 implements AlignmentAlgorithmInterface {
      * @param sequences
      * @param traceback
      */
-	public SmithWatermanGotohP3(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences, int traceback) {
+	public SmithWatermanGotohP3(Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences, int traceback) {
 		this.sequences = sequences;
 		this.traceback = traceback;
 	}
 	
 	@Override
-	public void setSequence(Broadcast<List<Tuple2<String,SequenceFeatureInterface<?>>>> sequences) {
+	public void setSequence(Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences) {
 		this.sequences = sequences;
 	}
 	
 	@Override
-	public Tuple2<String, Float> call(Tuple2<Integer, Integer> tuple) {
-		Tuple2<String,SequenceFeatureInterface<?>> t1 = this.sequences.getValue().get(tuple._1);
-		Tuple2<String,SequenceFeatureInterface<?>> t2 = this.sequences.getValue().get(tuple._2);
+	public Tuple2<String, Float> call(Tuple2<String, String> tuple) {
+		SequenceFeatureInterface<?> t1 = this.sequences.getValue().get(tuple._1);
+		SequenceFeatureInterface<?> t2 = this.sequences.getValue().get(tuple._2);
 		
-		StringBuilder key = new StringBuilder();
-		key.append(t1._1);
-		key.append(",");
-		key.append(t2._1);
+		String key = tuple._1 +"," + tuple._2;
 		
-		SequenceFeatureInterface<?> v1 = t1._2;
-		SequenceFeatureInterface<?> v2 = t2._2;
-		
-		Alignment<?> SWAlignment = getAlignment(v1, v2, open, extend);
+		Alignment<?> SWAlignment = getAlignment(t1, t2, open, extend);
 		float value = (float) SWAlignment.calculateScore();
-		int v1L = v1.length();
-		int v2L = v2.length();
+		int v1L = t1.length();
+		int v2L = t2.length();
 		if (v1L > v2L)
 			value = value/v2L;
 		else
 			value = value/v1L;
 		// Traceback
 		if (traceback > 0)  {
-			printTraceback(v1,v2,SWAlignment.getSequence1(),SWAlignment.getSequence2());
+			printTraceback(t1,t2,SWAlignment.getSequence1(),SWAlignment.getSequence2());
 		}
 		return new Tuple2<String, Float>(key.toString(), value);
 	}

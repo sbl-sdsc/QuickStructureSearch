@@ -1,18 +1,12 @@
 package org.rcsb.ProteinLigandInteractionSearch;
 
-import java.io.BufferedReader;
 import java.io.IOException;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Set;
-import java.util.SortedSet;
-import java.util.TreeSet;
 
 import javax.vecmath.Point3d;
 
@@ -31,11 +25,10 @@ import org.biojava.nbio.structure.ResidueNumber;
 import org.biojava.nbio.structure.Structure;
 import org.biojava.nbio.structure.StructureIO;
 import org.biojava.nbio.structure.align.util.AtomCache;
-import org.biojava.nbio.structure.align.util.HTTPConnectionTools;
 import org.biojava.nbio.structure.io.FileParsingParameters;
 import org.biojava.nbio.structure.io.mmcif.AllChemCompProvider;
 import org.biojava.nbio.structure.io.mmcif.ChemCompGroupFactory;
-import org.biojava.nbio.structure.io.mmcif.DownloadChemCompProvider;
+import org.biojava.nbio.structure.rcsb.GetRepresentatives;
 /**
  * This class creates a hadoop sequence file of protein-ligand interactions,
  * the file contains chain id, sequence number, insertion code, residue name, atom name and element name
@@ -58,7 +51,7 @@ public class WriteSeqFile {
 				+ timeStamp 
 				+ ".seq";
 
-		Set<String> pdbIds = getAll();
+		Set<String> pdbIds = GetRepresentatives.getAll();
 //		StructureIO.setAtomCache(cache);
 //		cache.setPath("/Users/hina/DistanceData/");
 		long start = System.nanoTime();
@@ -136,7 +129,7 @@ public class WriteSeqFile {
 											else{
 												inscode2=r.getInsCode();
 											}
-											String label=r.getChainId() + "," + r2.getChainId() + "," + r.getSeqNum() + "," +  // store the eight selected features as a string for each protein-ligand pair
+											String label=r.getChainName() + "," + r2.getChainName() + "," + r.getSeqNum() + "," +  // store the eight selected features as a string for each protein-ligand pair
 											r2.getSeqNum() + "," + inscode+ "," + inscode2+ ","+g1.getChemComp().getId()+ "," +
 											g2.getChemComp().getId()+ "," + atom1.getName()+ "," + atom2.getName()+ ","
 											+ atom1.getElement()+ "," + atom2.getElement()+ ","+ idist;
@@ -169,37 +162,37 @@ public class WriteSeqFile {
 		System.out.println("Time: " + (System.nanoTime() - start)/1E9 + " sec.");
 	}
 
-	/**
-	 * Returns the current list of all PDB IDs.
-	 * @return representatives set of all PDB IDs.
-	 */
-	public static SortedSet<String> getAll() {
-		SortedSet<String> representatives = new TreeSet<String>();
-		try {
-
-			URL u = new URL(allUrl);
-
-			InputStream stream = HTTPConnectionTools.getInputStream(u, 60000);
-
-			if (stream != null) {
-				BufferedReader reader = new BufferedReader(
-						new InputStreamReader(stream));
-
-				String line = null;
-
-				while ((line = reader.readLine()) != null) {
-					int index = line.lastIndexOf("structureId=");
-					if (index > 0) {
-						representatives.add(line.substring(index + 13, index + 17));
-					}
-				}
-			}
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		return representatives;
-	}
+//	/**
+//	 * Returns the current list of all PDB IDs.
+//	 * @return representatives set of all PDB IDs.
+//	 */
+//	public static SortedSet<String> getAll() {
+//		SortedSet<String> representatives = new TreeSet<String>();
+//		try {
+//
+//			URL u = new URL(allUrl);
+//
+//			InputStream stream = HTTPConnectionTools.getInputStream(u, 60000);
+//
+//			if (stream != null) {
+//				BufferedReader reader = new BufferedReader(
+//						new InputStreamReader(stream));
+//
+//				String line = null;
+//
+//				while ((line = reader.readLine()) != null) {
+//					int index = line.lastIndexOf("structureId=");
+//					if (index > 0) {
+//						representatives.add(line.substring(index + 13, index + 17));
+//					}
+//				}
+//			}
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//
+//		return representatives;
+//	}
 /**
  * 
  * @return

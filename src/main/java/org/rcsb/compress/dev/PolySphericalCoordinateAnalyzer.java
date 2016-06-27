@@ -1,10 +1,5 @@
 package org.rcsb.compress.dev;
 
-import java.io.BufferedReader;
-import java.io.File;
-import java.io.InputStream;
-import java.io.InputStreamReader;
-import java.net.URL;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Calendar;
@@ -12,52 +7,18 @@ import java.util.Collection;
 import java.util.LinkedHashMap;
 import java.util.List;
 import java.util.Map;
-import java.util.SortedSet;
-import java.util.TreeSet;
-
-import javax.vecmath.Point3d;
 
 import org.apache.commons.math3.stat.descriptive.DescriptiveStatistics;
-import org.apache.hadoop.conf.Configuration;
-import org.apache.hadoop.fs.Path;
-import org.apache.hadoop.io.IOUtils;
-import org.apache.hadoop.io.SequenceFile;
-import org.apache.hadoop.io.Text;
-import org.apache.hadoop.io.compress.BZip2Codec;
-import org.biojava.nbio.structure.AminoAcidImpl;
 import org.biojava.nbio.structure.Atom;
 import org.biojava.nbio.structure.Bond;
-import org.biojava.nbio.structure.Chain;
-import org.biojava.nbio.structure.Group;
-import org.biojava.nbio.structure.GroupType;
-import org.biojava.nbio.structure.NucleotideImpl;
 import org.biojava.nbio.structure.Structure;
 import org.biojava.nbio.structure.StructureIO;
 import org.biojava.nbio.structure.StructureTools;
 import org.biojava.nbio.structure.align.util.AtomCache;
-import org.biojava.nbio.structure.align.util.HTTPConnectionTools;
 import org.biojava.nbio.structure.io.FileParsingParameters;
-import org.biojava.nbio.structure.io.mmcif.AllChemCompProvider;
 import org.biojava.nbio.structure.io.mmcif.ChemCompGroupFactory;
 import org.biojava.nbio.structure.io.mmcif.DownloadChemCompProvider;
-import org.biojava.nbio.structure.io.mmcif.chem.PolymerType;
-import org.rcsb.compress.AncientEgyptianDecomposition;
-import org.rcsb.compress.CombinedTransform;
-import org.rcsb.compress.DeltaTransform;
-import org.rcsb.compress.FastWaveletTransform;
-import org.rcsb.compress.IntegerDeltaZigzagVariableByte;
-import org.rcsb.compress.IntegerToByteTransform;
-import org.rcsb.compress.IntegerToByteTransformer;
-import org.rcsb.compress.IntegerTransform;
-import org.rcsb.compress.UnsignedDeltaTransform;
-import org.rcsb.compress.dev.ByteQuadrupleToByteTransform;
-import org.rcsb.compress.dev.ByteQuadrupleTransform;
-import org.rcsb.compress.dev.DeltaHalfTransform;
-import org.rcsb.compress.dev.DeltaToShortTransform;
-import org.rcsb.compress.dev.PythagoreanQuadrupleTransform;
-import org.rcsb.compress.dev.SphericalCoordinateTransform;
-import org.rcsb.hadoop.io.SimplePolymerChain;
-import org.rcsb.hadoop.io.SimplePolymerType;
+import org.biojava.nbio.structure.rcsb.GetRepresentatives;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 
@@ -83,7 +44,7 @@ public class PolySphericalCoordinateAnalyzer {
 //				+ ".seq";
 		
 		
-		List<String> subset = new ArrayList<>(getAll());
+		List<String> subset = new ArrayList<>(GetRepresentatives.getAll());
 //		List<String> pdbIds = subset;
 		List<String> pdbIds = subset.subList(90000, 90001);
 
@@ -182,39 +143,39 @@ public class PolySphericalCoordinateAnalyzer {
 	    return (n << 1) ^ (n >> 31);
 	}
 
-	/**
-	 * Returns the current list of all PDB IDs.
-	 * @return PdbChainKey set of all PDB IDs.
-	 */
-	public static SortedSet<String> getAll() {
-		SortedSet<String> representatives = new TreeSet<String>();
-
-		try {
-
-			URL u = new URL(allUrl);
-
-			InputStream stream = HTTPConnectionTools.getInputStream(u, 60000);
-
-			if (stream != null) {
-				BufferedReader reader = new BufferedReader(
-						new InputStreamReader(stream));
-
-				String line = null;
-
-				while ((line = reader.readLine()) != null) {
-					int index = line.lastIndexOf("structureId=");
-					if (index > 0) {
-						representatives.add(line.substring(index + 13, index + 17));
-					}
-				}
-			}
-
-		} catch (Exception e) {
-			e.printStackTrace();
-		}
-
-		return representatives;
-	}
+//	/**
+//	 * Returns the current list of all PDB IDs.
+//	 * @return PdbChainKey set of all PDB IDs.
+//	 */
+//	public static SortedSet<String> getAll() {
+//		SortedSet<String> representatives = new TreeSet<String>();
+//
+//		try {
+//
+//			URL u = new URL(allUrl);
+//
+//			InputStream stream = HTTPConnectionTools.getInputStream(u, 60000);
+//
+//			if (stream != null) {
+//				BufferedReader reader = new BufferedReader(
+//						new InputStreamReader(stream));
+//
+//				String line = null;
+//
+//				while ((line = reader.readLine()) != null) {
+//					int index = line.lastIndexOf("structureId=");
+//					if (index > 0) {
+//						representatives.add(line.substring(index + 13, index + 17));
+//					}
+//				}
+//			}
+//
+//		} catch (Exception e) {
+//			e.printStackTrace();
+//		}
+//
+//		return representatives;
+//	}
 
 	private static AtomCache initializeCache() {
 		AtomCache cache = new AtomCache();
