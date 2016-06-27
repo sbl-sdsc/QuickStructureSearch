@@ -4,13 +4,9 @@
 		<Console name="Console" target="SYSTEM_ERR">
 			<PatternLayout pattern="%d{HH:mm:ss} [%t] %-5level %logger{36} - %msg%n"/>
 		</Console>
-		 <RollingFile name="FixNameFileAppender" fileName="/Users/peter/Data/PDB_CHAINS/spark.log" append="true" filePattern="/Users/peter/Data/PDB_CHAINS/spark.log.%d{yyyy-MM-dd}.%i">
+		 <File name="FixNameFileAppender" fileName="${sys:user.home}/spark.log" append="true">
             <PatternLayout pattern="%d{yyyy-MM-dd HH:mm:ss.SSS} [%t] %-5level %logger{36} - %msg%n"/>
-            <Policies>
-                <OnStartupTriggeringPolicy />
-            </Policies>
-            <DefaultRolloverStrategy max="5"/> <!-- keeps up to 5 files -->
-        </RollingFile>
+        </File>
 	</appenders>
 	<loggers>
 		<root level="info">
