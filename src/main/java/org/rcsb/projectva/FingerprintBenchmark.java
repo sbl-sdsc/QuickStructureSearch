@@ -60,7 +60,7 @@ public class FingerprintBenchmark implements Serializable {
 //		SequenceFingerprint fingerprint = new DCT1DSequenceFingerprint();
 		
 		// setup similarity algorithm
-		AlignmentAlgorithmInterface algorithm = new MeetMinIndexMapper();
+		AlignmentAlgorithmInterface algorithm = new NormalizedCompressionDistanceMapper();
 //		AlignmentAlgorithmInterface algorithm = new LevenshteinMapperP3();
 //	    AlignmentAlgorithmInterface algorithm = new SmithWatermanGotohP3();
 
