@@ -21,10 +21,11 @@ public class MeetMinIndex {
 	 * @param featureCounts2 feature map
 	 * @return the Jaccard index
 	 */
-	public static <T> double jaccardIndex(Map<T, Integer> featureCounts1, Map<T, Integer> featureCounts2) {
+	public static <T> double meetMinIndex(Map<T, Integer> featureCounts1, Map<T, Integer> featureCounts2) {
 		int union = 0;
 		int intersection = 0;
-		//??
+		int sum1 = 0;
+		int sum2 = 0;
 		for (Entry<T, Integer> entry: featureCounts1.entrySet()) {
 			if (featureCounts2.containsKey(entry.getKey())) {
 				int v1 = entry.getValue();
@@ -42,10 +43,18 @@ public class MeetMinIndex {
 				union += entry.getValue();
 			}
 		}
+		for (Entry<T, Integer> entry: featureCounts1.entrySet()) {
+			sum1+=entry.getValue();
+		}
+		for (Entry<T, Integer> entry: featureCounts2.entrySet()) {
+			sum2+=entry.getValue();
+		}
+		
+		int denom = Math.min(sum1,sum2);
 		
 		double value = 0;
-		if (union > 0) {
-		    value = intersection/(float)union;
+		if (denom > 0) {
+		    value = intersection/(float)denom;
 		}
 		return value;
 	}

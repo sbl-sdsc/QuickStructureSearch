@@ -49,7 +49,7 @@ public class MeetMinIndexMapperP3 implements AlignmentAlgorithmInterface {
 		SequenceFeatureInterface<Integer> v2 = (SequenceFeatureInterface<Integer>) this.sequences.getValue().get(tuple._2);
 
 		String key = tuple._1 + "," + tuple._2;
-		float value = jaccardIndex(v1, v2);
+		float value = meetMinIndex(v1, v2);
 	
         return new Tuple2<String, Float>(key, value);
     }
@@ -66,11 +66,11 @@ public class MeetMinIndexMapperP3 implements AlignmentAlgorithmInterface {
 	public void setCoords(Broadcast<List<Tuple2<String, Point3d[]>>> coords) {		
 	}
 	
-	private <T> float jaccardIndex(SequenceFeatureInterface<T> s1, SequenceFeatureInterface<T> s2) {
+	private <T> float meetMinIndex(SequenceFeatureInterface<T> s1, SequenceFeatureInterface<T> s2) {
 		Map<T, Integer>features1 = calcFeatureCounts(s1);
 		Map<T, Integer>features2 = calcFeatureCounts(s2);
 		
-		return (float) MeetMinIndex.jaccardIndex(features1, features2);
+		return (float) MeetMinIndex.meetMinIndex(features1, features2);
 	}
 	
 	/**
