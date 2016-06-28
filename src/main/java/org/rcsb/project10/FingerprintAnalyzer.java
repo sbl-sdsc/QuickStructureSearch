@@ -6,17 +6,23 @@ import org.apache.spark.api.java.JavaSparkContext;
 
 import scala.Tuple2;
 
+/**
+ * This class calculates binary classification scores.
+ * @author Peter Rose
+ *
+ */
 public class FingerprintAnalyzer {
+
 
 	public static void main(String[] args) {
 		// setup spark
 				SparkConf conf = new SparkConf()
 						.setMaster("local[*]")
-						.setAppName("Demo1");	
+						.setAppName("FingerprintAnalyzer");	
 				
 				JavaSparkContext sc = new JavaSparkContext(conf);
 				
-				String benchmarkDir = "/Users/peter/Data/PairwiseAlignments/benchmark_20160626_231254.csv";
+				String benchmarkDir = args[0];
 
 				// split input lines of .csv files into chainId1,chainId2, and alignment metrics
 				JavaPairRDD<String, Double> tmScores = sc
@@ -24,18 +30,18 @@ public class FingerprintAnalyzer {
 				        .map(t -> t.split(",")) // split String into String[]
 				        .mapToPair(t -> new Tuple2<String, Double>(t[0]+"_"+t[1], Double.parseDouble(t[2])));
 
-                System.out.println("Benchmark size: " + tmScores.count());
-                tmScores.foreach(t -> System.out.println(t));
+ //               System.out.println("Benchmark size: " + tmScores.count());
+ //               tmScores.foreach(t -> System.out.println(t));
                  
-                 String resultsDir = "/Users/peter/Data/ProteinSimilarityResults/EndToEndDistanceSequenceFingerprint_L8B3.7_JaccardIndex_20160627_161201.csv";
+                 String resultsDir = args[1];
               // split input lines of .csv files into chainId1,chainId2, and alignment metrics
  				 JavaPairRDD<String, Double> fpScores = sc
 						.textFile(resultsDir, sc.defaultParallelism()) // read files as lines
 				        .map(t -> t.split(",")) // split String into String[]
 				        .mapToPair(t -> new Tuple2<String, Double>(t[0]+"_"+t[1], Double.parseDouble(t[2])));
                  
-                 System.out.println("Results size: " + fpScores.count());
-                 fpScores.foreach(t -> System.out.println(t));
+ //                System.out.println("Results size: " + fpScores.count());
+ //                fpScores.foreach(t -> System.out.println(t));
                  
                  JavaPairRDD<String, Tuple2<Double, Double>> jScores = tmScores.join(fpScores);
                  jScores.foreach(t -> System.out.println(t));
