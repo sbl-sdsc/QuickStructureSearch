@@ -6,23 +6,25 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.Test;
-
-public class MeetMinIndexTest {
+/**
+ * 
+ * @author David Mao
+ *
+ */
+public class NormalizedCompressionDistanceTest {
 
 	@Test
 	public void testIdentity() {
-		Map<Integer, Integer> features1 = new HashMap<Integer, Integer>();
-		features1.put(1,1);
-		features1.put(2,1);
-		features1.put(3,1);
-		
-		Map<Integer, Integer> features2 = new HashMap<Integer, Integer>();
-		features2.put(1,1);
-		features2.put(2,1);
-		features2.put(3,1);
-		
-		double index = MeetMinIndex.meetMinIndex(features1, features2);
-		assertEquals(1.0, index, Math.ulp(1.0));
+		int[] features1 = new int[26];
+		for (int i = 0; i < 26; i++){
+			features1[i] = i;
+		}
+		int[] features2 = new int[26];
+		for (int i = 0; i < 26; i++){
+			features2[i] = i;
+		}
+		double index = NormalizedCompressionDistance.distance(features1, features2);
+		System.out.println(index);
 	}
 	
 	@Test
@@ -43,18 +45,17 @@ public class MeetMinIndexTest {
 	
 	@Test
 	public void testNonIdentity() {
-		Map<Integer, Integer> features1 = new HashMap<Integer, Integer>();
-		features1.put(1,1);
-		features1.put(2,1);
-		features1.put(3,1);
-		
-		Map<Integer, Integer> features2 = new HashMap<Integer, Integer>();
-		features2.put(4,1);
-		features2.put(5,1);
-		features2.put(6,1);
-		
-		double index = MeetMinIndex.meetMinIndex(features1, features2);
-		assertEquals(0.0, index, Math.ulp(1.0));
+
+		int[] features1 = new int[26];
+		for (int i = 0; i < 26; i++){
+			features1[i] = i;
+		}
+		int[] features2 = new int[26];
+		for (int i = 0; i < 26; i++){
+			features2[i] = 26-i;
+		}
+		double index = NormalizedCompressionDistance.distance(features1, features2);
+		System.out.println(index);
 	}
 	
 	@Test

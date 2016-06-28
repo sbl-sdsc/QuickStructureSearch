@@ -12,24 +12,20 @@ import org.rcsb.project3.*;
 import scala.Tuple2;
 
 /**
- * This class maps a pair of chains, specified by two indices into the broadcasted sequences list, to
- * a Jaccard Index. It calculates the Jaccard index for multi-sets.
- * 
- * Order of fragments are getting ignored for Jaccard index calculation.
  * 
  * @author  David Mao
  */
-public class MeetMinIndexMapper implements AlignmentAlgorithmInterface {
+public class NormalizedCompressionDistanceMapper implements AlignmentAlgorithmInterface {
 	private static final long serialVersionUID = 1L;
 	private Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences = null;
 
 	public static void main(String[] args) {
 		
 	}
-	public MeetMinIndexMapper() {
+	public NormalizedCompressionDistanceMapper() {
 	}
 
-	public MeetMinIndexMapper(Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences) {
+	public NormalizedCompressionDistanceMapper(Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences) {
 		this.sequences = sequences;
 	}
 
@@ -38,6 +34,7 @@ public class MeetMinIndexMapper implements AlignmentAlgorithmInterface {
 	}
 	
 	/**
+	 * Returns <
 	 * Returns <PdbId.Chain, Jaccard Index> pairs. This is an extension of the 
 	 * Jaccard Index to multi-sets. The multi-sets are represented as vectors,
 	 * where each vector element is a feature count.
@@ -46,9 +43,8 @@ public class MeetMinIndexMapper implements AlignmentAlgorithmInterface {
 	public Tuple2<String, Float> call(Tuple2<String, String> tuple) throws Exception {
 		SequenceFeatureInterface<Integer> v1 = (SequenceFeatureInterface<Integer>) this.sequences.getValue().get(tuple._1);
 		SequenceFeatureInterface<Integer> v2 = (SequenceFeatureInterface<Integer>) this.sequences.getValue().get(tuple._2);
-
 		String key = tuple._1 + "," + tuple._2;
-		float value = meetMinIndex(v1, v2);
+		float value = (float) distance(v1, v2);
 	
         return new Tuple2<String, Float>(key, value);
     }
@@ -65,11 +61,16 @@ public class MeetMinIndexMapper implements AlignmentAlgorithmInterface {
 	public void setCoords(Broadcast<List<Tuple2<String, Point3d[]>>> coords) {		
 	}
 	
-	private <T> float meetMinIndex(SequenceFeatureInterface<T> s1, SequenceFeatureInterface<T> s2) {
-		Map<T, Integer>features1 = calcFeatureCounts(s1);
-		Map<T, Integer>features2 = calcFeatureCounts(s2);
-		
-		return (float) MeetMinIndex.meetMinIndex(features1, features2);
+	private <T> float distance(SequenceFeatureInterface<T> s1, SequenceFeatureInterface<T> s2) {
+		int[] w1 = new int[s1.length()];
+		for (int i = 0; i < s1.length(); i++){
+			w1[i] = (int) s1.get(i);
+		}
+		int[] w2 = new int[s2.length()];
+		for (int i = 0; i < s2.length(); i++){
+			w2[i] = (int) s2.get(i);
+		}
+		return (float) NormalizedCompressionDistance.distance(w1,w2);
 	}
 	
 	/**
