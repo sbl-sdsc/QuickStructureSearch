@@ -56,7 +56,7 @@ public class MeetMinIndexMapper implements AlignmentAlgorithmInterface {
 	public void setSequence(Broadcast<Map<String, SequenceFeatureInterface<?>>> sequences) {
 		this.sequences = sequences;
 	}
-
+//
 	/**
 	 * Not used in this algorithm
 	 */

@@ -39,7 +39,7 @@ public class MeetMinIndex {
 				union += entry.getValue();
 			}
 		}
-		
+		//
 		for (Entry<T, Integer> entry: featureCounts1.entrySet()) {
 			sum1 += entry.getValue();
 		}

@@ -81,7 +81,7 @@ public class FingerprintBenchmark implements Serializable {
 	    
 	    System.out.println("Time          : " + time + " seconds"); 
 	}
-
+//
 	/**
 	 * Runs protein chain similarity calculations for a benchmark set.
 	 * @param chainsDir directory with Hadoop sequence files containing protein chains
