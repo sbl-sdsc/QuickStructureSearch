@@ -46,6 +46,10 @@ public class NCDIndexMapper implements AlignmentAlgorithmInterface {
 	public Tuple2<String, Float> call(Tuple2<String, String> tuple) throws Exception {
 		SequenceFeatureInterface<Integer> v1 = (SequenceFeatureInterface<Integer>) this.sequences.getValue().get(tuple._1);
 		SequenceFeatureInterface<Integer> v2 = (SequenceFeatureInterface<Integer>) this.sequences.getValue().get(tuple._2);
+		
+		if(v1 == null || v2 == null) {
+			return null;
+		}
 
 		String key = tuple._1 + "," + tuple._2;
 		float value = nCd(v1, v2);
