@@ -22,7 +22,6 @@ import org.rcsb.project10.WritableSegment;
 import org.rcsb.project3.AlignmentAlgorithmInterface;
 import org.rcsb.project3.ChainToSequenceFeatureVectorMapper;
 import org.rcsb.project3.EndToEndDistanceSequenceFingerprint;
-import org.rcsb.project3.JaccardIndexMapperP3;
 import org.rcsb.project3.SequenceFeatureInterface;
 import org.rcsb.project3.SequenceFingerprint;
 
@@ -61,6 +60,7 @@ public class FingerprintBenchmarkMW implements Serializable {
 		
 		// setup similarity algorithm
 		AlignmentAlgorithmInterface algorithm = new MeetMinIndexMapperP3();
+//		AlignmentAlgorithmInterface algorithm = new NCDIndexMapper();
 //		AlignmentAlgorithmInterface algorithm = new LevenshteinMapperP3();
 //	    AlignmentAlgorithmInterface algorithm = new SmithWatermanGotohP3();
 

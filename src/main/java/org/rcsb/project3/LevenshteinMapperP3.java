@@ -36,6 +36,10 @@ public class LevenshteinMapperP3 implements AlignmentAlgorithmInterface {
 		SequenceFeatureInterface<?> t1 = this.sequences.getValue().get(tuple._1);
 		SequenceFeatureInterface<?> t2 = this.sequences.getValue().get(tuple._2);
 		
+		if (t1 == null || t2 == null) {
+			return null;
+		}
+		
 		String key = tuple._1+  "," + tuple._2;
 		Float value = (float) LevenshteinDistanceP3.normalizedDistance(t1,  t2);
 		
