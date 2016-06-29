@@ -32,7 +32,7 @@ import scala.Tuple2;
  * similarity scores using fingerprinting methods.
  * The scores are saved as .csv files.
  * 
- * @author Peter Rose
+ * @author David Mao
  */
 public class FingerprintBenchmark implements Serializable {
 	private static final long serialVersionUID = -8293414734009053770L;	
@@ -59,7 +59,7 @@ public class FingerprintBenchmark implements Serializable {
 //		SequenceFingerprint fingerprint = new DCT1DSequenceFingerprint();
 		
 		// setup similarity algorithm
-		AlignmentAlgorithmInterface algorithm = new MeetMinIndexMapper();
+		AlignmentAlgorithmInterface algorithm = new NormalizedCompressionDistanceMapper();
 //		AlignmentAlgorithmInterface algorithm = new LevenshteinMapperP3();
 //	    AlignmentAlgorithmInterface algorithm = new SmithWatermanGotohP3();
 
