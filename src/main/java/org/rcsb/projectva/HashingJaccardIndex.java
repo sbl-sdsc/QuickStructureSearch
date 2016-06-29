@@ -4,8 +4,8 @@ import java.util.Map;
 import java.util.Map.Entry;
 
 /**
- * Class that calculates the Jaccard index between two feature maps.
- * @author Peter Rose
+ * Class that calculates the Jaccard index between two vectors derived from hashed Features.
+ * @author Varkey Alumootil
  *
  */
 public class HashingJaccardIndex {
@@ -23,8 +23,13 @@ public class HashingJaccardIndex {
 	 */
 	
 
-
 	
+	/**
+	 * Calculates generalized Jaccard distance(index) between two integer sequences.
+	 * @param seq1
+	 * @param seq2
+	 * @return
+	 */
 	public static<T> double distance(int seq1[], int seq2[]) 
 	{
 		//seq1 and seq2 are necessarily the same size

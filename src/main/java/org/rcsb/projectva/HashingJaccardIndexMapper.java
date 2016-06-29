@@ -17,7 +17,7 @@ import scala.Tuple2;
  * 
  * Order of fragments are getting ignored for HashingJaccard index calculation.
  * 
- * @author  Peter Rose, Chris Li
+ * @author  Peter Rose, Chris Li, Varkey Alumootil
  */
 public class HashingJaccardIndexMapper implements AlignmentAlgorithmInterface {
 	private static final long serialVersionUID = 1L;
@@ -69,7 +69,13 @@ public class HashingJaccardIndexMapper implements AlignmentAlgorithmInterface {
 	public void setCoords(Broadcast<List<Tuple2<String, Point3d[]>>> coords) {		
 	}
 	
-
+	/**
+	 * Hashes two SequenceFeatureInterfaces to int arrays. 
+	 * Uses generalized Jaccard distance to compute distance.
+	 * @param s1
+	 * @param s2
+	 * @return
+	 */
 	private <T> float hashingJaccardIndex(SequenceFeatureInterface<T> s1, SequenceFeatureInterface<T> s2) {
 //		Map<T, Integer>features1 = calcFeatureCounts(s1);
 //		Map<T, Integer>features2 = calcFeatureCounts(s2);
