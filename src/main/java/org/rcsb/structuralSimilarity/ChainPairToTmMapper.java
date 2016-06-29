@@ -11,9 +11,10 @@ import scala.Tuple2;
 
 /**
  * This class maps a pair of chains, specified by two indices into the broadcasted data
- * to a vector of alignment scores
+ * to a vector of alignment scores.
  * 
  * @author  Peter Rose
+ * 
  */
 public class ChainPairToTmMapper implements PairFunction<Tuple2<Integer,Integer>,String,Float[]> {
 	private static final long serialVersionUID = 1L;
@@ -25,7 +26,7 @@ public class ChainPairToTmMapper implements PairFunction<Tuple2<Integer,Integer>
 	}
 
 	/**
-	 * Returns a chainId pair with the TM scores
+	 * Returns a chainId pair with the TM scores.
 	 */
 	public Tuple2<String, Float[]> call(Tuple2<Integer, Integer> tuple) throws Exception {
 		Tuple2<String,Point3d[]> t1 = this.data.getValue().get(tuple._1);
