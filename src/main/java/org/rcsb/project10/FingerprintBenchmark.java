@@ -131,7 +131,8 @@ public class FingerprintBenchmark implements Serializable {
 		
 		// map results to .csv format and save to text file
 		scores
-		        .map(t -> new String(t._1 + "," + t._2))
+		        .filter(t -> t!= null)
+		         .map(t -> new String(t._1 + "," + t._2))
 		        .saveAsTextFile(resultsDir);
 
 	    // terminate Spark
