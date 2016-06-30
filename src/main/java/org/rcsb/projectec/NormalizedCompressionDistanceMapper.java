@@ -35,7 +35,7 @@ public class NormalizedCompressionDistanceMapper implements AlignmentAlgorithmIn
 	}
 
 	public String getName() {
-		return "MeetMinIndex";
+		return "NormalizedCompressionDistance";
 	}
 	
 	/**
@@ -48,6 +48,10 @@ public class NormalizedCompressionDistanceMapper implements AlignmentAlgorithmIn
 		SequenceFeatureInterface<Integer> v1 = (SequenceFeatureInterface<Integer>) this.sequences.getValue().get(tuple._1);
 		SequenceFeatureInterface<Integer> v2 = (SequenceFeatureInterface<Integer>) this.sequences.getValue().get(tuple._2);
 
+		if (v1 == null || v2 == null) {
+			return null;
+		}
+		
 		String key = tuple._1 + "," + tuple._2;
 		float value = meetMinIndex(v1, v2);
 	

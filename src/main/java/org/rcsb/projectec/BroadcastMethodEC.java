@@ -1,4 +1,4 @@
-package org.rcsb.project10;
+package org.rcsb.projectec;
 
 import java.io.File;
 import java.text.SimpleDateFormat;
@@ -10,6 +10,8 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
 import org.rcsb.mmtf.spark.utils.SparkUtils;
+import org.rcsb.project10.StructuralAlignmentMapper;
+import org.rcsb.project10.WritableSegment;
 
 import scala.Tuple2;
 /**
@@ -19,7 +21,7 @@ import scala.Tuple2;
  * @author Peter Rose
  *
  */
-public class BroadcastMethod {
+public class BroadcastMethodEC {
 
 	public static void main(String[] args) {
 		String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
@@ -56,7 +58,7 @@ public class BroadcastMethod {
 	    		.sample(false, fraction, randomSeed) // take a sample
 	    		.collect();
 	    
-	    int numPairs = (segments.size()*(segments.size()-1))/2;
+	    int combinations = (segments.size()*(segments.size()-1))/2;
 	    
 	    // broadcast segment data to all nodes
 	    final Broadcast<List<Tuple2<String,WritableSegment>>> data = sc.broadcast(segments); 
@@ -74,6 +76,6 @@ public class BroadcastMethod {
 	    sc.stop();
 	    sc.close();
 	    
-		return numPairs;
+		return combinations;
 	}
 }

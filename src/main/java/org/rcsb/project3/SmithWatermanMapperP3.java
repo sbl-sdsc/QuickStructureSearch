@@ -17,7 +17,7 @@ import scala.Tuple2;
  * 
  * @author Chris Li
  */
-public class SmithWatermanP3 implements AlignmentAlgorithmInterface {
+public class SmithWatermanMapperP3 implements AlignmentAlgorithmInterface {
 
 	private static final long serialVersionUID = 1L;
 	private Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences = null;
@@ -35,10 +35,10 @@ public class SmithWatermanP3 implements AlignmentAlgorithmInterface {
     // print traceback if it is greater than 0
     private int traceback = 0;
 
-    public SmithWatermanP3() {
+    public SmithWatermanMapperP3() {
 	}
     
-    public SmithWatermanP3(Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences) {
+    public SmithWatermanMapperP3(Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences) {
 		this.sequences = sequences;
 	}
     
@@ -47,7 +47,7 @@ public class SmithWatermanP3 implements AlignmentAlgorithmInterface {
      * @param data
      * @param traceback
      */
-	public SmithWatermanP3(Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences, int traceback) {
+	public SmithWatermanMapperP3(Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences, int traceback) {
 		this.sequences = sequences;
 		this.traceback = traceback;
 	}
@@ -60,6 +60,10 @@ public class SmithWatermanP3 implements AlignmentAlgorithmInterface {
 	public Tuple2<String, Float> call(Tuple2<String, String> tuple) {
 		SequenceFeatureInterface<?> t1 = this.sequences.getValue().get(tuple._1);
 		SequenceFeatureInterface<?> t2 = this.sequences.getValue().get(tuple._2);
+		
+		if (t1 == null || t2 == null) {
+			return null;
+		}
 		
 		String key = tuple._1 +"," + tuple._2;
 		
