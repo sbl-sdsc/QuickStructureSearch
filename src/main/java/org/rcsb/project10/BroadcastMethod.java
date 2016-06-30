@@ -56,7 +56,7 @@ public class BroadcastMethod {
 	    		.sample(false, fraction, randomSeed) // take a sample
 	    		.collect();
 	    
-	    int combinations = (segments.size()*segments.size()-1)/2;
+	    int numPairs = (segments.size()*(segments.size()-1))/2;
 	    
 	    // broadcast segment data to all nodes
 	    final Broadcast<List<Tuple2<String,WritableSegment>>> data = sc.broadcast(segments); 
@@ -74,6 +74,6 @@ public class BroadcastMethod {
 	    sc.stop();
 	    sc.close();
 	    
-		return combinations;
+		return numPairs;
 	}
 }
