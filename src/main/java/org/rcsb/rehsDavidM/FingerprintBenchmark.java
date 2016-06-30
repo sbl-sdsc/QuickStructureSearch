@@ -19,12 +19,7 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
 import org.rcsb.project10.*;
-import org.rcsb.project3.AlignmentAlgorithmInterface;
-import org.rcsb.project3.ChainToSequenceFeatureVectorMapper;
-import org.rcsb.project3.EndToEndDistanceSequenceFingerprint;
-import org.rcsb.project3.JaccardIndexMapperP3;
-import org.rcsb.project3.SequenceFeatureInterface;
-import org.rcsb.project3.SequenceFingerprint;
+import org.rcsb.project3.*;
 
 import scala.Tuple2;
 
@@ -60,7 +55,7 @@ public class FingerprintBenchmark implements Serializable {
 //		SequenceFingerprint fingerprint = new DCT1DSequenceFingerprint();
 		
 		// setup similarity algorithm
-		AlignmentAlgorithmInterface algorithm = new JaccardIndexMapperP3();
+		AlignmentAlgorithmInterface algorithm = new SmithWatermanGotohMapperP3();
 //		AlignmentAlgorithmInterface algorithm = new LevenshteinMapperP3();
 //	    AlignmentAlgorithmInterface algorithm = new SmithWatermanGotohP3();
 
@@ -103,7 +98,8 @@ public class FingerprintBenchmark implements Serializable {
 		// split input lines of .csv files into chainId1,chainId2, and alignment metrics
 		JavaRDD<String[]> benchmarkData = sc
 				.textFile(benchmarkDir, sc.defaultParallelism() * NUM_TASKS_PER_THREAD) // read files
-				.map(s -> s.split(",")) // split each line into a list items
+				.map(s -> s.split(","))// split each line into a list items
+				.filter(s -> Double.parseDouble(s[5]) >= 50)
 				.cache();	
 
 		// create a list of unique chain ids
