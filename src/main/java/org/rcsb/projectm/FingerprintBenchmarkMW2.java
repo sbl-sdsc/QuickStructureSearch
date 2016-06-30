@@ -1,4 +1,4 @@
-package org.rcsb.projectva;
+package org.rcsb.projectm;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -22,7 +22,7 @@ import org.rcsb.project10.WritableSegment;
 import org.rcsb.project3.AlignmentAlgorithmInterface;
 import org.rcsb.project3.ChainToSequenceFeatureVectorMapper;
 import org.rcsb.project3.EndToEndDistanceSequenceFingerprint;
-//import org.rcsb.project3.MeetMinIndexMapper;
+import org.rcsb.project3.LevenshteinMapperP3;
 import org.rcsb.project3.SequenceFeatureInterface;
 import org.rcsb.project3.SequenceFingerprint;
 
@@ -35,7 +35,7 @@ import scala.Tuple2;
  * 
  * @author Peter Rose
  */
-public class FingerprintBenchmark implements Serializable {
+public class FingerprintBenchmarkMW2 implements Serializable {
 	private static final long serialVersionUID = -8293414734009053770L;	
 	private static int NUM_TASKS_PER_THREAD = 3; // Spark recommends 2-3 tasks per thread
 
@@ -56,15 +56,16 @@ public class FingerprintBenchmark implements Serializable {
 		
 		
 		// setup fingerprint algorithm
-		SequenceFingerprint fingerprint = new EndToEndDistanceSequenceFingerprint();
-//		SequenceFingerprint fingerprint = new DCT1DSequenceFingerprint();
+//		SequenceFingerprint fingerprint = new EndToEndDistanceSequenceFingerprint();
+		SequenceFingerprint fingerprint = new DCT1DSequenceFingerprint();
 		
 		// setup similarity algorithm
-		AlignmentAlgorithmInterface algorithm = new MeetMinIndexMapper();
-//		AlignmentAlgorithmInterface algorithm = new LevenshteinMapperP3();
+//    	AlignmentAlgorithmInterface algorithm = new MeetMinIndexMapperP3();
+//		AlignmentAlgorithmInterface algorithm = new NCDIndexMapper();
+		AlignmentAlgorithmInterface algorithm = new LevenshteinMapperP3();
 //	    AlignmentAlgorithmInterface algorithm = new SmithWatermanGotohP3();
 
-		FingerprintBenchmark benchmark = new FingerprintBenchmark();
+		FingerprintBenchmarkMW2 benchmark = new FingerprintBenchmarkMW2();
 		
 		// create unique results directory name
 		String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
@@ -81,7 +82,7 @@ public class FingerprintBenchmark implements Serializable {
 	    
 	    System.out.println("Time          : " + time + " seconds"); 
 	}
-//
+
 	/**
 	 * Runs protein chain similarity calculations for a benchmark set.
 	 * @param chainsDir directory with Hadoop sequence files containing protein chains
@@ -132,6 +133,7 @@ public class FingerprintBenchmark implements Serializable {
 		
 		// map results to .csv format and save to text file
 		scores
+				.filter(t -> t!= null)
 		        .map(t -> new String(t._1 + "," + t._2))
 		        .saveAsTextFile(resultsDir);
 

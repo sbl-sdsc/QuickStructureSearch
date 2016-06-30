@@ -19,22 +19,22 @@ import scala.Tuple2;
  * 
  * @author  Peter Rose, Chris Li
  */
-public class MeetMinIndexMapperP3 implements AlignmentAlgorithmInterface {
+public class NCDIndexMapper implements AlignmentAlgorithmInterface {
 	private static final long serialVersionUID = 1L;
 	private Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences = null;
 
 	public static void main(String[] args) {
 		
 	}
-	public MeetMinIndexMapperP3() {
+	public NCDIndexMapper() {
 	}
 
-	public MeetMinIndexMapperP3(Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences) {
+	public NCDIndexMapper(Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences) {
 		this.sequences = sequences;
 	}
 
 	public String getName() {
-		return "MeetMinIndex";
+		return "NormalizedCompressionDistance";
 	}
 	
 	/**
@@ -52,7 +52,7 @@ public class MeetMinIndexMapperP3 implements AlignmentAlgorithmInterface {
 		}
 
 		String key = tuple._1 + "," + tuple._2;
-		float value = meetMinIndex(v1, v2);
+		float value = nCd(v1, v2);
 	
         return new Tuple2<String, Float>(key, value);
     }
@@ -69,11 +69,19 @@ public class MeetMinIndexMapperP3 implements AlignmentAlgorithmInterface {
 	public void setCoords(Broadcast<List<Tuple2<String, Point3d[]>>> coords) {		
 	}
 	
-	private <T> float meetMinIndex(SequenceFeatureInterface<T> s1, SequenceFeatureInterface<T> s2) {
-		Map<T, Integer>features1 = calcFeatureCounts(s1);
-		Map<T, Integer>features2 = calcFeatureCounts(s2);
+	private <T> float nCd(SequenceFeatureInterface<T> s1, SequenceFeatureInterface<T> s2) {
+		int[] x1 = new int[s1.length()];
+		int[] x2 = new int[s2.length()];
+		for(int i=0;i<s1.length();i++){
+			x1[i] = (int) s1.get(i);
+		}
 		
-		return (float) MeetMinIndex.meetMinIndex(features1, features2);
+		for(int i=0;i<s2.length();i++){
+			x2[i] = (int) s2.get(i);
+		}
+		
+		
+		return (float) NormalizedCompressionDistance.distance(x1, x2);
 	}
 	
 	/**

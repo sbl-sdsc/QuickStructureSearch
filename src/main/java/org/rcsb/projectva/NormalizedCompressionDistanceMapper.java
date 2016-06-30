@@ -1,4 +1,5 @@
-package org.rcsb.projectm;
+package org.rcsb.projectva;
+import org.rcsb.project3.*;
 
 import java.util.HashMap;
 import java.util.List;
@@ -7,7 +8,6 @@ import java.util.Map;
 import javax.vecmath.Point3d;
 
 import org.apache.spark.broadcast.Broadcast;
-import org.rcsb.project3.*;
 
 import scala.Tuple2;
 
@@ -19,22 +19,22 @@ import scala.Tuple2;
  * 
  * @author  Peter Rose, Chris Li
  */
-public class MeetMinIndexMapperP3 implements AlignmentAlgorithmInterface {
+public class NormalizedCompressionDistanceMapper implements AlignmentAlgorithmInterface {
 	private static final long serialVersionUID = 1L;
 	private Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences = null;
 
 	public static void main(String[] args) {
 		
 	}
-	public MeetMinIndexMapperP3() {
+	public NormalizedCompressionDistanceMapper() {
 	}
 
-	public MeetMinIndexMapperP3(Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences) {
+	public NormalizedCompressionDistanceMapper(Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences) {
 		this.sequences = sequences;
 	}
 
 	public String getName() {
-		return "MeetMinIndex";
+		return "Normalized Compression Distance";
 	}
 	
 	/**
@@ -46,13 +46,19 @@ public class MeetMinIndexMapperP3 implements AlignmentAlgorithmInterface {
 	public Tuple2<String, Float> call(Tuple2<String, String> tuple) throws Exception {
 		SequenceFeatureInterface<Integer> v1 = (SequenceFeatureInterface<Integer>) this.sequences.getValue().get(tuple._1);
 		SequenceFeatureInterface<Integer> v2 = (SequenceFeatureInterface<Integer>) this.sequences.getValue().get(tuple._2);
-		
-		if(v1 == null || v2 == null) {
-			return null;
-		}
 
 		String key = tuple._1 + "," + tuple._2;
-		float value = meetMinIndex(v1, v2);
+		
+//		int[] s = new int[v1.length()];
+//		for (int i = 0; i < v1.length(); i++) {
+//			s[i] = v1.get(i);
+//		}
+//		
+//		int[] t = new int[v2.length()];
+//		for (int i = 0; i < v2.length(); i++) {
+//			t[i] = v2.get(i);
+//		}
+		float value = distance(v1, v2);
 	
         return new Tuple2<String, Float>(key, value);
     }
@@ -61,7 +67,7 @@ public class MeetMinIndexMapperP3 implements AlignmentAlgorithmInterface {
 	public void setSequence(Broadcast<Map<String, SequenceFeatureInterface<?>>> sequences) {
 		this.sequences = sequences;
 	}
-
+//
 	/**
 	 * Not used in this algorithm
 	 */
@@ -69,11 +75,22 @@ public class MeetMinIndexMapperP3 implements AlignmentAlgorithmInterface {
 	public void setCoords(Broadcast<List<Tuple2<String, Point3d[]>>> coords) {		
 	}
 	
-	private <T> float meetMinIndex(SequenceFeatureInterface<T> s1, SequenceFeatureInterface<T> s2) {
-		Map<T, Integer>features1 = calcFeatureCounts(s1);
-		Map<T, Integer>features2 = calcFeatureCounts(s2);
+	private <T> float distance(SequenceFeatureInterface<T> s1, SequenceFeatureInterface<T> s2) {
+		int[] s = new int[s1.length()];
+		int[] t = new int[s2.length()];
 		
-		return (float) MeetMinIndex.meetMinIndex(features1, features2);
+		for (int i = 0; i < s1.length(); i++) {
+			s[i] =(int) s1.get(i);
+		}
+		
+		for (int i = 0; i < s2.length(); i++) {
+			t[i] = (int) s2.get(i);
+		}
+		
+		
+	
+
+		return (float) NormalizedCompressionDistance.distance(s, t);
 	}
 	
 	/**

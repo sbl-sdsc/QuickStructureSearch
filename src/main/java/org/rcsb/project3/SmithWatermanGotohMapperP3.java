@@ -15,7 +15,7 @@ import scala.Tuple2;
  * 
  * @author Chris Li
  */
-public class SmithWatermanGotohP3 implements AlignmentAlgorithmInterface {
+public class SmithWatermanGotohMapperP3 implements AlignmentAlgorithmInterface {
 
 	private static final long serialVersionUID = 1L;
 	private Broadcast<Map<String,SequenceFeatureInterface<?>> >sequences = null;
@@ -30,10 +30,10 @@ public class SmithWatermanGotohP3 implements AlignmentAlgorithmInterface {
     // extend gap penalty
     private double extend = 0.1;
 
-    public SmithWatermanGotohP3() {
+    public SmithWatermanGotohMapperP3() {
 	}
     
-    public SmithWatermanGotohP3(Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences) {
+    public SmithWatermanGotohMapperP3(Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences) {
 		this.sequences = sequences;
 	}
     
@@ -47,7 +47,7 @@ public class SmithWatermanGotohP3 implements AlignmentAlgorithmInterface {
      * @param open
      * @param extend
      */
-    public SmithWatermanGotohP3(Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences, double open, double extend) {
+    public SmithWatermanGotohMapperP3(Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences, double open, double extend) {
 		this.sequences = sequences;
 		this.open = open;
 		this.extend = extend;
@@ -58,7 +58,7 @@ public class SmithWatermanGotohP3 implements AlignmentAlgorithmInterface {
      * @param sequences
      * @param traceback
      */
-	public SmithWatermanGotohP3(Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences, int traceback) {
+	public SmithWatermanGotohMapperP3(Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences, int traceback) {
 		this.sequences = sequences;
 		this.traceback = traceback;
 	}
@@ -72,6 +72,10 @@ public class SmithWatermanGotohP3 implements AlignmentAlgorithmInterface {
 	public Tuple2<String, Float> call(Tuple2<String, String> tuple) {
 		SequenceFeatureInterface<?> t1 = this.sequences.getValue().get(tuple._1);
 		SequenceFeatureInterface<?> t2 = this.sequences.getValue().get(tuple._2);
+		
+		if (t1 == null || t2 == null) {
+			return null;
+		}
 		
 		String key = tuple._1 +"," + tuple._2;
 		
