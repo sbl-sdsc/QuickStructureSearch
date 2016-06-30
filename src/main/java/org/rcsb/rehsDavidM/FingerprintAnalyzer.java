@@ -1,8 +1,9 @@
-package org.rcsb.project10;
+package org.rcsb.rehsDavidM;
 
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.rcsb.project10.*;
 
 import scala.Tuple2;
 

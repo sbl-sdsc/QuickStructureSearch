@@ -18,10 +18,11 @@ import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
-import org.rcsb.project10.WritableSegment;
+import org.rcsb.project10.*;
 import org.rcsb.project3.AlignmentAlgorithmInterface;
 import org.rcsb.project3.ChainToSequenceFeatureVectorMapper;
 import org.rcsb.project3.EndToEndDistanceSequenceFingerprint;
+import org.rcsb.project3.JaccardIndexMapperP3;
 import org.rcsb.project3.SequenceFeatureInterface;
 import org.rcsb.project3.SequenceFingerprint;
 
@@ -32,7 +33,7 @@ import scala.Tuple2;
  * similarity scores using fingerprinting methods.
  * The scores are saved as .csv files.
  * 
- * @author David Mao
+ * @author Peter Rose
  */
 public class FingerprintBenchmark implements Serializable {
 	private static final long serialVersionUID = -8293414734009053770L;	
@@ -59,7 +60,7 @@ public class FingerprintBenchmark implements Serializable {
 //		SequenceFingerprint fingerprint = new DCT1DSequenceFingerprint();
 		
 		// setup similarity algorithm
-		AlignmentAlgorithmInterface algorithm = new NormalizedCompressionDistanceMapper();
+		AlignmentAlgorithmInterface algorithm = new JaccardIndexMapperP3();
 //		AlignmentAlgorithmInterface algorithm = new LevenshteinMapperP3();
 //	    AlignmentAlgorithmInterface algorithm = new SmithWatermanGotohP3();
 
@@ -131,7 +132,8 @@ public class FingerprintBenchmark implements Serializable {
 		
 		// map results to .csv format and save to text file
 		scores
-		        .map(t -> new String(t._1 + "," + t._2))
+		        .filter(t -> t!= null)
+		         .map(t -> new String(t._1 + "," + t._2))
 		        .saveAsTextFile(resultsDir);
 
 	    // terminate Spark
