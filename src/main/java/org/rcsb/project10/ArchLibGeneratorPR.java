@@ -62,12 +62,12 @@ public class ArchLibGeneratorPR {
 
 		JavaSparkContext sc = new JavaSparkContext(conf);
 	
-		// read protein and cut into fragments (sliding window approach)
+		// read protein chains and cut into fragments (sliding window approach)
 	    JavaRDD<Point3d[]> fragments = sc
 	    		.sequenceFile(chainFile, Text.class, WritableSegment.class) // read file with chains
 	    		.map(t -> t._2.getCoordinates()) // get the coordinates of the protein chains
 	    		.repartition(1) // create a single partition to generate a single fragment library (this cannot be done in parallel!)
-	    		.flatMap(new FlatMapToFragmentsEC(8)); // flatmap to fragments
+	    		.flatMap(new FlatMapToFragmentsEC(fragmentSize)); // flatmap to fragments
 
 //	    fragments.foreach(t-> System.out.println(Arrays.toString(t)));
 
