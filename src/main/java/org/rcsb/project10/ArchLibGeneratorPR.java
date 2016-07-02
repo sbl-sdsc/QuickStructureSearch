@@ -1,9 +1,7 @@
 package org.rcsb.project10;
 
-import java.io.File;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
 import java.util.List;
@@ -13,21 +11,14 @@ import javax.vecmath.Point3d;
 import org.apache.hadoop.io.Text;
 import org.apache.spark.Accumulable;
 import org.apache.spark.SparkConf;
-import org.apache.spark.api.java.JavaPairRDD;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
-import org.apache.spark.broadcast.Broadcast;
-import org.rcsb.mmtf.spark.utils.SparkUtils;
-import org.rcsb.project10.StructuralAlignmentMapper;
 
-import org.rcsb.project10.WritableSegment;
-import org.rcsb.structuralAlignment.SuperPositionQCP; // yay
-
-import scala.Tuple2;
 /**
- * This class performs pairwise structural alignments using broadcasting to eliminate
- * shuffles between servers.
+ * This class ... add documentation here
  * 
+ * @author Emilia Copic
+ * @author Varkey Alumootil
  * @author Peter Rose
  *
  */
