@@ -20,7 +20,6 @@ import org.rcsb.hadoop.io.SimplePolymerChain;
 import org.rcsb.project3.ChainToSequenceFeatureVectorMapper;
 import org.rcsb.project3.EndToEndDistanceDoubleSequenceFingerprint;
 import org.rcsb.project3.SequenceFeatureInterface;
-import org.rcsb.project3.SmithWatermanGotohP3;
 import org.rcsb.structuralSimilarity.ChainIdFilter;
 import org.rcsb.structuralSimilarity.ChainIdPairFilter;
 import org.rcsb.structuralSimilarity.ChainIdToIndexMapper;
@@ -194,7 +193,7 @@ public class FingerPrintTesterP8 {
 //					.mapToPair(new SmithWatermanWithGeoComp(featureVectorsBc))
 //					.mapToPair(new JaccardScoreMapperP3(featureVectorsBc))
 //					.mapToPair(new LevenshteinMapperP3(featureVectorsBc))
-//					.mapToPair(new SmithWatermanGotohP3(featureVectorsBc))
+//					.mapToPair(new SmithWatermanGotohMapperP3(featureVectorsBc))
 //					.join(trainingData) // join with TM metrics from the input file
 //					.sortByKey()
 //					.collect();
