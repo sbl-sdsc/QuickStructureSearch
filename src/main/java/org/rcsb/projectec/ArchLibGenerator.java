@@ -80,7 +80,7 @@ public class ArchLibGenerator {
 	    JavaRDD<Point3d[]>fragments = mapToPair.map(t->t._2()).flatMap(new FlatMapToFragments(6));
 //	    fragments.foreach(t-> System.out.println(Arrays.toString(t)));
 
-		
+		//issue with adding, maybe just use list... make for loop and filter out stuff
 		List<Point3d[]> prelib = new ArrayList<>();
 		List<Point3d[]> lib = Collections.synchronizedList(prelib);
 		Accumulable<List<Point3d[]>,Point3d[]> accLib = new Accumulable<>(lib,new AccumuableList());
