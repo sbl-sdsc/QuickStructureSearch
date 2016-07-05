@@ -10,6 +10,8 @@ import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
  *
  */
 public class GenerateMoments {
+	
+
 
 	/**
 	 * Generate the USR moments for a given input array of 3D points.
@@ -35,8 +37,9 @@ public class GenerateMoments {
 	 */
 	private static Point3d[] getFourPoints(Point3d[] inputArray) {		
 		Point3d[] outArray = new Point3d[4];
-		outArray[0] = getCentroid(inputArray); 
-		for (int i=1; i<4; i++){
+		outArray[0] = getCentroid(inputArray);
+		outArray[1] = getFarthestPoint(inputArray, outArray[0], null);
+		for (int i=2; i<4; i++){
 			outArray[i] = getFarthestPoint(inputArray, outArray[i-1], outArray[i-2]);
 		}
 		return outArray;
@@ -53,10 +56,12 @@ public class GenerateMoments {
 		double maxDist = -1.0;
 		Point3d maxPoint = null;
 		for(Point3d point3d : inputArray) {
+			if(point3d != null){
 			double currentDist = point3d.distance(queryPoint);
 			if(point3d != reUsed && currentDist>maxDist){
 				maxPoint = point3d;
 				maxDist = currentDist;  
+			}
 			}
 		}
 		return maxPoint;
@@ -74,9 +79,13 @@ public class GenerateMoments {
 		double sumZ = 0;
 		final int nPoints = points.length;
 		for (int n = 0; n < nPoints; n++) {
-			sumX += points[n].x;
-			sumY += points[n].y;
-			sumZ += points[n].z;
+			
+			if(points[n] != null)
+			{
+			sumX += (double) points[n].x;
+			sumY += (double) points[n].y;
+			sumZ += (double) points[n].z;
+			}
 		}
 		centroid.x = sumX / nPoints;
 		centroid.y = sumY / nPoints;
@@ -114,7 +123,10 @@ public class GenerateMoments {
 	private static double[] getDistribution(Point3d singlePoint3d, Point3d[] inputArray) {
 		double[] outArray = new double[inputArray.length];
 		for(int i=0; i<inputArray.length;i++){
+			if(inputArray[i] != null)
+			{
 			outArray[i] = inputArray[i].distance(singlePoint3d);
+			}
 		}
 		return outArray;
 	}
