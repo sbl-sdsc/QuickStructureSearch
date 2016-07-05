@@ -19,22 +19,22 @@ import scala.Tuple2;
  * 
  * @author  Peter Rose, Chris Li
  */
-public class MeetMinIndexMapperP3 implements AlignmentAlgorithmInterface {
+public class NMDMapper implements AlignmentAlgorithmInterface {
 	private static final long serialVersionUID = 1L;
 	private Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences = null;
 
 	public static void main(String[] args) {
 		
 	}
-	public MeetMinIndexMapperP3() {
+	public NMDMapper() {
 	}
 
-	public MeetMinIndexMapperP3(Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences) {
+	public NMDMapper(Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences) {
 		this.sequences = sequences;
 	}
 
 	public String getName() {
-		return "MeetMinIndex";
+		return "NormalizedManhattanDistance";
 	}
 	
 	/**
@@ -44,15 +44,15 @@ public class MeetMinIndexMapperP3 implements AlignmentAlgorithmInterface {
 	 */
 	@SuppressWarnings("unchecked")
 	public Tuple2<String, Float> call(Tuple2<String, String> tuple) throws Exception {
-		SequenceFeatureInterface<Integer> v1 = (SequenceFeatureInterface<Integer>) this.sequences.getValue().get(tuple._1);
-		SequenceFeatureInterface<Integer> v2 = (SequenceFeatureInterface<Integer>) this.sequences.getValue().get(tuple._2);
+		SequenceFeatureInterface<Double> v1 = (SequenceFeatureInterface<Double>) this.sequences.getValue().get(tuple._1);
+		SequenceFeatureInterface<Double> v2 = (SequenceFeatureInterface<Double>) this.sequences.getValue().get(tuple._2);
 		
 		if(v1 == null || v2 == null) {
 			return null;
 		}
 
 		String key = tuple._1 + "," + tuple._2;
-		float value = meetMinIndex(v1, v2);
+		float value = nMd(v1, v2);
 	
         return new Tuple2<String, Float>(key, value);
     }
@@ -69,11 +69,19 @@ public class MeetMinIndexMapperP3 implements AlignmentAlgorithmInterface {
 	public void setCoords(Broadcast<List<Tuple2<String, Point3d[]>>> coords) {		
 	}
 	
-	private <T> float meetMinIndex(SequenceFeatureInterface<T> s1, SequenceFeatureInterface<T> s2) {
-		Map<T, Integer>features1 = calcFeatureCounts(s1);
-		Map<T, Integer>features2 = calcFeatureCounts(s2);
+	private <T> float nMd(SequenceFeatureInterface<T> s1, SequenceFeatureInterface<T> s2) {
+		double[] x1 = new double[s1.length()];
+		double[] x2 = new double[s2.length()];
+		for(int i=0;i<s1.length();i++){
+			x1[i] = (double) s1.get(i);
+		}
 		
-		return (float) MeetMinIndex.meetMinIndex(features1, features2);
+		for(int i=0;i<s2.length();i++){
+			x2[i] = (double) s2.get(i);
+		}
+		
+		
+		return (float) NormalizedManhattanDistance.distance(x1, x2);
 	}
 	
 	/**

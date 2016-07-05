@@ -1,4 +1,4 @@
-package org.rcsb.projectm;
+package org.rcsb.projectm.Demo;
 
 import static org.junit.Assert.assertEquals;
 
