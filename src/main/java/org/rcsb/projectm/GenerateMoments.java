@@ -121,11 +121,13 @@ public class GenerateMoments {
 	 * @return the distribution of distances as an array of floats
 	 */
 	private static double[] getDistribution(Point3d singlePoint3d, Point3d[] inputArray) {
-		double[] outArray = new double[inputArray.length];
+		double[] outArray = new double[inputArray.length - 1];
+		int j = 0;
 		for(int i=0; i<inputArray.length;i++){
-			if(inputArray[i] != null)
+			if(inputArray[i] != null && inputArray[i] != singlePoint3d)
 			{
-			outArray[i] = inputArray[i].distance(singlePoint3d);
+				outArray[j] = inputArray[i].distance(singlePoint3d);
+				j++;
 			}
 		}
 		return outArray;
