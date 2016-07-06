@@ -19,7 +19,12 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
 import org.rcsb.project10.*;
-import org.rcsb.project3.*;
+import org.rcsb.project3.AlignmentAlgorithmInterface;
+import org.rcsb.project3.ChainToSequenceFeatureVectorMapper;
+import org.rcsb.project3.EndToEndDistanceSequenceFingerprint;
+import org.rcsb.project3.JaccardIndexMapperP3;
+import org.rcsb.project3.SequenceFeatureInterface;
+import org.rcsb.project3.SequenceFingerprint;
 
 import scala.Tuple2;
 
@@ -33,7 +38,7 @@ import scala.Tuple2;
 public class FingerprintBenchmark implements Serializable {
 	private static final long serialVersionUID = -8293414734009053770L;	
 	private static int NUM_TASKS_PER_THREAD = 3; // Spark recommends 2-3 tasks per thread
-	private static double threshold = 0.8; 
+
 	public static void main(String[] args) throws FileNotFoundException {
 		if (args.length != 3) {
 			System.out.println("Usage: FingerPrintTester.jar chainsDir trainingDir resultsDir");
@@ -55,8 +60,8 @@ public class FingerprintBenchmark implements Serializable {
 //		SequenceFingerprint fingerprint = new DCT1DSequenceFingerprint();
 		
 		// setup similarity algorithm
-		AlignmentAlgorithmInterface algorithmGotoh = new SmithWatermanGotohMapperP3();
-		AlignmentAlgorithmInterface algorithmLevenshtein = new LevenshteinMapperP3();
+		AlignmentAlgorithmInterface algorithm = new WatermanLevenschteinMapper();
+//		AlignmentAlgorithmInterface algorithm = new JaccardIndexMapper();
 //		AlignmentAlgorithmInterface algorithm = new LevenshteinMapperP3();
 //	    AlignmentAlgorithmInterface algorithm = new SmithWatermanGotohP3();
 
@@ -64,13 +69,13 @@ public class FingerprintBenchmark implements Serializable {
 		
 		// create unique results directory name
 		String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
-		resultsDir += File.separatorChar + fingerprint.getName() + "_" + algorithmGotoh.getName() + "_" + algorithmLevenshtein.getName() + "_"+ timeStamp + ".csv";
+		resultsDir += File.separatorChar + fingerprint.getName() + "_" + algorithm.getName() + "_"+ timeStamp + ".csv";
 		System.out.println("Results       : " + resultsDir);
 	
 		// run the benchmark
 		long start = System.nanoTime();
 		
-		benchmark.run(chainsDir, benchmarkDir, resultsDir, fingerprint, algorithmGotoh, algorithmLevenshtein, threshold);
+		benchmark.run(chainsDir, benchmarkDir, resultsDir, fingerprint, algorithm);
 			    
 	    long end = System.nanoTime();   
 	    double time = (end-start)/1E9;
@@ -87,11 +92,11 @@ public class FingerprintBenchmark implements Serializable {
 	 * @param comparisionAlgorithm algorithm for sequence feature vector comparision
 	 */
 	private void run(String chainsDir, String benchmarkDir, String resultsDir, SequenceFingerprint fingerprint, 
-			AlignmentAlgorithmInterface comparisionAlgorithm1, AlignmentAlgorithmInterface comparisonAlgorithm2, double threshold) {
+			AlignmentAlgorithmInterface comparisionAlgorithm) {
 		
 		// setup spark
 		SparkConf conf = new SparkConf()
-				.setMaster("local[*]")ss
+				.setMaster("local[*]")
 				.setAppName(this.getClass().getSimpleName());	
 		
 		JavaSparkContext sc = new JavaSparkContext(conf);
@@ -99,19 +104,12 @@ public class FingerprintBenchmark implements Serializable {
 		// split input lines of .csv files into chainId1,chainId2, and alignment metrics
 		JavaRDD<String[]> benchmarkData = sc
 				.textFile(benchmarkDir, sc.defaultParallelism() * NUM_TASKS_PER_THREAD) // read files
-				.map(s -> s.split(","))// split each line into a list items
-				.filter(s -> Double.parseDouble(s[5]) >= 50)
+				.map(s -> s.split(",")) // split each line into a list items
 				.cache();	
 
 		// create a list of unique chain ids
 		Set<String> chainIds = new HashSet<>
 		      (benchmarkData.flatMap(t -> Arrays.asList(t[0], t[1])).distinct().collect());
-		
-		//Splitting up the problem into 2 based on length similarity
-		sc
-		.sequenceFile(chainsDir, Text.class, WritableSegment.class)
-		.mapToPair(t -> new Tuple2<String, WritableSegment> (new String(t._1.toString()), new WritableSegment(t._2)))
-		.filter(t._2.
 		
 		// compute feature vectors	    
 	    Map<String, SequenceFeatureInterface<?>> featureVectors = sc

@@ -54,10 +54,15 @@ package org.rcsb.rehsDavidM;
 			if (v1 == null || v2 == null){
 				return null;
 			}
-			String key = tuple._1 + "," + tuple._2;
-			float value = meetMinIndex(v1, v2);
-		
-	        return new Tuple2<String, Float>(key, value);
+			double length1 = v1.length();
+			double length2 = v2.length();
+			double lengthRatio = Math.min(length1, length2)/Math.max(length1, length2);
+			if (lengthRatio >= 0.80){
+				return callGotoh(tuple);
+			}
+			else{
+				return callLevenshtein(tuple);
+			}
 	    }
 		
 		public Tuple2<String, Float> callLevenshtein(Tuple2<String, String> tuple) throws Exception {
@@ -111,26 +116,13 @@ package org.rcsb.rehsDavidM;
 		public void setCoords(Broadcast<List<Tuple2<String, Point3d[]>>> coords) {		
 		}
 		
-		private <T> float meetMinIndex(SequenceFeatureInterface<T> s1, SequenceFeatureInterface<T> s2) {
-			Map<T, Integer>features1 = calcFeatureCounts(s1);
-			Map<T, Integer>features2 = calcFeatureCounts(s2);
-			
-			return (float) MeetMinIndex.meetMinIndex(features1, features2);
-		}
 		
 		/**
 		 * Counts how many times each feature occurs in the sequence.
 		 * @param sequence map where the key represents the feature and the value represents the feature count
 		 * @return
 		 */
-		private <T> Map<T, Integer> calcFeatureCounts(SequenceFeatureInterface<T> sequence) {
-			Map<T, Integer> featureCounts = new HashMap<T, Integer>(sequence.length());
-			for (T key: sequence.getSequence()) {
-				Integer count = featureCounts.getOrDefault(key, 0);
-				featureCounts.put(key, count+1);
-			}
-			return featureCounts;
-		}
+
 		private <T,K> Alignment<T> getAlignment(SequenceFeatureInterface<T> v1,SequenceFeatureInterface<K> v2,double o, double e) {
 			return SmithWatermanGotoh.align(v1, (SequenceFeatureInterface<T>)v2, o, e);
 		}

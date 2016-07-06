@@ -23,7 +23,7 @@ public class BroadcastMethod {
 
 	public static void main(String[] args) {
 		String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
-		
+			
 		System.out.println("Broadcast Method");
 		
 		String chainFile = args[0];
@@ -35,7 +35,7 @@ public class BroadcastMethod {
 	    long start = System.nanoTime();
 
 		double fraction = 0.0002;
-		int randomSeed = 1;
+		int randomSeed = 50;
 	    int combinations = run(chainFile, benchmarkFile, fraction, randomSeed);
 	    
 	    long end = System.nanoTime();
