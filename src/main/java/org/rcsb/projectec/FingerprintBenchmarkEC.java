@@ -7,6 +7,7 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -58,17 +59,18 @@ public class FingerprintBenchmarkEC implements Serializable {
 		System.out.println("Chain s       : " + chainsDir);
 		System.out.println("Benchmark data: " + benchmarkDir);
 		
-		
+		List<Point3d[]> library = ArchLibGeneratorPR.readLibraryFromFile(args[3]);
 		// setup fingerprint algorithm
 //		SequenceFingerprint fingerprint = new EndToEndDistanceSequenceFingerprint();
-		SequenceFingerprint fingerprint = new DCT1DSequenceFingerprint();
+//		SequenceFingerprint fingerprint = new DCT1DSequenceFingerprint();
+		SequenceFingerprint fingerprint = new LibraryFingerprint(library,2.0);
 		
 		// setup similarity algorithm
 //		AlignmentAlgorithmInterface algorithm = new NormalizedCompressionDistanceMapper();
 //		AlignmentAlgorithmInterface algorithm = new MeetMinIndexMapperP3();
-//		AlignmentAlgorithmInterface algorithm = new JaccardIndexMapperP3();
+		AlignmentAlgorithmInterface algorithm = new JaccardIndexMapperP3();
 //  	AlignmentAlgorithmInterface algorithm = new LevenshteinMapperP3();
-	    AlignmentAlgorithmInterface algorithm = new SmithWatermanGotohMapperP3();
+//	    AlignmentAlgorithmInterface algorithm = new SmithWatermanGotohMapperP3();
 
 		FingerprintBenchmarkEC benchmark = new FingerprintBenchmarkEC();
 		
