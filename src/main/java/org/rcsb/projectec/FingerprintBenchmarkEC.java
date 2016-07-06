@@ -147,4 +147,5 @@ public class FingerprintBenchmarkEC implements Serializable {
 	    sc.stop();
 	    sc.close();
 	}
+	
 }
