@@ -102,7 +102,8 @@ public class GenerateMoments {
 	private static float[] getThreeMoments(double[] distribution) {
 		DescriptiveStatistics descriptiveStatistics = new DescriptiveStatistics();
 		for (double val : distribution){
-			descriptiveStatistics.addValue(val);
+			if(val != 0)
+				descriptiveStatistics.addValue(val);
 		}
 		float[] outVals = new float[3];
 		outVals[0] = (float) descriptiveStatistics.getMean();
@@ -121,13 +122,11 @@ public class GenerateMoments {
 	 * @return the distribution of distances as an array of floats
 	 */
 	private static double[] getDistribution(Point3d singlePoint3d, Point3d[] inputArray) {
-		double[] outArray = new double[inputArray.length - 1];
-		int j = 0;
+		double[] outArray = new double[inputArray.length];
 		for(int i=0; i<inputArray.length;i++){
-			if(inputArray[i] != null && inputArray[i] != singlePoint3d)
+			if(inputArray[i] != null)
 			{
-				outArray[j] = inputArray[i].distance(singlePoint3d);
-				j++;
+			outArray[i] = inputArray[i].distance(singlePoint3d);
 			}
 		}
 		return outArray;
