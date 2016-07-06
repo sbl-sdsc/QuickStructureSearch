@@ -53,4 +53,8 @@ public class AccumuableListPR implements AccumulableParam<List<Point3d[]>,Point3
 		lib.clear();
 		return lib;
 	}
+	
+	public double getRMSDThreshold(){
+		return rmsdThreshold;
+	}
 }
