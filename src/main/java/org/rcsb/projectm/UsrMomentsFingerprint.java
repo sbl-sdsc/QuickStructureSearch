@@ -9,9 +9,9 @@ import org.rcsb.project3.SequenceFingerprint;
 
 /**
  * This class generates a fingerprint (signature) for protein chains based upon
- * the end-to-end distance of fragments
+ * its USR moments.
  *
- * @author Peter Rose
+ * @author Peter Rose, Michael Wang
  */
 public class UsrMomentsFingerprint implements SequenceFingerprint, Serializable {
 	private static final long serialVersionUID = 1L;

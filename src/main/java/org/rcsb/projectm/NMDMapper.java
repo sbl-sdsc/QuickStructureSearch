@@ -13,11 +13,9 @@ import scala.Tuple2;
 
 /**
  * This class maps a pair of chains, specified by two indices into the broadcasted sequences list, to
- * a MeetMin Index. It calculates the MeetMin index for multi-sets.
+ * a Normalized Manhattan Distance. It calculates the NMD for multi-sets.
  * 
- * Order of fragments are getting ignored for MeetMin index calculation.
- * 
- * @author  Peter Rose, Chris Li
+ * @author  Peter Rose, Michael Wang
  */
 public class NMDMapper implements AlignmentAlgorithmInterface {
 	private static final long serialVersionUID = 1L;
@@ -38,8 +36,8 @@ public class NMDMapper implements AlignmentAlgorithmInterface {
 	}
 	
 	/**
-	 * Returns <PdbId.Chain, MeetMin Index> pairs. This is an extension of the 
-	 * MeetMin Index to multi-sets. The multi-sets are represented as vectors,
+	 * Returns <PdbId.Chain, NMD> pairs. This is an extension of the 
+	 * NMD to multi-sets. The multi-sets are represented as vectors,
 	 * where each vector element is a feature count.
 	 */
 	@SuppressWarnings("unchecked")

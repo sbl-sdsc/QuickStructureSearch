@@ -9,9 +9,9 @@ import org.rcsb.project3.SequenceFeatureInterface;
 
 /**
  * This class implements the SequenceFeatureInterface.
- * It is used for the calculation for DCT1DSequenceFingerprint
+ * It is used for the calculation for UsrMomentsFingerprint
  * 
- * @author Michael Wang
+ * @author Chris Li, Michael Wang
  */
 public class UsrFeature implements SequenceFeatureInterface<Double>, Serializable {
 

@@ -6,7 +6,7 @@ import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 
 /**
  * Generate the USR moments for a given {@link Point3d} array.
- * @author Anthony Bradley
+ * @author Anthony Bradley, Michael Wang
  *
  */
 public class GenerateMoments {
@@ -57,10 +57,10 @@ public class GenerateMoments {
 		Point3d maxPoint = null;
 		for(Point3d point3d : inputArray) {
 			if(point3d != null){
-			double currentDist = point3d.distance(queryPoint);
-			if(point3d != reUsed && currentDist>maxDist){
-				maxPoint = point3d;
-				maxDist = currentDist;  
+				double currentDist = point3d.distance(queryPoint);
+				if(point3d != reUsed && currentDist>maxDist){
+					maxPoint = point3d;
+					maxDist = currentDist;  
 			}
 			}
 		}

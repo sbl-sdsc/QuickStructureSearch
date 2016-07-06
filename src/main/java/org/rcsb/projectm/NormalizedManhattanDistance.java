@@ -1,8 +1,14 @@
 package org.rcsb.projectm;
 
 import java.io.ByteArrayOutputStream;
+
 import java.util.zip.GZIPOutputStream;
 
+/**
+ * This class calculates the Normalized Manhattan Distance between two arrays containing the 12 moments describing the protein.
+ * 
+ * @author  Michael Wang
+ */
 
 public class NormalizedManhattanDistance {
 	
