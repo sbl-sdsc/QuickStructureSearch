@@ -57,13 +57,15 @@ public class FingerprintBenchmarkMW2 implements Serializable {
 		
 		// setup fingerprint algorithm
 //		SequenceFingerprint fingerprint = new EndToEndDistanceSequenceFingerprint();
-		SequenceFingerprint fingerprint = new DCT1DSequenceFingerprint();
+//		SequenceFingerprint fingerprint = new DCT1DSequenceFingerprint();
+		SequenceFingerprint fingerprint = new UsrMomentsFingerprint();
 		
 		// setup similarity algorithm
 //    	AlignmentAlgorithmInterface algorithm = new MeetMinIndexMapperP3();
 //		AlignmentAlgorithmInterface algorithm = new NCDIndexMapper();
-		AlignmentAlgorithmInterface algorithm = new LevenshteinMapperP3();
-//	    AlignmentAlgorithmInterface algorithm = new SmithWatermanGotohP3();
+//		AlignmentAlgorithmInterface algorithm = new LevenshteinMapperP3();
+//	    AlignmentAlgorithmInterface algorithm = new SmithWatermanGotohMapperP3();
+		AlignmentAlgorithmInterface algorithm = new NMDMapper();
 
 		FingerprintBenchmarkMW2 benchmark = new FingerprintBenchmarkMW2();
 		

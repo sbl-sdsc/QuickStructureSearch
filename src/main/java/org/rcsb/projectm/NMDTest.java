@@ -7,7 +7,7 @@ import java.util.Map;
 
 import org.junit.Test;
 
-public class MeetMinIndexTest {
+public class NMDTest {
 
 	@Test
 	public void testIdentity() {

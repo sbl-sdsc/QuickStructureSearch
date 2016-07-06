@@ -1,4 +1,4 @@
-package org.rcsb.projectm;
+package org.rcsb.projectm.Demo;
 
 import java.io.ByteArrayOutputStream;
 import java.util.zip.GZIPOutputStream;

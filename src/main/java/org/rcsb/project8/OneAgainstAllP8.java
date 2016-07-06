@@ -19,8 +19,7 @@ import org.rcsb.project3.ChainToSequenceFeatureVectorMapper;
 import org.rcsb.project3.EndToEndDistanceDoubleSequenceFingerprint;
 import org.rcsb.project3.SequenceFeatureInterface;
 import org.rcsb.project3.SequenceFingerprint;
-import org.rcsb.project3.SmithWatermanGotohP3;
-import org.rcsb.structuralSimilarity.ChainPairToTmMapper;
+import org.rcsb.project3.SmithWatermanGotohMapperP3;
 import org.rcsb.structuralSimilarity.ChainSmootherMapper;
 import org.rcsb.structuralSimilarity.GapFilter;
 import org.rcsb.structuralSimilarity.LengthFilter;
@@ -44,7 +43,7 @@ public class OneAgainstAllP8 {
 	// Other fingerPrint: AngleSequenceFingerprint() || DCT1DSequenceFingerprint()
 	private static SequenceFingerprint fingerPrint = new EndToEndDistanceDoubleSequenceFingerprint();
 	// Other alignment: LCSFeatureIndexP3() || SmithWatermanP3() || JaccardScoreMapperP3() || LevenshteinMapperP3()
-	private static AlignmentAlgorithmInterface alignmentAlgorithm = new SmithWatermanGotohP3();
+	private static AlignmentAlgorithmInterface alignmentAlgorithm = new SmithWatermanGotohMapperP3();
 	
 	public static void main(String[] args ) throws FileNotFoundException
 	{
