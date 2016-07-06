@@ -62,14 +62,22 @@ public class LibraryFingerprint implements SequenceFingerprint, Serializable {
 		// split protein into fragments
 		List<Point3d[]> fragments = new ArrayList<>();
 		for (int i = 0; i < coords.length - length + 1; i++) {
-			fragments.add(Arrays.copyOfRange(coords, i, i + length));
+		Point3d[] fragment = Arrays.copyOfRange(coords, i, i + length);
+			boolean result = true;
+			for (int j = 0; j < fragment.length; j++) {
+				result = result && (fragment[j] != null);
+			}
+			//if no nulls, add
+			if (result) {	
+			fragments.add(fragment);
+		}
 		}
 
 		// compare fragments to each one in library
 		//then get list of indices the fragments correspond to
 		List<Integer> typeIndices = new ArrayList<>();
 		for (int j = 0; j < fragments.size(); j++) {
-
+			
 			Point3d[] cFragment = SuperPosition.clonePoint3dArray(fragments.get(j));
 			SuperPositionQCP.center(cFragment);
 			// compare each archetype with the new fragment
