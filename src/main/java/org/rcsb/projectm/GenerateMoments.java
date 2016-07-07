@@ -18,11 +18,12 @@ public class GenerateMoments {
 	 * @param inputArray the array of {@link Point3d}
 	 * @return the moments of this array
 	 */
+	private static int numPoints = 6;
 	public static double[] getMoments(Point3d[] inputArray) {
-		double[] outArray = new double[12];
-		Point3d[] fourPoints = getFourPoints(inputArray);
-		for (int i=0; i<4; i++) {
-			float[] threeMoments = getThreeMoments(getDistribution(fourPoints[i], inputArray));
+		double[] outArray = new double[3*numPoints];
+		Point3d[] Points = getXPoints(inputArray,numPoints);
+		for (int i=0; i<numPoints; i++) {
+			float[] threeMoments = getThreeMoments(getDistribution(Points[i], inputArray));
 			for (int j=0; j<3; j++){
 				outArray[i*3+j] = threeMoments[j];
 			}
@@ -35,6 +36,15 @@ public class GenerateMoments {
 	 * @param inputArray the inputArray of points
 	 * @return
 	 */
+	private static Point3d[] getXPoints(Point3d[] inputArray, int x){
+		Point3d[] outArray = new Point3d[x];
+		outArray[0] = getCentroid(inputArray);
+		outArray[1] = getFarthestPoint(inputArray, outArray[0], null);
+		for (int i=2; i<x; i++){
+			outArray[i] = getFarthestPoint(inputArray, outArray[i-1], outArray[i-2]);
+		}
+		return outArray;
+	}
 	private static Point3d[] getFourPoints(Point3d[] inputArray) {		
 		Point3d[] outArray = new Point3d[4];
 		outArray[0] = getCentroid(inputArray);
