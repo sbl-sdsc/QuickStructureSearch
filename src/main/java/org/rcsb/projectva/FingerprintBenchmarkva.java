@@ -1,5 +1,5 @@
 package org.rcsb.projectva;
-
+import org.rcsb.project3.*;
 import java.io.File;
 import java.io.FileNotFoundException;
 import java.io.Serializable;
@@ -7,6 +7,7 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -25,6 +26,8 @@ import org.rcsb.project3.EndToEndDistanceSequenceFingerprint;
 //import org.rcsb.project3.MeetMinIndexMapper;
 import org.rcsb.project3.SequenceFeatureInterface;
 import org.rcsb.project3.SequenceFingerprint;
+//import org.rcsb.projectec.ArchLibGeneratorPR;
+//import org.rcsb.projectec.LibraryFingerprint;
 
 import scala.Tuple2;
 
@@ -35,7 +38,7 @@ import scala.Tuple2;
  * 
  * @author Peter Rose
  */
-public class FingerprintBenchmark implements Serializable {
+public class FingerprintBenchmarkva implements Serializable {
 	private static final long serialVersionUID = -8293414734009053770L;	
 	private static int NUM_TASKS_PER_THREAD = 3; // Spark recommends 2-3 tasks per thread
 
@@ -54,17 +57,19 @@ public class FingerprintBenchmark implements Serializable {
 		System.out.println("Chain s       : " + chainsDir);
 		System.out.println("Benchmark data: " + benchmarkDir);
 		
-		
+		List<Point3d[]> library = ArchLibGeneratorPR.readLibraryFromFile(args[3]);
 		// setup fingerprint algorithm
-		SequenceFingerprint fingerprint = new EndToEndDistanceSequenceFingerprint();
+		
+//		SequenceFingerprint fingerprint = new EndToEndDistanceSequenceFingerprint();
 //		SequenceFingerprint fingerprint = new DCT1DSequenceFingerprint();
+		SequenceFingerprint fingerprint = new LibraryFingerprint(library,2.0);
 		
 		// setup similarity algorithm
-		AlignmentAlgorithmInterface algorithm = new NormalizedCompressionDistanceMapper();
+//		AlignmentAlgorithmInterface algorithm = new NormalizedCompressionDistanceMapper();
 //		AlignmentAlgorithmInterface algorithm = new LevenshteinMapperP3();
-//	    AlignmentAlgorithmInterface algorithm = new SmithWatermanGotohP3();
+	    AlignmentAlgorithmInterface algorithm = new SmithWatermanGotohMapperP3();
 
-		FingerprintBenchmark benchmark = new FingerprintBenchmark();
+		FingerprintBenchmarkva benchmark = new FingerprintBenchmarkva();
 		
 		// create unique results directory name
 		String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
@@ -132,6 +137,7 @@ public class FingerprintBenchmark implements Serializable {
 		
 		// map results to .csv format and save to text file
 		scores
+				.filter(t -> t!= null)
 		        .map(t -> new String(t._1 + "," + t._2))
 		        .saveAsTextFile(resultsDir);
 
