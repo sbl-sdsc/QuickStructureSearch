@@ -9,7 +9,6 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.Collections;
-import java.util.Iterator;
 import java.util.List;
 import java.util.Scanner;
 
@@ -43,9 +42,9 @@ public class ArchLibGeneratorPR {
 		long start = System.nanoTime();
 
 		int fragmentSize = 8;
-		double rmsdThreshold = 2.0;
+		double rmsdThreshold = 2.05;
 
-		getAllFragments(chainFile, fragmentSize, rmsdThreshold, args[1]);
+		getAllFragments(chainFile, fragmentSize, rmsdThreshold, args[1] + "_" + timeStamp);
 
 		long end = System.nanoTime();
 
@@ -62,10 +61,7 @@ public class ArchLibGeneratorPR {
 		JavaSparkContext sc = new JavaSparkContext(conf);
 
 		// read protein chains and cut into fragments (sliding window approach)
-		JavaRDD<Point3d[]> fragments = sc.sequenceFile(chainFile, Text.class, WritableSegment.class) // read
-																										// file
-																										// with
-																										// chains
+		JavaRDD<Point3d[]> fragments = sc.sequenceFile(chainFile, Text.class, WritableSegment.class)
 				.map(t -> t._2.getCoordinates()) // get the coordinates of the
 													// protein chains
 				.repartition(1) // create a single partition to generate a
@@ -73,8 +69,6 @@ public class ArchLibGeneratorPR {
 								// in parallel!)
 				.flatMap(new FlatMapToFragments(fragmentSize)); // flatmap to
 																// fragments
-
-		// fragments.foreach(t-> System.out.println(Arrays.toString(t)));
 
 		// Create library of fragment archetypes
 		List<Point3d[]> prelib = new ArrayList<>();
@@ -87,9 +81,7 @@ public class ArchLibGeneratorPR {
 
 		System.out.println(archetypes.size());
 
-		// for (Point3d[] archetype: archetypes) {
-		// System.out.println(Arrays.toString(archetype));
-		// }
+		// save to text file for later use
 
 		FileWriter writer = new FileWriter(filePath);
 		for (Point3d[] fragment : archetypes) {
@@ -104,7 +96,7 @@ public class ArchLibGeneratorPR {
 	}
 
 	public static List<Point3d[]> readLibraryFromFile(String filePath) throws FileNotFoundException {
-		//thank you for nO HELP VARKEY
+		// thank you for nO HELP VARKEY
 		Scanner s = new Scanner(new File(filePath));
 		String all = "";
 		ArrayList<Point3d[]> lib = new ArrayList<>();
@@ -122,8 +114,7 @@ public class ArchLibGeneratorPR {
 			b[i] = b[i].replace(")", "");
 			b[i] = b[i].replace(",", " ");
 		}
-		
-	
+
 		for (int i = 0; i < b.length; i++) {
 			String pointArray = b[i];
 			Scanner scanString = new Scanner(pointArray);
@@ -137,7 +128,6 @@ public class ArchLibGeneratorPR {
 			lib.add(frag);
 		}
 
-		
 		s.close();
 		return lib;
 	}

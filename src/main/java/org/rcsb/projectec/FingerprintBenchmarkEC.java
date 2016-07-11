@@ -63,14 +63,14 @@ public class FingerprintBenchmarkEC implements Serializable {
 		// setup fingerprint algorithm
 //		SequenceFingerprint fingerprint = new EndToEndDistanceSequenceFingerprint();
 //		SequenceFingerprint fingerprint = new DCT1DSequenceFingerprint();
-		SequenceFingerprint fingerprint = new LibraryFingerprint(library,2.0);
+		SequenceFingerprint fingerprint = new LibraryFingerprint(library,2.05);
 		
 		// setup similarity algorithm
 //		AlignmentAlgorithmInterface algorithm = new NormalizedCompressionDistanceMapper();
 //		AlignmentAlgorithmInterface algorithm = new MeetMinIndexMapperP3();
-		AlignmentAlgorithmInterface algorithm = new JaccardIndexMapperP3();
+//		AlignmentAlgorithmInterface algorithm = new JaccardIndexMapperP3();
 //  	AlignmentAlgorithmInterface algorithm = new LevenshteinMapperP3();
-//	    AlignmentAlgorithmInterface algorithm = new SmithWatermanGotohMapperP3();
+	    AlignmentAlgorithmInterface algorithm = new SmithWatermanGotohMapperP3();
 
 		FingerprintBenchmarkEC benchmark = new FingerprintBenchmarkEC();
 		
@@ -112,7 +112,7 @@ public class FingerprintBenchmarkEC implements Serializable {
 		JavaRDD<String[]> benchmarkData = sc
 				.textFile(benchmarkDir, sc.defaultParallelism() * NUM_TASKS_PER_THREAD) // read files
 				.map(s -> s.split(","))// split each line into a list items
-				.filter(s -> Double.parseDouble(s[5])>49)
+				//.filter(s -> Double.parseDouble(s[5])>49)
 				.cache();	
 
 		// create a list of unique chain ids
