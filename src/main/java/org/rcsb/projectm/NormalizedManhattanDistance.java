@@ -20,7 +20,7 @@ public class NormalizedManhattanDistance {
 			manhattanDis += (s[i] - t[i]);
 		}
 		
-		return (1.0)/(1.0 + (manhattanDis /( Math.pow(s.length,8))));
+		return (1.0)/(1.0 + (manhattanDis / 12));
 		//return ( 1- (manhattanDis/(Math.pow(s.length,3.25))));
 	}
 }
