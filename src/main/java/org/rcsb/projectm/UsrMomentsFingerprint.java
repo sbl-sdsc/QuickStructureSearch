@@ -23,18 +23,7 @@ public class UsrMomentsFingerprint implements SequenceFingerprint, Serializable 
      */
     public UsrMomentsFingerprint() {
     }
-   
-    /**
-     * Constructor with all parameters
-     * @param length fragment length
-     */
- /**   public UsrFingerprint (int length, double binSize) {
-        this.length = length;
-        this.binSize = binSize;
-        this.featureCount = (int)(this.length * this.MAX_AVE_CA_CA_DISTANCE/this.binSize);
-	}
-*/
-    public String getName() {
+   public String getName() {
     	return this.getClass().getSimpleName();
     }
 
@@ -45,32 +34,7 @@ public class UsrMomentsFingerprint implements SequenceFingerprint, Serializable 
      */
     public UsrFeature getFingerprint(Point3d[] coords) {
     	double[] features = new double[12];
-/**
-    	double scale = 1/this.binSize;
-    	if (coords.length-this.length < 0) {
-    		return features;
-    	}
-
-    	for (int i = 0; i < coords.length-this.length+1; i++) {
-    		Point3d first = coords[i];
-    		Point3d last = coords[i+this.length-1];
-    		
-    		// skip gaps
-    		if (first == null || last  == null) {
-    			continue;
-    		}
-
-    		// calculate end to end distance of fragment
-    		// and bin values
-    		int bin = (int)Math.round(scale*first.distance(last));
-    		if (bin > this.featureCount-1) {
-    			continue;
-    		}
-    		features[bin]++;
-    	}
-    	*/
     	features = GenerateMoments.getMoments(coords);
-//    	System.out.println(Arrays.toString(features));
 		return new UsrFeature(features);
     }
 }

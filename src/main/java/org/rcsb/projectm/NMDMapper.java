@@ -81,18 +81,4 @@ public class NMDMapper implements AlignmentAlgorithmInterface {
 		
 		return (float) NormalizedManhattanDistance.distance(x1, x2);
 	}
-	
-	/**
-	 * Counts how many times each feature occurs in the sequence.
-	 * @param sequence map where the key represents the feature and the value represents the feature count
-	 * @return
-	 */
-	private <T> Map<T, Integer> calcFeatureCounts(SequenceFeatureInterface<T> sequence) {
-		Map<T, Integer> featureCounts = new HashMap<T, Integer>(sequence.length());
-		for (T key: sequence.getSequence()) {
-			Integer count = featureCounts.getOrDefault(key, 0);
-			featureCounts.put(key, count+1);
-		}
-		return featureCounts;
-	}
 }

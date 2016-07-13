@@ -24,17 +24,17 @@ public class UsrFeature implements SequenceFeatureInterface<Double>, Serializabl
 	private double gap = -1;
 	    
     /**
-     * Constructor that will store an int array as DCT1D feature
-     * @param DCT1DSequence
+     * Constructor that will store a double array as a UsrFeature
+     * @param moments
      */
 	public UsrFeature(double[] moments) {
 		this.moments = moments;
 	}
 	
 	/**
-	 * Constructor that will store an int array as DCT1D feature and a Point3d array as the 
+	 * Constructor that will store a double array as a UsrFeature and a Point3d array as the 
 	 * coordinates of the protein
-	 * @param DCT1DSequence
+	 * @param moments
 	 * @param coords
 	 */
 	public UsrFeature(double[] moments, Point3d[] coords) {
@@ -43,8 +43,8 @@ public class UsrFeature implements SequenceFeatureInterface<Double>, Serializabl
 	}
 	
 	/**
-	 * Constructor that will store a int array of DCT1D feature and update the settings
-	 * @param DCT1DSequence
+	 * Constructor that will store a double array as a UsrFeature and update the settings
+	 * @param moments
 	 * @param gap
 	 * @param match
 	 * @param mismatch
