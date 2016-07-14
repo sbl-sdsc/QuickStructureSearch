@@ -1,4 +1,4 @@
-package org.rcsb.projectm;
+package org.rcsb.REHS.Usr;
 
 import java.util.HashMap;
 import java.util.List;

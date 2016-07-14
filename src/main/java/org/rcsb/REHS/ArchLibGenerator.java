@@ -1,4 +1,4 @@
-package org.rcsb.projectec;
+package org.rcsb.REHS;
 
 import java.io.File;
 import java.io.FileNotFoundException;
@@ -23,21 +23,25 @@ import org.apache.spark.api.java.JavaSparkContext;
 import org.rcsb.project10.WritableSegment;
 
 /**
- * This class ... add documentation here
+ * This class generates a library of unique fragments from a protein chain file
+ * when given a fragment size and and rmsd threshold (used to see whether 
+ * or not a fragment is unique compared to the others). The library is stored as a text file.
+ * This class also contains a static method to read the library into a list, 
+ * which the LibraryFingerprint class can use.
  * 
  * @author Emilia Copic
  * @author Varkey Alumootil
  * @author Peter Rose
  *
  */
-public class ArchLibGeneratorPR {
+public class ArchLibGenerator {
 	public static void main(String[] args) throws IOException {
 		String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
 
 		System.out.println("ArchLibGen");
 
 		String chainFile = args[0];
-		System.out.println("Chain file    : " + chainFile);	
+		System.out.println("Chain file    : " + chainFile);
 
 		long start = System.nanoTime();
 
@@ -50,7 +54,14 @@ public class ArchLibGeneratorPR {
 
 		System.out.println("Time          : " + (end - start) / 1E9 + " seconds");
 	}
-
+/**
+ * Generates library, stores it in text file
+ * @param chainFile file with all of the proteins
+ * @param fragmentSize number of 3D points each fragment will be
+ * @param rmsdThreshold when a fragment is compared to one in the library and the rmsd is below this threshold, it will not be considered unique and therefore not be added to the library
+ * @param filePath library text file will be stored here
+ * @throws IOException
+ */
 	private static void getAllFragments(String chainFile, int fragmentSize, double rmsdThreshold, String filePath)
 			throws IOException {
 
@@ -73,7 +84,7 @@ public class ArchLibGeneratorPR {
 		// Create library of fragment archetypes
 		List<Point3d[]> prelib = new ArrayList<>();
 		List<Point3d[]> lib = Collections.synchronizedList(prelib);
-		Accumulable<List<Point3d[]>, Point3d[]> accLib = new Accumulable<>(lib, new AccumuableListPR(rmsdThreshold));
+		Accumulable<List<Point3d[]>, Point3d[]> accLib = new Accumulable<>(lib, new AccumuableList(rmsdThreshold));
 
 		fragments.foreach(t -> accLib.add(t));
 
@@ -94,7 +105,12 @@ public class ArchLibGeneratorPR {
 		sc.stop();
 		sc.close();
 	}
-
+/**
+ * Reads text file genreated by getAllFragments and returns the library as a list
+ * @param filePath gets text file from this location
+ * @return libray as a List
+ * @throws FileNotFoundException
+ */
 	public static List<Point3d[]> readLibraryFromFile(String filePath) throws FileNotFoundException {
 		// thank you for nO HELP VARKEY
 		Scanner s = new Scanner(new File(filePath));
