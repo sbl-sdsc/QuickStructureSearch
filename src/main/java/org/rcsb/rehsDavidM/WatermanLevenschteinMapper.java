@@ -39,7 +39,7 @@ package org.rcsb.rehsDavidM;
 		}
 
 		public String getName() {
-			return "meetMinIndex";
+			return "WatermanLevenschteinMapper";
 		}
 		
 		/**
@@ -57,11 +57,12 @@ package org.rcsb.rehsDavidM;
 			double length1 = v1.length();
 			double length2 = v2.length();
 			double lengthRatio = Math.min(length1, length2)/Math.max(length1, length2);
-			if (lengthRatio >= 0.80){
-				return callGotoh(tuple);
+			if (lengthRatio >= 0.75){
+				return callLevenshtein(tuple);
+
 			}
 			else{
-				return callLevenshtein(tuple);
+				return callGotoh(tuple);
 			}
 	    }
 		

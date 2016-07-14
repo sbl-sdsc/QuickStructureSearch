@@ -8,6 +8,7 @@ import java.util.zip.GZIPOutputStream;
  * This class calculates the Normalized Manhattan Distance between two arrays containing the 12 moments describing the protein.
  * 
  * @author  Michael Wang
+ * @author David Mao
  */
 
 public class NormalizedManhattanDistance {

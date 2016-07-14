@@ -7,6 +7,7 @@ import org.apache.commons.math.stat.descriptive.DescriptiveStatistics;
 /**
  * Generate the USR moments for a given {@link Point3d} array.
  * @author Anthony Bradley, Michael Wang
+ * @author David Mao
  *
  */
 public class GenerateMoments {

@@ -38,7 +38,7 @@ public class ArchLibGeneratorPR {
 		System.out.println("ArchLibGen");
 
 		String chainFile = args[0];
-		System.out.println("Chain file    : " + chainFile);
+		System.out.println("Chain file    : " + chainFile);	
 
 		long start = System.nanoTime();
 
