@@ -1,4 +1,4 @@
-package org.rcsb.rehsDavidM;
+package org.rcsb.REHS;
 import org.rcsb.project3.*;
 
 import java.util.HashMap;
@@ -12,35 +12,30 @@ import org.apache.spark.broadcast.Broadcast;
 import scala.Tuple2;
 
 /**
- * This class maps a pair of chains, specified by two indices into the broadcasted sequences list, to
- * a HashingJaccard Index. It calculates the HashingJaccard index for multi-sets.
  * 
- * Order of fragments are getting ignored for HashingJaccard index calculation.
- * 
- * @author  Peter Rose, Chris Li, Varkey Alumootil
+ * @author  David Mao
  */
-public class HashingJaccardIndexMapper implements AlignmentAlgorithmInterface {
+public class SmithWatermanMapperDM implements AlignmentAlgorithmInterface {
 	private static final long serialVersionUID = 1L;
 	private Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences = null;
-
+	private double start = 1;
+	private double extend = 0.1;
 	public static void main(String[] args) {
 		
 	}
-	public HashingJaccardIndexMapper() {
+	public SmithWatermanMapperDM() {
 	}
 
-	public HashingJaccardIndexMapper(Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences) {
+	public SmithWatermanMapperDM(Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences) {
 		this.sequences = sequences;
 	}
 
 	public String getName() {
-		return "HashingJaccardIndex";
+		return "ModifiedSmithWaterman";
 	}
 	
 	/**
-	 * Returns <PdbId.Chain, HashingJaccard Index> pairs. This is an extension of the 
-	 * HashingJaccard Index to multi-sets. The multi-sets are represented as vectors,
-	 * where each vector element is a feature count.
+	 * 
 	 */
 	@SuppressWarnings("unchecked")
 	public Tuple2<String, Float> call(Tuple2<String, String> tuple) throws Exception {
@@ -81,22 +76,16 @@ public class HashingJaccardIndexMapper implements AlignmentAlgorithmInterface {
 //		Map<T, Integer>features2 = calcFeatureCounts(s2);
 //		
 //		return (float) HashingJaccardIndex.HashingJaccardIndex(features1, features2);
-		
-		int prime = 23;
-		
-		int[] seq1 = new int[prime];
-		int[] seq2 = new int[prime];
-		
-		for (int i = 0; i < s1.length(); i++) {
-			seq1[((int)s1.get(i))%prime]++;
-			//seq2[((int)s2.get(i))%prime]++;
+		int [] seq1 = new int[s1.length()];
+		int [] seq2 = new int [s2.length()];
+		for (int i = 0; i < seq1.length; i++){
+			seq1[i] = (int) s1.get(i);
+		}
+		for (int i = 0; i < seq2.length; i++){
+			seq2[i] = (int) s2.get(i);
 		}
 		
-		for (int i = 0; i < s2.length(); i++) {
-			seq2[((int)s2.get(i))%prime]++;
-		}
-		
-		return (float)HashingJaccardIndex.distance(seq1, seq2);
+		return (float)SmithWatermanDM.distance(seq1, seq2,start,extend);
 		
 		
 	}

@@ -52,7 +52,7 @@ public class FingerprintBenchmarkEC implements Serializable {
 			System.out.println("  benchmarkDir: directory with benchmark data");
 			System.out.println("  resultsDir: directory with calculated scores");
 		}
-		
+			
 		String chainsDir = args[0];
 		String benchmarkDir = args[1];
 		String resultsDir = args[2];
@@ -69,7 +69,7 @@ public class FingerprintBenchmarkEC implements Serializable {
 		// setup similarity algorithm
 //		AlignmentAlgorithmInterface algorithm = new NormalizedCompressionDistanceMapper();
 //		AlignmentAlgorithmInterface algorithm = new MeetMinIndexMapperP3();
-		AlignmentAlgorithmInterface algorithm = new WatermanLevenschteinMapper();
+		AlignmentAlgorithmInterface algorithm = new SmithWatermanMapperDM();
 //		AlignmentAlgorithmInterface algorithm = new LevenshteinMapperP3();
 //	    AlignmentAlgorithmInterface algorithm = new SmithWatermanGotohMapperP3();
 
