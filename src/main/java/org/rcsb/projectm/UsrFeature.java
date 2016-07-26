@@ -72,12 +72,12 @@ public class UsrFeature implements SequenceFeatureInterface<Double>, Serializabl
 	@Override
 	public boolean identity(SequenceFeatureInterface<Double> sequence2, int i, int j) {
 		// check NaN as gap
-		if (this.get(i) == null || sequence2.get(j) == null){
-			return false;
-		}
-		// check identity
-		else 
-			return this.get(i).equals(sequence2.get(j));
+				if (this.get(i) == null || sequence2.get(j) == null){
+					return false;
+				}
+				// check identity
+				else 
+					return this.get(i).equals(sequence2.get(j));
 	}
 
 	@Override

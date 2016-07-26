@@ -17,7 +17,7 @@ public class UsrMomentsFingerprint implements SequenceFingerprint, Serializable 
 	private static final long serialVersionUID = 1L;
 //	private double MAX_AVE_CA_CA_DISTANCE = 3.3;
 //	private double[] moments;
- 
+//  Work on fragments
     /**
      * Default constructor uses default parameters
      */
@@ -33,8 +33,7 @@ public class UsrMomentsFingerprint implements SequenceFingerprint, Serializable 
      * @return fingerprint
      */
     public UsrFeature getFingerprint(Point3d[] coords) {
-    	double[] features = new double[12];
-    	features = GenerateMoments.getMoments(coords);
+    	double[] features = GenerateMoments.getMoments(coords);
 		return new UsrFeature(features);
     }
 }

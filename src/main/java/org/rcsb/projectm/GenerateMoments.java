@@ -58,6 +58,7 @@ public class GenerateMoments {
 		for(Point3d point3d : inputArray) {
 			if(point3d != null){
 				double currentDist = point3d.distance(queryPoint);
+				//double currentDist = Math.abs(point3d.x - queryPoint.x) + Math.abs(point3d.y - queryPoint.y) + Math.abs(point3d.z - queryPoint.z);
 				if(currentDist>maxDist){
 					maxPoint = point3d;
 					maxDist = currentDist;  
@@ -80,6 +81,7 @@ public class GenerateMoments {
 		for(Point3d point3d : inputArray) {
 			if(point3d != null){
 				double currentDist = point3d.distance(queryPoint);
+				//double currentDist = Math.abs(point3d.x - queryPoint.x) + Math.abs(point3d.y - queryPoint.y) + Math.abs(point3d.z - queryPoint.z);
 				if(currentDist<minDist){
 					minPoint = point3d;
 					minDist = currentDist;  
@@ -99,14 +101,15 @@ public class GenerateMoments {
 		double sumX = 0;
 		double sumY = 0;
 		double sumZ = 0;
-		final int nPoints = points.length;
-		for (int n = 0; n < nPoints; n++) {
+		int nPoints = 0;
+		for (int n = 0; n < points.length; n++) {
 			
 			if(points[n] != null)
 			{
 			sumX += (double) points[n].x;
 			sumY += (double) points[n].y;
 			sumZ += (double) points[n].z;
+			nPoints++;
 			}
 		}
 		centroid.x = sumX / nPoints;
