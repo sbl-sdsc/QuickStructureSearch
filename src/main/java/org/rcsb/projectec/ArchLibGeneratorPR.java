@@ -21,6 +21,8 @@ import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.rcsb.project10.WritableSegment;
+import org.rcsb.structuralAlignment.SuperPosition;
+import org.rcsb.structuralAlignment.SuperPositionQCP;
 
 /**
  * This class ... add documentation here
@@ -41,8 +43,8 @@ public class ArchLibGeneratorPR {
 
 		long start = System.nanoTime();
 
-		int fragmentSize = 8;
-		double rmsdThreshold = 2.05;
+		int fragmentSize = 16;
+		double rmsdThreshold = 5.7;
 
 		getAllFragments(chainFile, fragmentSize, rmsdThreshold, args[1] + "_" + timeStamp);
 
@@ -87,6 +89,7 @@ public class ArchLibGeneratorPR {
 		for (Point3d[] fragment : archetypes) {
 			String frag = Arrays.toString(fragment);
 			writer.write(frag);
+			//write.flush();
 
 		}
 		writer.close();
@@ -131,5 +134,27 @@ public class ArchLibGeneratorPR {
 		s.close();
 		return lib;
 	}
-
+	
+	public static double[][] getRmsdArray(List<Point3d[]> lib)
+	{
+		double[][] rmsdArray = new double[lib.size()][lib.size()];
+		SuperPositionQCP qcp = new SuperPositionQCP(true);
+//		Point3d[] cFragment = SuperPosition.clonePoint3dArray(lib.get(j));
+//		SuperPositionQCP.center(cFragment);
+//		lib is already in this form
+//		
+//		qcp.set(library.get(i), cFragment);
+//		double rmsd = qcp.getRmsd();
+		for (int i = 0; i < lib.size(); i++) {
+			for (int j = 0; j < lib.size(); j++) {
+				qcp.set(lib.get(i), lib.get(j));
+				double rmsd = qcp.getRmsd();
+				rmsdArray[i][j]  = rmsd;	
+			}
+		}
+		
+		return rmsdArray;
+	}
+	
+	
 }

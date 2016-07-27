@@ -48,7 +48,7 @@ public class ArchLibGenerator {
 		int fragmentSize = 8;
 		double rmsdThreshold = 2.05;
 
-		getAllFragments(chainFile, fragmentSize, rmsdThreshold, args[1] + "_" + timeStamp);
+		getLibrary(chainFile, fragmentSize, rmsdThreshold, args[1] + "_" + timeStamp);
 
 		long end = System.nanoTime();
 
@@ -62,7 +62,7 @@ public class ArchLibGenerator {
  * @param filePath library text file will be stored here
  * @throws IOException
  */
-	private static void getAllFragments(String chainFile, int fragmentSize, double rmsdThreshold, String filePath)
+	private static void getLibrary(String chainFile, int fragmentSize, double rmsdThreshold, String filePath)
 			throws IOException {
 
 		// setup spark

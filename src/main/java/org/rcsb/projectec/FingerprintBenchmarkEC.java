@@ -60,10 +60,15 @@ public class FingerprintBenchmarkEC implements Serializable {
 		System.out.println("Benchmark data: " + benchmarkDir);
 		
 		List<Point3d[]> library = ArchLibGeneratorPR.readLibraryFromFile(args[3]);
+		double[][] rmsdArray = ArchLibGeneratorPR.getRmsdArray(library);
 		// setup fingerprint algorithm
 //		SequenceFingerprint fingerprint = new EndToEndDistanceSequenceFingerprint();
 //		SequenceFingerprint fingerprint = new DCT1DSequenceFingerprint();
-		SequenceFingerprint fingerprint = new LibraryFingerprint(library,2.05);
+//		SequenceFingerprint fingerprint = new LibraryFingerprint(library, 4.5);
+//		SequenceFingerprint fingerprint = new LibraryFingerprint2(library, rmsdArray, 4.5);
+//	SequenceFingerprint fingerprint = new LibraryFingerprint2(library, 2.05);
+	//	SequenceFingerprint fingerprint = new LibraryFingerprint3(library, 4.5);
+		SequenceFingerprint fingerprint = new LibraryFingerprintMinSim(library,  rmsdArray, 4.5);
 		
 		// setup similarity algorithm
 //		AlignmentAlgorithmInterface algorithm = new NormalizedCompressionDistanceMapper();

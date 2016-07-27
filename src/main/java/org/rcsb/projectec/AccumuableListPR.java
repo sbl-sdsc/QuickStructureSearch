@@ -38,7 +38,7 @@ public class AccumuableListPR implements AccumulableParam<List<Point3d[]>,Point3
 		
 		// we found a new archetype, add it to the library
 		lib.add(cFragment);
-		System.out.println("Adding archetype: " + lib.size());
+		//System.out.println("Adding archetype: " + lib.size());
 		return lib;
 	}
 

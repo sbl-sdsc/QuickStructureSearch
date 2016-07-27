@@ -20,10 +20,11 @@ import org.rcsb.structuralAlignment.SuperPositionQCP;
  * @author Emilia Copic
  */
 
-public class LibraryFingerprint implements SequenceFingerprint, Serializable {
+public class LibraryFingerprint2 implements SequenceFingerprint, Serializable {
 	// will take a protein, convert it to indices of library
 	private int length = 8;
 	List<Point3d[]> library;
+	double[][] rmsdArray;
 	private SuperPositionQCP qcp = new SuperPositionQCP(true);
 	private double rmsdThreshold;
 
@@ -32,15 +33,17 @@ public class LibraryFingerprint implements SequenceFingerprint, Serializable {
 	 * 
 	 * @param lib
 	 *            library with all of the archetype fragments
+	 * @param rmsdArray 
 	 * @param rmsdThreshold
 	 *            threshold it will check the library against - make this the
 	 *            same threshold as the library
 	 * 
 	 */
-	public LibraryFingerprint(List<Point3d[]> lib, double rmsdThreshold) {
+	public LibraryFingerprint2 (List<Point3d[]> lib, double[][] rmsdArray, double rmsdThreshold) {
 		this.library = lib;
-		length = library.get(0).length;
 		this.rmsdThreshold = rmsdThreshold;
+		length = library.get(0).length;
+		this.rmsdArray = rmsdArray;
 	}
 
 	public int getLength() {
@@ -59,7 +62,7 @@ public class LibraryFingerprint implements SequenceFingerprint, Serializable {
 	 * @return fingerprint
 	 */
 	@Override
-	public LibrarySequenceFeature getFingerprint(Point3d[] coords){
+	public LibrarySequenceFeatureSim getFingerprint(Point3d[] coords){
 		// split protein into fragments
 		List<Point3d[]> fragments = new ArrayList<>();
 		for (int i = 0; i < coords.length - length + 1; i++) {
@@ -102,7 +105,7 @@ public class LibraryFingerprint implements SequenceFingerprint, Serializable {
 			typeIndicesArray[i] = typeIndices.get(i).intValue();
 		}
 		
-		return new LibrarySequenceFeature(typeIndicesArray);
+		return new LibrarySequenceFeatureSim(typeIndicesArray, rmsdArray, rmsdThreshold);
 		
 		
 	

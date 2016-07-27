@@ -15,17 +15,18 @@ import org.rcsb.structuralAlignment.SuperPosition;
 import org.rcsb.structuralAlignment.SuperPositionQCP;
 
 /**
- * Takes a library and identifies a protein as a list of fragment indices
- *  from the library.
+ * 
  * @author Emilia Copic
  */
 
-public class LibraryFingerprint implements SequenceFingerprint, Serializable {
+public class LibraryFingerprintMinSim implements SequenceFingerprint, Serializable {
 	// will take a protein, convert it to indices of library
 	private int length = 8;
 	List<Point3d[]> library;
 	private SuperPositionQCP qcp = new SuperPositionQCP(true);
 	private double rmsdThreshold;
+	double[][] rmsdArray;
+
 
 	/**
 	 * Constructor with all parameters
@@ -37,10 +38,11 @@ public class LibraryFingerprint implements SequenceFingerprint, Serializable {
 	 *            same threshold as the library
 	 * 
 	 */
-	public LibraryFingerprint(List<Point3d[]> lib, double rmsdThreshold) {
+	public LibraryFingerprintMinSim(List<Point3d[]> lib, double[][] rmsdArray, double rmsdThreshold) {
 		this.library = lib;
 		length = library.get(0).length;
 		this.rmsdThreshold = rmsdThreshold;
+		this.rmsdArray = rmsdArray;
 	}
 
 	public int getLength() {
@@ -59,7 +61,7 @@ public class LibraryFingerprint implements SequenceFingerprint, Serializable {
 	 * @return fingerprint
 	 */
 	@Override
-	public LibrarySequenceFeature getFingerprint(Point3d[] coords){
+	public LibrarySequenceFeatureSim getFingerprint(Point3d[] coords){
 		// split protein into fragments
 		List<Point3d[]> fragments = new ArrayList<>();
 		for (int i = 0; i < coords.length - length + 1; i++) {
@@ -83,18 +85,21 @@ public class LibraryFingerprint implements SequenceFingerprint, Serializable {
 			SuperPositionQCP.center(cFragment);
 			// compare each archetype with the new fragment
 			// for (Point3d[] archetype: library) {
-
+			double minRmsd = Double.MAX_VALUE;
+			int minIndex = Integer.MAX_VALUE;
 			for (int i = 0; i < library.size(); i++) {
 				qcp.set(library.get(i), cFragment);
 				double rmsd = qcp.getRmsd();
-
 				if (rmsd < rmsdThreshold) {
-					typeIndices.add(i);
-					break;
+				if (rmsd < minRmsd) {
+					//typeIndices.add(i);
+					minIndex = i;
+					minRmsd = rmsd;
 					//not sure what to do if for some reason they don't match...
 				}
+				}
 			}
-
+			typeIndices.add(minIndex);
 		}
 		//make typeIndices into an int array
 		int[] typeIndicesArray = new int[typeIndices.size()];
@@ -102,7 +107,7 @@ public class LibraryFingerprint implements SequenceFingerprint, Serializable {
 			typeIndicesArray[i] = typeIndices.get(i).intValue();
 		}
 		
-		return new LibrarySequenceFeature(typeIndicesArray);
+		return new LibrarySequenceFeatureSim(typeIndicesArray, rmsdArray, rmsdThreshold);
 		
 		
 	

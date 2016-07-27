@@ -83,6 +83,7 @@ public class LibraryFingerprint implements SequenceFingerprint, Serializable {
 			SuperPositionQCP.center(cFragment);
 			// compare each archetype with the new fragment
 			// for (Point3d[] archetype: library) {
+
 			for (int i = 0; i < library.size(); i++) {
 				qcp.set(library.get(i), cFragment);
 				double rmsd = qcp.getRmsd();

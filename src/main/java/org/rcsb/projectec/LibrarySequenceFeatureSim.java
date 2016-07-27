@@ -1,6 +1,7 @@
-package org.rcsb.REHS;
+package org.rcsb.projectec;
 
 import java.io.Serializable;
+import java.util.List;
 
 import javax.vecmath.Point3d;
 
@@ -9,46 +10,69 @@ import org.rcsb.project3.SequenceFeatureInterface;
 
 /**
  * This class implements the SequenceFeatureInterface.
- * It is used for storing the list of indices resulting from LibraryFingerprint
+ * It is used for storing the list of indicies resulting from LibraryFingerprint
  * No similarity for this, may be used for Jaccard Index
  * 
  * @author Emilia Copic
  */
-public class LibrarySequenceFeature implements SequenceFeatureInterface<Integer>, Serializable {
+public class LibrarySequenceFeatureSim implements SequenceFeatureInterface<Integer>, Serializable {
 
 	private static final long serialVersionUID = 1L;
+	List<Point3d[]> library;
+	double[][] rmsdArray;
 	private int[] libSequence;
 	private Point3d[] coords;
 	// Some setting for calculate similarity score 
-	private double match = 1;
-	private double mismatch = -1;
+	double rmsdThreshold;
 	private double gap = -1;
-	    
     /**
      * Constructor that will store an int array as EndToEndDistance feature
      * @param EndToEndSequence
      */
-	public LibrarySequenceFeature(int[] LibrarySequence) {
+	public LibrarySequenceFeatureSim(int[] LibrarySequence, double[][] rmsdArray, double rmsdThreshold) {
 		this.libSequence = LibrarySequence;
+		this.rmsdThreshold = rmsdThreshold;
+		this.rmsdArray = rmsdArray;
 		
 	}
 	
-	public LibrarySequenceFeature(int[] EndToEndSequence, Point3d[] coords) {
+	public LibrarySequenceFeatureSim(int[] EndToEndSequence, Point3d[] coords,  List<Point3d[]> lib) {
 		this.libSequence = EndToEndSequence;
 		this.coords = coords;
+		this.library = lib;
 	}
 		
 	@Override
 	public double similarity(SequenceFeatureInterface<Integer> sequence2, int i, int j) {
 		// check NaN as gap
+
 		if (this.get(i) == null || sequence2.get(j) == null){
 			return gap;
+			//I might have gotten rid of all nulls...
 		}
-		// check similarity
-		else if (this.get(i).equals(sequence2.get(j)))
-			return match;
-		else 
-			return mismatch;
+		
+		else{
+			
+		double rmsd = rmsdArray[this.get(i)][sequence2.get(j)];
+		double score;
+		score = 1 - 2*(rmsd/rmsdThreshold);
+//		if(rmsd>2*rmsdThreshold)
+//		score = -2;
+//		
+//		else if(rmsd > 1.5*rmsdThreshold)
+//			score = -1;
+//		
+//		else if(rmsd >rmsdThreshold)
+//			score = -.5;
+//		
+//		else if(rmsd > .7*rmsdThreshold)
+//			score = 1;
+//		else 
+//			score = 2;
+			//(rmsd < rmsdThreshold)
+		
+		return score;
+		}
 	}
 
 	@Override
