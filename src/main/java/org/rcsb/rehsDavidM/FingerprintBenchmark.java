@@ -19,12 +19,8 @@ import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
 import org.apache.spark.broadcast.Broadcast;
 import org.rcsb.project10.*;
-import org.rcsb.project3.AlignmentAlgorithmInterface;
-import org.rcsb.project3.ChainToSequenceFeatureVectorMapper;
-import org.rcsb.project3.EndToEndDistanceSequenceFingerprint;
-import org.rcsb.project3.JaccardIndexMapperP3;
-import org.rcsb.project3.SequenceFeatureInterface;
-import org.rcsb.project3.SequenceFingerprint;
+import org.rcsb.project3.*;
+import org.rcsb.projectec.*;
 
 import scala.Tuple2;
 
@@ -60,7 +56,7 @@ public class FingerprintBenchmark implements Serializable {
 //		SequenceFingerprint fingerprint = new DCT1DSequenceFingerprint();
 		
 		// setup similarity algorithm
-		AlignmentAlgorithmInterface algorithm = new WatermanLevenschteinMapper();
+		AlignmentAlgorithmInterface algorithm = new SmithWatermanGotohMapperP3();
 //		AlignmentAlgorithmInterface algorithm = new JaccardIndexMapper();
 //		AlignmentAlgorithmInterface algorithm = new LevenshteinMapperP3();
 //	    AlignmentAlgorithmInterface algorithm = new SmithWatermanGotohP3();

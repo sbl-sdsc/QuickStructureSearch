@@ -24,7 +24,7 @@ package org.rcsb.rehsDavidM;
 	public class WatermanLevenschteinMapper implements AlignmentAlgorithmInterface {
 		private static final long serialVersionUID = 1L;
 		private Broadcast<Map<String,SequenceFeatureInterface<?>>> sequences = null;
-		double open = 1;
+		double open = 1.0;
 		double extend = 0.1;
 	    private int traceback = 0;
 
@@ -39,7 +39,7 @@ package org.rcsb.rehsDavidM;
 		}
 
 		public String getName() {
-			return "meetMinIndex";
+			return "WatermanLevenschteinMapper";
 		}
 		
 		/**
@@ -57,11 +57,12 @@ package org.rcsb.rehsDavidM;
 			double length1 = v1.length();
 			double length2 = v2.length();
 			double lengthRatio = Math.min(length1, length2)/Math.max(length1, length2);
-			if (lengthRatio >= 0.80){
-				return callGotoh(tuple);
+			if (lengthRatio >= 0.50){
+				return callLevenshtein(tuple);
+
 			}
 			else{
-				return callLevenshtein(tuple);
+				return callGotoh(tuple);
 			}
 	    }
 		
