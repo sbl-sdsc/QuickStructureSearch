@@ -3,6 +3,7 @@ package org.rcsb.projectec;
 import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
+import java.io.PrintWriter;
 import java.text.SimpleDateFormat;
 import java.util.ArrayList;
 import java.util.Arrays;
@@ -36,7 +37,7 @@ import scala.Tuple2;
 /*
  * An attempt at auto-testing many different LibraryFingerprints
  */
-public class AutomatedTesting4 {
+public class AutomatedTesting5 {
 
 	private static int NUM_TASKS_PER_THREAD = 3;
 	static SparkConf conf = new SparkConf().setMaster("local[*]").setAppName("AutomatedTesting2");
@@ -45,16 +46,41 @@ public class AutomatedTesting4 {
 
 	public static void main(String[] args) throws IOException {
 		// Fingerprint Benchmark
-
-		// frag length
-		int startLength = 9;
-		int endLength = 11;
-
-		double startRmsdThreshold = 3.5;
-		double endRmsdThreshold = 5.0;
-
 		String chainsDir = args[0];
 		String benchmarkDir = args[1];
+		int startLength = 13;
+		int endLength = 16;
+		double startRmsdThreshold = 6.5;
+		double endRmsdThreshold = 7.25;
+		String name  = "/"+startLength+"_"+endLength+"__"+
+				startRmsdThreshold+"_"+endRmsdThreshold+".csv";
+		String results = args[2]+name;
+		///Users/student/Documents/Emi/AutoTestingCsvs/
+		FileWriter writer = new FileWriter(results);
+        StringBuilder sb = new StringBuilder();
+        sb.append("Fingerprint");
+        sb.append(',');
+        sb.append("length");
+        sb.append(',');
+        sb.append("rmsd");
+        sb.append(',');
+        sb.append("Sensitivity");
+        sb.append(',');
+        sb.append("Specificity");
+        sb.append(',');
+        sb.append("F1");
+        sb.append(',');
+        sb.append("TP");
+        sb.append(',');
+        sb.append("TN");
+        sb.append(',');
+        sb.append("FP");
+        sb.append(',');
+        sb.append("FN");
+        sb.append('\n');
+        writer.write(sb.toString());
+		// frag length
+
 
 		System.out.println("Chain s       : " + chainsDir);
 		System.out.println("Benchmark data: " + benchmarkDir);
@@ -82,14 +108,14 @@ public class AutomatedTesting4 {
 				.mapToPair(t -> new Tuple2<String, Point3d[]>(t._1, t._2.getCoordinates()));
 		
 		for (int length = startLength; length <= endLength; length++) {
-			for (double rmsdThresh = startRmsdThreshold; rmsdThresh <= endRmsdThreshold; rmsdThresh += .5) {
+			for (double rmsdThresh = startRmsdThreshold; rmsdThresh <= endRmsdThreshold; rmsdThresh += .25) {
 
 				// make lib and fingerprint
 				List<Point3d[]> library = getLib(chainsDir, length, rmsdThresh);
 				double[][] rmsdArray = getRmsdArray(library);
 				SequenceFingerprint fingerprint = new LibraryFingerprintMinSim(library, rmsdArray, rmsdThresh);
 
-				AutomatedTesting4 at = new AutomatedTesting4();
+				AutomatedTesting5 at = new AutomatedTesting5();
 
 				// create unique results directory name
 
@@ -160,10 +186,37 @@ public class AutomatedTesting4 {
 				System.out.println("Sensitivity: " + sensitivity);
 				System.out.println("Specificity: " + specificity);
 				System.out.println("F1 score: " + f1Score);
+				sb = new StringBuilder();
+			     sb.append("LibraryFingerprintMinSim");
+			        sb.append(',');
+			        sb.append(length);
+			        sb.append(',');
+			        sb.append(rmsdThresh);
+			        sb.append(',');
+			        sb.append(sensitivity);
+			        sb.append(',');
+			        sb.append(specificity);
+			        sb.append(',');
+			        sb.append(f1Score);
+			        sb.append(',');
+			        sb.append(tp);
+			        sb.append(',');
+			        sb.append(tn);
+			        sb.append(',');
+			        sb.append(fp);
+			        sb.append(',');
+			        sb.append(fn);
+			        sb.append('\n');
+				writer.write(sb.toString());
+				writer.flush();
 
 			}
 		}
 
+
+        writer.write(sb.toString());
+        writer.close();
+        System.out.println("done!");
 		sc.stop();
 		sc.close();
 	}
