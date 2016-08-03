@@ -11,19 +11,19 @@ import java.util.List;
 /**
  * This class makes it so that ArchLibGenerator can use an accumulator on the JavaRDD that stores the fragments.
  * In this case, this accumulator filters out fragments that already seem to exist in the fragment library.
- * 
+ * It does not print the number of fragments in the library.
  * @author Emilia Copic
  * @author Peter Rose
  *
  */
-public class AccumuableList implements AccumulableParam<List<Point3d[]>,Point3d[]>{
+public class AccumuableListNoPrint implements AccumulableParam<List<Point3d[]>,Point3d[]>{
 	private static final long serialVersionUID = 8776704701706611288L;
 	private double rmsdThreshold;
 	
 	// create new SuperPositionQCP object that uses pre-centered coordinates
 	private SuperPositionQCP qcp = new SuperPositionQCP(true); 
 	
-	public AccumuableList(double rmsdThreshold) {
+	public AccumuableListNoPrint(double rmsdThreshold) {
 		this.rmsdThreshold = rmsdThreshold;
 	}
 
@@ -52,7 +52,7 @@ public class AccumuableList implements AccumulableParam<List<Point3d[]>,Point3d[
 		
 		// we found a new archetype, add it to the library
 		lib.add(cFragment);
-		System.out.println("Adding archetype: " + lib.size());
+		
 		return lib;
 	}
 

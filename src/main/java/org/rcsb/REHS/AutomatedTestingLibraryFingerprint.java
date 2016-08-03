@@ -1,4 +1,4 @@
-package org.rcsb.projectec;
+package org.rcsb.REHS;
 
 import java.io.File;
 import java.io.FileWriter;
@@ -40,10 +40,10 @@ import scala.Tuple2;
  * fragment lengths and rmsd thresholds. Writes this information to a csv file.
  *
  */
-public class AutomatedTesting5 {
+public class AutomatedTestingLibraryFingerprint {
 
 	private static int NUM_TASKS_PER_THREAD = 3;
-	static SparkConf conf = new SparkConf().setMaster("local[*]").setAppName("AutomatedTesting2");
+	static SparkConf conf = new SparkConf().setMaster("local[*]").setAppName("AutomatedTestingLibraryFingerprint");
 	//
 	static JavaSparkContext sc = new JavaSparkContext(conf);
 
@@ -52,9 +52,9 @@ public class AutomatedTesting5 {
 		String chainsDir = args[0];
 		String benchmarkDir = args[1];
 		int startLength = 8;
-		int endLength = 16;
-		double startRmsdThreshold = 2.5;
-		double endRmsdThreshold = 6.5;
+		int endLength = 12;
+		double startRmsdThreshold = 3;
+		double endRmsdThreshold = 6;
 		String name  = "/"+startLength+"_"+endLength+"__"+
 				startRmsdThreshold+"_"+endRmsdThreshold+".csv";
 		String results = args[2]+name;
@@ -118,7 +118,7 @@ public class AutomatedTesting5 {
 				double[][] rmsdArray = getRmsdArray(library);
 				SequenceFingerprint fingerprint = new LibraryFingerprintMinSim(library, rmsdArray, rmsdThresh);
 
-				AutomatedTesting5 at = new AutomatedTesting5();
+				AutomatedTestingLibraryFingerprint at = new AutomatedTestingLibraryFingerprint();
 
 				// create unique results directory name
 
@@ -193,10 +193,7 @@ public class AutomatedTesting5 {
 				writer.write(sb.toString());
 				writer.flush();
 				
-//				//if one of the stats is too low, don't bother continuing
-//				if(sensitivity< .1 || specificity<.1 ){
-//					break;
-//				}
+
 
 			}
 		}
@@ -224,7 +221,7 @@ public class AutomatedTesting5 {
 		// Create library of fragment archetypes
 		List<Point3d[]> prelib = new ArrayList<>();
 		List<Point3d[]> lib = Collections.synchronizedList(prelib);
-		Accumulable<List<Point3d[]>, Point3d[]> accLib = new Accumulable<>(lib, new AccumuableListPR(rmsdThreshold));
+		Accumulable<List<Point3d[]>, Point3d[]> accLib = new Accumulable<>(lib, new AccumuableListNoPrint(rmsdThreshold));
 
 		fragments.foreach(t -> accLib.add(t));
 
@@ -282,7 +279,6 @@ public class AutomatedTesting5 {
 		scores = scores.filter(t -> t != null);
 		return scores;
 
-		// terminate Spark
 	}
 
 }
