@@ -48,29 +48,14 @@ public class LibrarySequenceFeatureSim implements SequenceFeatureInterface<Integ
 
 		if (this.get(i) == null || sequence2.get(j) == null){
 			return gap;
-			//I might have gotten rid of all nulls...
+			
 		}
 		
 		else{
 			
 		double rmsd = rmsdArray[this.get(i)][sequence2.get(j)];
 		double score;
-		score = 1 - 2*(rmsd/rmsdThreshold);
-//		if(rmsd>2*rmsdThreshold)
-//		score = -2;
-//		
-//		else if(rmsd > 1.5*rmsdThreshold)
-//			score = -1;
-//		
-//		else if(rmsd >rmsdThreshold)
-//			score = -.5;
-//		
-//		else if(rmsd > .7*rmsdThreshold)
-//			score = 1;
-//		else 
-//			score = 2;
-			//(rmsd < rmsdThreshold)
-		
+		score = 1 - 2*(rmsd/rmsdThreshold);		
 		return score;
 		}
 	}
