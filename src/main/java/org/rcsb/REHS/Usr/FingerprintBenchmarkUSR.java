@@ -7,6 +7,7 @@ import java.text.SimpleDateFormat;
 import java.util.Arrays;
 import java.util.Calendar;
 import java.util.HashSet;
+import java.util.List;
 import java.util.Map;
 import java.util.Set;
 
@@ -21,10 +22,15 @@ import org.apache.spark.broadcast.Broadcast;
 import org.rcsb.project10.WritableSegment;
 import org.rcsb.project3.AlignmentAlgorithmInterface;
 import org.rcsb.project3.ChainToSequenceFeatureVectorMapper;
+import org.rcsb.project3.DCT1DSequenceFingerprint;
 import org.rcsb.project3.EndToEndDistanceSequenceFingerprint;
+import org.rcsb.project3.JaccardIndexMapperP3;
 import org.rcsb.project3.LevenshteinMapperP3;
 import org.rcsb.project3.SequenceFeatureInterface;
 import org.rcsb.project3.SequenceFingerprint;
+import org.rcsb.project3.SmithWatermanGotohMapperP3;
+import org.rcsb.projectec.*;
+
 
 import scala.Tuple2;
 
@@ -35,7 +41,7 @@ import scala.Tuple2;
  * 
  * @author Peter Rose
  */
-public class FingerprintBenchmarkMW2 implements Serializable {
+public class FingerprintBenchmarkUSR implements Serializable {
 	private static final long serialVersionUID = -8293414734009053770L;	
 	private static int NUM_TASKS_PER_THREAD = 3; // Spark recommends 2-3 tasks per thread
 
@@ -54,20 +60,20 @@ public class FingerprintBenchmarkMW2 implements Serializable {
 		System.out.println("Chain s       : " + chainsDir);
 		System.out.println("Benchmark data: " + benchmarkDir);
 		
-		
+		List<Point3d[]> library = ArchLibGeneratorPR.readLibraryFromFile(args[3]);
 		// setup fingerprint algorithm
 //		SequenceFingerprint fingerprint = new EndToEndDistanceSequenceFingerprint();
 //		SequenceFingerprint fingerprint = new DCT1DSequenceFingerprint();
-		SequenceFingerprint fingerprint = new UsrMomentsFingerprint();
+		SequenceFingerprint fingerprint = new LibraryFingerprint(library,2.0);
 		
 		// setup similarity algorithm
-//    	AlignmentAlgorithmInterface algorithm = new MeetMinIndexMapperP3();
-//		AlignmentAlgorithmInterface algorithm = new NCDIndexMapper();
+//		AlignmentAlgorithmInterface algorithm = new NormalizedCompressionDistanceMapper();
+//		AlignmentAlgorithmInterface algorithm = new MeetMinIndexMapperP3();
+//		AlignmentAlgorithmInterface algorithm = new WatermanLevenschteinMapper();
 //		AlignmentAlgorithmInterface algorithm = new LevenshteinMapperP3();
-//	    AlignmentAlgorithmInterface algorithm = new SmithWatermanGotohMapperP3();
-		AlignmentAlgorithmInterface algorithm = new NMDMapper();
+	    AlignmentAlgorithmInterface algorithm = new SmithWatermanGotohMapperP3();
 
-		FingerprintBenchmarkMW2 benchmark = new FingerprintBenchmarkMW2();
+		FingerprintBenchmarkUSR benchmark = new FingerprintBenchmarkUSR();
 		
 		// create unique results directory name
 		String timeStamp = new SimpleDateFormat("yyyyMMdd_HHmmss").format(Calendar.getInstance().getTime());
@@ -106,7 +112,8 @@ public class FingerprintBenchmarkMW2 implements Serializable {
 		// split input lines of .csv files into chainId1,chainId2, and alignment metrics
 		JavaRDD<String[]> benchmarkData = sc
 				.textFile(benchmarkDir, sc.defaultParallelism() * NUM_TASKS_PER_THREAD) // read files
-				.map(s -> s.split(",")) // split each line into a list items
+				.map(s -> s.split(","))// split each line into a list items
+				.filter(s -> Double.parseDouble(s[5])>49)
 				.cache();	
 
 		// create a list of unique chain ids
@@ -135,12 +142,13 @@ public class FingerprintBenchmarkMW2 implements Serializable {
 		
 		// map results to .csv format and save to text file
 		scores
-				.filter(t -> t!= null)
-		        .map(t -> new String(t._1 + "," + t._2))
+		        .filter(t -> t!= null)
+		         .map(t -> new String(t._1 + "," + t._2))
 		        .saveAsTextFile(resultsDir);
 
 	    // terminate Spark
 	    sc.stop();
 	    sc.close();
 	}
+	
 }

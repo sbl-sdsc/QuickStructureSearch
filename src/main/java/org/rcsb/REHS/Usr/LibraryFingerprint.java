@@ -1,4 +1,4 @@
-package org.rcsb.projectm;
+package org.rcsb.REHS.Usr;
 
 import java.io.Serializable;
 import java.util.ArrayList;
@@ -11,6 +11,7 @@ import javax.vecmath.Point3d;
 import org.rcsb.project3.EndToEndDistanceSequenceFeature;
 import org.rcsb.project3.SequenceFeatureInterface;
 import org.rcsb.project3.SequenceFingerprint;
+import org.rcsb.projectm.LibrarySequenceFeature;
 import org.rcsb.structuralAlignment.SuperPosition;
 import org.rcsb.structuralAlignment.SuperPositionQCP;
 
@@ -20,7 +21,7 @@ import org.rcsb.structuralAlignment.SuperPositionQCP;
  * @author Emilia Copic
  */
 
-public class LibraryFingerprint2 implements SequenceFingerprint, Serializable {
+public class LibraryFingerprint implements SequenceFingerprint, Serializable {
 	// will take a protein, convert it to indices of library
 	private int length = 8;
 	List<Point3d[]> library;
@@ -37,7 +38,7 @@ public class LibraryFingerprint2 implements SequenceFingerprint, Serializable {
 	 *            same threshold as the library
 	 * 
 	 */
-	public LibraryFingerprint2(List<Point3d[]> lib, double rmsdThreshold) {
+	public LibraryFingerprint(List<Point3d[]> lib, double rmsdThreshold) {
 		this.library = lib;
 		length = library.get(0).length;
 		this.rmsdThreshold = rmsdThreshold;

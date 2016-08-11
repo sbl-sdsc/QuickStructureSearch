@@ -105,6 +105,8 @@ public class LibraryFingerprint implements SequenceFingerprint, Serializable {
 		return new UsrFeature(features);
 		
 		
+		
+		
 	
 
 	}

@@ -31,9 +31,9 @@ public class GenerateMoments {
 	}
 
 	/**
-	 * Get the four points of interest. The middle point, the point furthes
+	 * Get the four points of interest. The middle point, the point closest, the point furthest, and the point furthest from the furthest
 	 * @param inputArray the inputArray of points
-	 * @return
+	 * @return outArray the four points of interest
 	 */
 
 	private static Point3d[] getFourPoints(Point3d[] inputArray) {		

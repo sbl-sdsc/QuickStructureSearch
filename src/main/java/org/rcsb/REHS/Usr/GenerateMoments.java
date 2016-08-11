@@ -18,7 +18,6 @@ public class GenerateMoments {
 	 * @param inputArray the array of {@link Point3d}
 	 * @return the moments of this array
 	 */
-//	private static int numPoints = 6;
 	public static double[] getMoments(Point3d[] inputArray) {
 		double[] outArray = new double[12];
 		Point3d[] Points = getFourPoints(inputArray);
@@ -32,18 +31,17 @@ public class GenerateMoments {
 	}
 
 	/**
-	 * Get the four points of interest. The middle point, the point furthes
+	 * Get the four points of interest. The middle point, the point closest, the point furthest, and the point furthest from the furthest
 	 * @param inputArray the inputArray of points
-	 * @return
+	 * @return outArray the four points of interest
 	 */
 
 	private static Point3d[] getFourPoints(Point3d[] inputArray) {		
 		Point3d[] outArray = new Point3d[4];
 		outArray[0] = getCentroid(inputArray);
-		outArray[1] = getFarthestPoint(inputArray, outArray[0], null);
-		for (int i=2; i<4; i++){
-			outArray[i] = getFarthestPoint(inputArray, outArray[i-1], outArray[i-2]);
-		}
+		outArray[1] = getClosestPoint(inputArray, outArray[0]);
+		outArray[2] = getFarthestPoint(inputArray, outArray[0]);
+		outArray[3] = getFarthestPoint(inputArray, outArray[2]);
 		return outArray;
 	}
 
@@ -54,19 +52,43 @@ public class GenerateMoments {
 	 * @param queryPoint the point to be farthest from
 	 * @return the farthest point
 	 */
-	private static Point3d getFarthestPoint(Point3d[] inputArray, Point3d queryPoint, Point3d reUsed) {
+	private static Point3d getFarthestPoint(Point3d[] inputArray, Point3d queryPoint) {
 		double maxDist = -1.0;
 		Point3d maxPoint = null;
 		for(Point3d point3d : inputArray) {
 			if(point3d != null){
 				double currentDist = point3d.distance(queryPoint);
-				if(point3d != reUsed && currentDist>maxDist){
+				//double currentDist = Math.abs(point3d.x - queryPoint.x) + Math.abs(point3d.y - queryPoint.y) + Math.abs(point3d.z - queryPoint.z);
+				if(currentDist>maxDist){
 					maxPoint = point3d;
 					maxDist = currentDist;  
-			}
+				}
 			}
 		}
 		return maxPoint;
+	}
+	
+	/**
+	 * Function to get the closest point from a single point in an array
+	 * of points.
+	 * @param inputArray the input {@link Point3d} array
+	 * @param queryPoint the point to be closest from
+	 * @return the closest point
+	 */
+	private static Point3d getClosestPoint(Point3d[] inputArray, Point3d queryPoint) {
+		double minDist = 100000;
+		Point3d minPoint = inputArray[0];
+		for(Point3d point3d : inputArray) {
+			if(point3d != null){
+				double currentDist = point3d.distance(queryPoint);
+				//double currentDist = Math.abs(point3d.x - queryPoint.x) + Math.abs(point3d.y - queryPoint.y) + Math.abs(point3d.z - queryPoint.z);
+				if(currentDist<minDist){
+					minPoint = point3d;
+					minDist = currentDist;  
+				}
+			}
+		}
+		return minPoint;
 	}
 
 	/**
@@ -79,14 +101,15 @@ public class GenerateMoments {
 		double sumX = 0;
 		double sumY = 0;
 		double sumZ = 0;
-		final int nPoints = points.length;
-		for (int n = 0; n < nPoints; n++) {
+		int nPoints = 0;
+		for (int n = 0; n < points.length; n++) {
 			
 			if(points[n] != null)
 			{
 			sumX += (double) points[n].x;
 			sumY += (double) points[n].y;
 			sumZ += (double) points[n].z;
+			nPoints++;
 			}
 		}
 		centroid.x = sumX / nPoints;
@@ -128,7 +151,7 @@ public class GenerateMoments {
 		for(int i=0; i<inputArray.length;i++){
 			if(inputArray[i] != null)
 			{
-			outArray[i] = inputArray[i].distance(singlePoint3d);
+				outArray[i] = inputArray[i].distance(singlePoint3d);
 			}
 		}
 		return outArray;
