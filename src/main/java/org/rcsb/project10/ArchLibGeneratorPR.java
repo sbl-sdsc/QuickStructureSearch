@@ -13,6 +13,7 @@ import org.apache.spark.Accumulable;
 import org.apache.spark.SparkConf;
 import org.apache.spark.api.java.JavaRDD;
 import org.apache.spark.api.java.JavaSparkContext;
+import org.rcsb.projectec.FlatMapToFragments;
 
 /**
  * This class ... add documentation here
@@ -58,7 +59,7 @@ public class ArchLibGeneratorPR {
 	    		.sequenceFile(chainFile, Text.class, WritableSegment.class) // read file with chains
 	    		.map(t -> t._2.getCoordinates()) // get the coordinates of the protein chains
 	    		.repartition(1) // create a single partition to generate a single fragment library (this cannot be done in parallel!)
-	    		.flatMap(new FlatMapToFragmentsEC(fragmentSize)); // flatmap to fragments
+	    		.flatMap(new FlatMapToFragments(fragmentSize)); // flatmap to fragments
 
 //	    fragments.foreach(t-> System.out.println(Arrays.toString(t)));
 

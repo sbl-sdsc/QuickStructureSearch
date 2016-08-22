@@ -6,6 +6,7 @@ import java.util.HashMap;
 import java.util.Map;
 
 import org.junit.Test;
+import org.rcsb.projectm.Demo.MeetMinIndex;
 
 public class NMDTest {
 
