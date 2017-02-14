@@ -55,9 +55,6 @@ public class LongestCommonSubstring {
             }
         }
 
-        // print out longest common substring
-        StdOut.println(lcs.length());
-        StdOut.println("'" + lcs + "'");
     }
 
     /**
